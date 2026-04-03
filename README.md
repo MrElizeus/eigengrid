@@ -1,30 +1,23 @@
-# EigenGrid Monorepo
+# EigenGrid
 
-EigenGrid is a single repository that now contains both a Laravel backend API and a JavaScript frontend. Keeping everything together makes it easy to version backend schema changes alongside the UI.
+EigenGrid is a web app split into a Laravel API and a JavaScript frontend.
 
-## Repository layout
-- `backend/` – Laravel 13 application that serves JSON to `frontend` and exposes authentication, profile, and static data endpoints.
-- `frontend/` – A Next.js 14 (app router) client that runs standalone but talks to the Laravel API.
-- `docker-compose.yml` – Spins up PostgreSQL, the backend PHP server, and the frontend dev server with one command.
+## What lives where
+- `backend/` contains the Laravel application and JSON API.
+- `frontend/` contains the Next.js UI.
+- `docker-compose.yml` starts PostgreSQL plus both services together.
 
-## Getting started locally (without Docker)
+## Run locally
 1. `cd backend && composer install && cp .env.example .env && php artisan key:generate`
-2. Set database credentials in `backend/.env` (PostgreSQL is default in this repo).
-3. `php artisan migrate` to prepare the database.
-4. `cd frontend && npm install && npm run dev` to start the React UI.
-   - Copy `frontend/.env.example` to `.env.local` and adjust `NEXT_PUBLIC_API_URL` if your backend is hosted elsewhere.
-5. The API is reachable at `http://localhost:8000`, and the Next app runs at `http://localhost:3000` by default.
+2. Configure `backend/.env` for your database.
+3. `cd frontend && npm install`
+4. Start the API and UI from their own folders, or use Docker if you prefer a single command.
 
-## Dockerized dev loop
-1. `docker-compose up --build`
-2. Backend API: `http://localhost:8000`
-3. Frontend: `http://localhost:3000`
-4. The frontend automatically calls `/api/login` on the backend using the token returned from Laravel Sanctum.
+## Useful commands
+- Backend tests: `cd backend && php artisan test`
+- Frontend lint: `cd frontend && npm run lint`
+- Frontend build: `cd frontend && npm run build`
 
-## Testing
-- Backend: `cd backend && php artisan test`
-- Frontend: `cd frontend && npm run lint` (if configured) or `npm run build` for a production check.
-
-## Next steps
-- Wire additional API endpoints under `backend/routes/api.php` once the frontend UI requires them.
-- Update `frontend/app/(...)` to render the actual EigenGrid dashboard once authentication is wired.
+## Notes
+- The app uses token-based auth through the API.
+- The UI is built in React/Next.js, so there is no Blade layer in the application code.
