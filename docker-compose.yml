@@ -1,0 +1,45 @@
+version: '3.9'
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: eigengrid
+      POSTGRES_USER: eigengrid
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+  backend:
+    image: laravelsail/php83-composer
+    working_dir: /var/www/html
+    volumes:
+      - ./backend:/var/www/html
+    ports:
+      - 8000:8000
+    environment:
+      APP_ENV: local
+      APP_DEBUG: 'true'
+      APP_URL: http://localhost:8000
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: eigengrid
+      DB_USERNAME: eigengrid
+      DB_PASSWORD: secret
+      FRONTEND_URL: http://localhost:3000
+    depends_on:
+      - postgres
+    command: sh -c "composer install && php artisan key:generate --force && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000"
+  frontend:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    ports:
+      - 3000:3000
+    depends_on:
+      - backend
+    command: sh -c "npm install && npm run dev -- --hostname 0.0.0.0 --port 3000"
+volumes:
+  postgres_data:
