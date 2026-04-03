@@ -12,6 +12,7 @@ EigenGrid is a web app split into a Laravel API and a JavaScript frontend.
 2. Configure `backend/.env` for your database.
 3. `cd frontend && npm install`
 4. Start the API and UI from their own folders, or use Docker if you prefer a single command.
+5. If Docker says `permission denied` on `docker.sock`, run `sudo usermod -aG docker $USER`, log out, and log back in.
 
 ## Useful commands
 - Backend tests: `cd backend && php artisan test`
