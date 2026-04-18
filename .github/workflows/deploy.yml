@@ -1,0 +1,37 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            cd /home/eigengrid/eigengrid
+
+            git pull origin main
+
+            # Backend
+            cd backend
+            /usr/local/bin/composer install --no-dev --optimize-autoloader
+            php artisan migrate --force
+            php artisan config:cache
+            php artisan route:cache
+
+            # Frontend
+            cd ../frontend
+            npm install
+            npm run build
+
+            # Restart services
+            export PATH=$PATH:/usr/local/bin
+            pm2 restart eigengrid-frontend eigengrid-backend
