@@ -3,8 +3,9 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
+import { getApiBaseUrl } from '../lib/api-url';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
+const API_URL = getApiBaseUrl();
 
 export default function LoginPage() {
   useEffect(() => {
