@@ -10,6 +10,7 @@
         "laravel/framework": "^13.0",
         "laravel/sanctum": "^4.3",
         "laravel/tinker": "^3.0",
+        "phpseclib/phpseclib": "~3.0",
         "symfony/console": "^7.0",
         "symfony/http-foundation": "^7.4",
         "symfony/http-kernel": "^7.0",

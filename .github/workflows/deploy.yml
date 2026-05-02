@@ -32,6 +32,10 @@ jobs:
             npm install
             npm run build
 
+            # SSH Bridge
+            cd ssh-bridge
+            npm install --omit=dev
+
             # Restart services
             export PATH=$PATH:/usr/local/bin
-            pm2 restart eigengrid-frontend eigengrid-backend
+            pm2 restart eigengrid-frontend eigengrid-backend eigengrid-ssh-bridge

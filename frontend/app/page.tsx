@@ -26,16 +26,32 @@ export default function LoginPage() {
     try {
       const response = await fetch(`${API_URL}/api/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
         body: JSON.stringify({ email, password, remember }),
       });
 
+      const rawBody = await response.text();
+      let body: { message?: string; token?: string } = {};
+
+      if (rawBody) {
+        try {
+          body = JSON.parse(rawBody) as { message?: string; token?: string };
+        } catch {
+          if (!response.ok) {
+            throw new Error('The API returned a non-JSON error response.');
+          }
+
+          throw new Error('The API returned an invalid JSON response.');
+        }
+      }
+
       if (!response.ok) {
-        const body = await response.json();
         throw new Error(body.message ?? 'Invalid credentials.');
       }
 
-      const body = await response.json();
       const returnedToken = body.token as string | undefined;
 
       if (!returnedToken) {

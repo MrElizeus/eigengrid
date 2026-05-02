@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\WolController;
+use App\Http\Controllers\SshSessionController;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -60,4 +62,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
     });
 
     Route::get('/dashboard', [DashboardController::class, 'index']);
+
+    Route::post('/wol/{machineId}', [WolController::class, 'wake']);
+
+    Route::post('/ssh/session', [SshSessionController::class, 'create']);
+});
+
+// Bridge-protected SSH session endpoint (no user auth, only bridge secret)
+Route::middleware(['bridge.secret'])->group(function () {
+    Route::get('/ssh/session/{token}', [SshSessionController::class, 'consume']);
 });

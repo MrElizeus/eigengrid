@@ -123,4 +123,18 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | SSH Bridge Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for the WebSocket SSH bridge that allows interactive
+    | terminal access through the web interface.
+    |
+    */
+
+    'bridge_secret' => env('SSH_BRIDGE_SECRET'),
+
+    'ssh_bridge_ws_url' => env('SSH_BRIDGE_WS_URL', 'ws://localhost:4000'),
+
 ];

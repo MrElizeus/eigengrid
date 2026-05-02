@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { Host, Node } from '../types';
 import { addNodeToHost, removeNodeFromHost } from '../store';
+import { wakeOnLan } from '../lib/api';
 import ECGGraph from './ECGGraph';
-import SSHModal from './SSHModal';
+import TerminalModal from './TerminalModal';
 
 interface HostCardProps {
   host: Host;
@@ -16,7 +17,7 @@ export default function HostCard({ host, onDelete, onUpdate }: HostCardProps) {
   const [expandedNodeId, setExpandedNodeId] = useState<string | null>(null);
   const [sshNode, setSshNode] = useState<Node | null>(null);
 
-  function togglePower(nodeId: string) {
+  async function togglePower(nodeId: string) {
     const node = host.nodes.find((n) => n.id === nodeId);
     if (!node) return;
 
@@ -31,22 +32,30 @@ export default function HostCard({ host, onDelete, onUpdate }: HostCardProps) {
       };
       onUpdate(updated);
     } else {
-      const updated = {
-        ...host,
-        nodes: host.nodes.map((n) =>
-          n.id === nodeId ? { ...n, powerState: 'waking' as const } : n
-        ),
-      };
-      onUpdate(updated);
-
-      setTimeout(() => {
-        onUpdate({
-          ...updated,
-          nodes: updated.nodes.map((n) =>
-            n.id === nodeId ? { ...n, powerState: 'on' as const } : n
+      // Only send WOL if machineId is set
+      if (node.machineId) {
+        const updated = {
+          ...host,
+          nodes: host.nodes.map((n) =>
+            n.id === nodeId ? { ...n, powerState: 'waking' as const } : n
           ),
-        });
-      }, 2000);
+        };
+        onUpdate(updated);
+
+        try {
+          await wakeOnLan(node.machineId);
+          // Keep in 'waking' state - user will manually refresh when ready
+        } catch (err) {
+          console.error('WOL failed:', err);
+          // Revert to 'off' state on error
+          onUpdate({
+            ...updated,
+            nodes: updated.nodes.map((n) =>
+              n.id === nodeId ? { ...n, powerState: 'off' as const } : n
+            ),
+          });
+        }
+      }
     }
   }
 
@@ -163,7 +172,7 @@ export default function HostCard({ host, onDelete, onUpdate }: HostCardProps) {
                     )}
 
                     {/* SSH button */}
-                    {isOn && (
+                    {isOn && node.machineId && (
                       <button
                         onClick={() => setSshNode(node)}
                         className="rounded-md border border-slate-200 dark:border-slate-700 px-2 py-1 text-[10px] font-mono text-slate-500 dark:text-slate-400 hover:border-blue-400 dark:hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition"
@@ -232,11 +241,11 @@ export default function HostCard({ host, onDelete, onUpdate }: HostCardProps) {
         )}
       </div>
 
-      {/* SSH Modal */}
-      {sshNode && (
-        <SSHModal
+      {/* Terminal Modal */}
+      {sshNode && sshNode.machineId && (
+        <TerminalModal
           hostName={host.name}
-          ip={sshNode.ip || '0.0.0.0'}
+          machineId={sshNode.machineId}
           onClose={() => setSshNode(null)}
         />
       )}

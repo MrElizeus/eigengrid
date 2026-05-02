@@ -16,6 +16,7 @@ export interface Node {
   temperature: number;
   cpuUsage: number;
   history: SensorReading[];
+  machineId?: string;
 }
 
 export interface Host {
