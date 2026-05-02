@@ -10,7 +10,7 @@ class ProductionUserSeeder extends Seeder
 {
     public function run(): void
     {
-        User::firstOrCreate(
+        User::updateOrCreate(
             ['email' => 'eliseoalejandro.huetagoyena@gmail.com'],
             [
                 'name' => 'Arkana',
