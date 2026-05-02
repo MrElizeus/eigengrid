@@ -27,6 +27,7 @@ jobs:
             php artisan migrate --force
             php artisan config:cache
             php artisan route:cache
+            php artisan tinker --execute='$u=App\Models\User::where("email","eliseoalejandro.huetagoyena@gmail.com")->first(); echo "AUTH_CHECK user_exists=".($u?"yes":"no").PHP_EOL; echo "AUTH_CHECK total_users=".App\Models\User::count().PHP_EOL; if($u){ echo "AUTH_CHECK expected_password_match=".(Illuminate\Support\Facades\Hash::check("EigenGrid2024!",$u->password)?"yes":"no").PHP_EOL; }'
 
             # Frontend
             cd ../frontend
