@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Terminal } from 'xterm';
 import { FitAddon } from '@xterm/addon-fit';
-import '@xterm/addon-fit/css/fit.css';
 import 'xterm/css/xterm.css';
 import { createSSHSession } from '../lib/api';
 
