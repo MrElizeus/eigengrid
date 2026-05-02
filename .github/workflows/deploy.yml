@@ -38,4 +38,11 @@ jobs:
 
             # Restart services
             export PATH=$PATH:/usr/local/bin
-            pm2 restart eigengrid-frontend eigengrid-backend eigengrid-ssh-bridge
+            pm2 restart eigengrid-frontend eigengrid-backend
+
+            # Start or restart SSH Bridge
+            if pm2 describe eigengrid-ssh-bridge > /dev/null 2>&1; then
+              pm2 restart eigengrid-ssh-bridge
+            else
+              pm2 start index.js --name eigengrid-ssh-bridge --env-file ../.env
+            fi
