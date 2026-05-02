@@ -1,11 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { Host, Node } from '../types';
 import { addNodeToHost, removeNodeFromHost } from '../store';
 import { wakeOnLan } from '../lib/api';
 import ECGGraph from './ECGGraph';
-import TerminalModal from './TerminalModal';
+
+const TerminalModal = dynamic(() => import('./TerminalModal'), { ssr: false });
 
 interface HostCardProps {
   host: Host;
