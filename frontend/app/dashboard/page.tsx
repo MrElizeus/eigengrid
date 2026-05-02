@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Host, SensorReading } from './types';
 import {
@@ -12,41 +12,6 @@ import {
 import HostCard from './components/HostCard';
 import HostModal from './components/HostModal';
 import { logout } from './lib/api';
-
-function useDarkMode() {
-  const [dark, setDark] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('eigengrid_dark');
-      const isDark = stored
-        ? stored === 'true'
-        : window.matchMedia('(prefers-color-scheme: dark)').matches;
-      return isDark;
-    }
-    return false;
-  });
-
-  // Apply dark class to document after mount
-  const [applied, setApplied] = useState(false);
-  if (!applied && typeof window !== 'undefined') {
-    if (dark) document.documentElement.classList.add('dark');
-    setApplied(true);
-  }
-
-  const toggle = useCallback(() => {
-    setDark((prev) => {
-      const next = !prev;
-      localStorage.setItem('eigengrid_dark', String(next));
-      if (next) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-      return next;
-    });
-  }, []);
-
-  return { dark, toggle };
-}
 
 function generateSensor(
   prev: SensorReading,
@@ -76,7 +41,6 @@ export default function DashboardPage() {
   const [hosts, setHosts] = useState<Host[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const { dark, toggle: toggleDark } = useDarkMode();
 
   // Load hosts from localStorage on mount (client only, avoids hydration mismatch)
   useEffect(() => {
@@ -185,13 +149,6 @@ export default function DashboardPage() {
             className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 dark:hover:bg-blue-500 transition"
           >
             + Add Host
-          </button>
-          <button
-            onClick={toggleDark}
-            className="rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2 text-sm text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
-            title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
-          >
-            {dark ? '☀' : '☾'}
           </button>
           <button
             onClick={handleLogout}
