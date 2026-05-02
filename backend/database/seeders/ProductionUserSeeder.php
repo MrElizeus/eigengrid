@@ -20,6 +20,6 @@ class ProductionUserSeeder extends Seeder
 
         $this->command->info('✓ User created/updated: eliseoalejandro.huetagoyena@gmail.com');
         $this->command->info('✓ Name: Arkana');
-        $this->command->info('✓ Password: EigenGrid2024!');
+        $this->command->info('✓ Production credentials synchronized.');
     }
 }
