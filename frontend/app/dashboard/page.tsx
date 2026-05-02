@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Host, SensorReading } from './types';
 import {
   createHost,
@@ -10,6 +11,7 @@ import {
 } from './store';
 import HostCard from './components/HostCard';
 import HostModal from './components/HostModal';
+import { logout } from './lib/api';
 
 function useDarkMode() {
   const [dark, setDark] = useState(() => {
@@ -70,8 +72,10 @@ function generateSensor(
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [hosts, setHosts] = useState<Host[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { dark, toggle: toggleDark } = useDarkMode();
 
   // Load hosts from localStorage on mount (client only, avoids hydration mismatch)
@@ -122,9 +126,10 @@ export default function DashboardPage() {
   function handleAddHost(
     name: string,
     type: 'standalone' | 'workstation' | 'cluster',
-    nodeCount: number
+    nodeCount: number,
+    firstNodeConfig: { machineId?: string; ip?: string; mac?: string }
   ) {
-    const newHost = createHost(name, type, nodeCount);
+    const newHost = createHost(name, type, nodeCount, firstNodeConfig);
     setHosts((prev) => [...prev, newHost]);
     setShowAddModal(false);
   }
@@ -137,6 +142,20 @@ export default function DashboardPage() {
     setHosts((prev) =>
       prev.map((h) => (h.id === updated.id ? updated : h))
     );
+  }
+
+  async function handleLogout() {
+    if (isLoggingOut) return;
+
+    setIsLoggingOut(true);
+    try {
+      await logout();
+    } catch (err) {
+      console.error('Logout failed:', err);
+    } finally {
+      localStorage.removeItem('eigengrid_token');
+      router.replace('/');
+    }
   }
 
   const onlineCount = hosts.reduce(
@@ -173,6 +192,13 @@ export default function DashboardPage() {
             title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
           >
             {dark ? '☀' : '☾'}
+          </button>
+          <button
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            className="rounded-lg border border-red-200 dark:border-red-900/60 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {isLoggingOut ? 'Signing out...' : 'Log out'}
           </button>
         </div>
       </header>

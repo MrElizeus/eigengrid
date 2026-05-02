@@ -47,11 +47,25 @@ export function saveHosts(hosts: Host[]): void {
 export function createHost(
   name: string,
   type: 'standalone' | 'workstation' | 'cluster',
-  nodeCount: number
+  nodeCount: number,
+  firstNodeConfig?: { machineId?: string; ip?: string; mac?: string }
 ): Host {
   const nodes: Node[] = Array.from({ length: nodeCount }, (_, i) =>
     createDefaultNode(i)
   );
+
+  if (firstNodeConfig) {
+    const machineId = firstNodeConfig.machineId?.trim();
+    const ip = firstNodeConfig.ip?.trim();
+    const mac = firstNodeConfig.mac?.trim();
+
+    nodes[0] = {
+      ...nodes[0],
+      machineId: machineId || undefined,
+      ip: ip || '',
+      mac: mac || '',
+    };
+  }
 
   return {
     id: generateId(),

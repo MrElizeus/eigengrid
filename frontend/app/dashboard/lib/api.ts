@@ -71,3 +71,9 @@ export async function createSSHSession(
     body: JSON.stringify({ machine_id: machineId }),
   });
 }
+
+export async function logout(): Promise<void> {
+  await apiFetch<{ message: string }>('/api/logout', {
+    method: 'POST',
+  });
+}
