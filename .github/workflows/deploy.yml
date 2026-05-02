@@ -16,7 +16,8 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -e
-            cd /home/eigengrid/eigengrid
+            APP_DIR=/home/eigengrid/eigengrid
+            cd "$APP_DIR"
 
             git pull origin main
 
@@ -36,13 +37,26 @@ jobs:
             cd ssh-bridge
             npm install --omit=dev
 
+            # Resolve env file for SSH Bridge
+            # Preferred: dedicated bridge env file. Fallback: backend env file.
+            SSH_BRIDGE_ENV_FILE="$APP_DIR/frontend/ssh-bridge/.env"
+            if [ ! -f "$SSH_BRIDGE_ENV_FILE" ]; then
+              SSH_BRIDGE_ENV_FILE="$APP_DIR/backend/.env"
+            fi
+
+            if [ ! -f "$SSH_BRIDGE_ENV_FILE" ]; then
+              echo "ERROR: Missing env file for ssh-bridge."
+              echo "Create $APP_DIR/frontend/ssh-bridge/.env or $APP_DIR/backend/.env"
+              exit 1
+            fi
+
             # Restart services
             export PATH=$PATH:/usr/local/bin
             pm2 restart eigengrid-frontend eigengrid-backend
 
-            # Start or restart SSH Bridge
-            if pm2 describe eigengrid-ssh-bridge > /dev/null 2>&1; then
-              pm2 restart eigengrid-ssh-bridge
-            else
-              pm2 start index.js --name eigengrid-ssh-bridge --env-file ../.env
-            fi
+            # Recreate SSH Bridge so node args/env-file are always applied
+            pm2 delete eigengrid-ssh-bridge > /dev/null 2>&1 || true
+            pm2 start index.js \
+              --name eigengrid-ssh-bridge \
+              --cwd "$APP_DIR/frontend/ssh-bridge" \
+              --node-args="--env-file=$SSH_BRIDGE_ENV_FILE"
