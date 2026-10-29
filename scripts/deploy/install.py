@@ -52,6 +52,7 @@ def configure(staging):
 
 
 def run(args, **kwargs):
+    kwargs.setdefault("cwd", "/")
     return subprocess.run(
         args, text=True, capture_output=True, check=True, **kwargs
     ).stdout

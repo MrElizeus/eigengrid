@@ -120,6 +120,7 @@ def validate_identity(validation, release, run, repository_id, tag_commit):
 
 
 def run(args, **kwargs):
+    kwargs.setdefault("cwd", "/")
     return subprocess.check_output(args, text=True, **kwargs).strip()
 
 
