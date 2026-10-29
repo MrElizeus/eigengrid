@@ -437,6 +437,35 @@ function emptyRecipes(): RecipeRegistry {
 // ── Tests ───────────────────────────────────────────────────
 
 describe("ApplicationContext", () => {
+  it("keeps personal SQLite metadata while preventing legacy effects with a cluster profile", async () => {
+    const previous = process.env.EIGENGRID_CLUSTER_PROFILE;
+    process.env.EIGENGRID_CLUSTER_PROFILE = "/site/cluster-profile.json";
+    const db = new FakeDatabase();
+    const ctx = new ApplicationContext(
+      minConfig(),
+      db,
+      emptyRegistry(),
+      new FakeBridge(),
+      emptyRecipes(),
+    );
+    try {
+      const result = await ctx.execution.executeLocal({
+        software: "gaussian",
+        inputPath: "unused.gjf",
+      });
+      expect(ctx.config.dbProvider).toBe("sqlite");
+      expect(result.ok).toBeFalse();
+      if (result.ok) throw new Error("Unexpected legacy execution");
+      expect(result.message).toContain("disabled in production");
+      expect(db.jobsMap.size).toBe(0);
+      expect(db.eventsStore).toHaveLength(0);
+    } finally {
+      await ctx.close();
+      if (previous === undefined) delete process.env.EIGENGRID_CLUSTER_PROFILE;
+      else process.env.EIGENGRID_CLUSTER_PROFILE = previous;
+    }
+  });
+
   it("constructs with fake dependencies", () => {
     const fakeDb = new FakeDatabase();
     const fakeBridge = new FakeBridge();

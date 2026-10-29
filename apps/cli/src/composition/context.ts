@@ -20,6 +20,7 @@ import { createDatabaseFromConfig, SqliteDatabase, PostgresDatabase } from "@eig
 import { createPythonBridge } from "@eigengrid/python-bridge";
 import { loadBuiltinRecipes, findRunnableRecipe } from "@eigengrid/recipes";
 import { generateId } from "@eigengrid/core";
+import { clusterNodeRecords } from "../services/cluster-inventory";
 import { loadOperatorPermissions } from "../services/operator-permission-store";
 import { operatorSandboxCommand } from "@eigengrid/runners/operator-sandbox";
 
@@ -194,18 +195,22 @@ class DbDashboardDataSource implements DashboardDataSource {
     const logTail = options.logTail ?? 50;
 
     if (!jobId) {
-      const [jobs, nodes] = await Promise.all([this.jobs.list(), this.db.listNodes()]);
+      const [jobs, nodes] = await Promise.all([this.jobs.list(), this.#nodes()]);
       return { jobs, nodes, logs: [], events: [], timeline: [], fetchedAt: this.clock() };
     }
 
     const [jobs, nodes, logs, events, timeline] = await Promise.all([
       this.jobs.list(),
-      this.db.listNodes(),
+      this.#nodes(),
       this.queries.logs.get(jobId, undefined, logTail),
       this.queries.events.list(jobId),
       this.queries.events.getTimeline(jobId),
     ]);
     return { jobs, nodes, logs, events, timeline, fetchedAt: this.clock() };
+  }
+
+  async #nodes() {
+    return (await clusterNodeRecords()) ?? this.db.listNodes();
   }
 }
 
@@ -300,7 +305,9 @@ export class ApplicationContext {
       idGenerator: this.idGenerator,
       localBackendFactory: overrides.localBackendFactory ?? defaultLocalBackendFactory,
       parser: parsers,
-      allowLegacyExecution: process.env.EIGENGRID_DEPLOYMENT_PROFILE !== "production",
+      allowLegacyExecution:
+        process.env.EIGENGRID_DEPLOYMENT_PROFILE !== "production" &&
+        !process.env.EIGENGRID_CLUSTER_PROFILE,
     };
     this.execution = overrides.execution ?? new ExecutionCoordinator(coordDeps);
   }

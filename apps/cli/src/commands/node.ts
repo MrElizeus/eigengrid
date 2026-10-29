@@ -5,6 +5,12 @@ import { isValidMacAddress, sendWolPacket } from "@eigengrid/scheduler/wol";
 import { WorkerSyncService } from "../services/worker-sync-service";
 import { runWithContext } from "../composition";
 import type { DatabaseLike, NodeUpdateInput, NodeRecord } from "@eigengrid/db";
+import {
+  clusterNodeRecords,
+  discoverCluster,
+  loadClusterProfile,
+  printCluster,
+} from "../services/cluster-inventory";
 
 async function updateNode(
   db: DatabaseLike,
@@ -134,31 +140,64 @@ export const nodeCommand: CommandModule = {
             },
           ),
       )
-      .command("list", "List all nodes", {}, async () => {
-        await runWithContext(async ({ db }) => {
-          const nodes = await db.listNodes();
-          if (nodes.length === 0) {
-            console.log("  No nodes found. Use `eigengrid node add` to add one.\n");
+      .command(
+        "discover",
+        "Observe live Slurm nodes (read-only)",
+        {
+          json: { type: "boolean", default: false },
+        } as const,
+        async (args) => {
+          printCluster(await discoverCluster(), args.json);
+        },
+      )
+      .command(
+        "list",
+        "List live cluster nodes, or project nodes when no site profile exists",
+        {
+          source: { type: "string", choices: ["auto", "project", "slurm"], default: "auto" },
+          json: { type: "boolean", default: false },
+        } as const,
+        async (args) => {
+          if (args.source === "slurm" || (args.source === "auto" && loadClusterProfile())) {
+            printCluster(await discoverCluster(), args.json);
             return;
           }
-          console.log("  NODE ID      NAME           RUNNER  STATUS   HOST");
-          console.log("  --------------------------------------------------");
-          for (const n of nodes) {
-            const id = (n.id as string).slice(0, 12).padEnd(12);
-            const name = (n.name as string).slice(0, 14).padEnd(14);
-            const runner = (n.runner as string).padEnd(7);
-            const status = (n.status as string).padEnd(8);
-            console.log(`  ${id} ${name} ${runner} ${status} ${n.host}`);
-          }
-          console.log("");
-        });
-      })
+          await runWithContext(async ({ db }) => {
+            const nodes = await db.listNodes();
+            if (args.json) {
+              console.log(JSON.stringify({ source: "project", nodes }, null, 2));
+              return;
+            }
+            if (nodes.length === 0) {
+              console.log("  No nodes found. Use `eigengrid node add` to add one.\n");
+              return;
+            }
+            console.log("  NODE ID      NAME           RUNNER  STATUS   HOST");
+            console.log("  --------------------------------------------------");
+            for (const n of nodes) {
+              const id = (n.id as string).slice(0, 12).padEnd(12);
+              const name = (n.name as string).slice(0, 14).padEnd(14);
+              const runner = (n.runner as string).padEnd(7);
+              const status = (n.status as string).padEnd(8);
+              console.log(`  ${id} ${name} ${runner} ${status} ${n.host}`);
+            }
+            console.log("");
+          });
+        },
+      )
       .command(
         "show",
         "Show node details",
         { id: { type: "string", demandOption: true } } as const,
         async (args) => {
           const nodeId = args.id as string;
+          const clusterNodes = await clusterNodeRecords();
+          if (clusterNodes) {
+            const node = clusterNodes.find((n) => n.id === nodeId || n.name === nodeId);
+            if (!node) throw new Error(`Slurm node not found: ${nodeId}`);
+            console.log(JSON.stringify(node, null, 2));
+            return;
+          }
           await runWithContext(async ({ db }) => {
             const n = await db.getNode(nodeId);
             if (!n) {

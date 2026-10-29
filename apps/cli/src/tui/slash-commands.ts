@@ -15,6 +15,7 @@ export const SlashCommands = new Map<string, string>([
   ["events", "View job events"],
   ["timeline", "Show job timeline"],
   ["node", "Manage compute nodes"],
+  ["cluster", "Show live Slurm cluster nodes and capacity"],
   ["recipes", "List available recipes"],
   ["collect", "Collect job outputs"],
   ["worker", "Manage workers"],

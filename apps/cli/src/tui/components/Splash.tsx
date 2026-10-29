@@ -85,13 +85,14 @@ interface SplashStats {
   dbReady: boolean;
   error?: string;
   jobs: { total: number; pending: number; running: number };
+  clusterNodes?: string[];
 }
 
 async function loadStats(): Promise<SplashStats> {
   try {
     const { runWithContext } = await import("../../composition");
     return await runWithContext(async (ctx) => {
-      const { jobs } = await ctx.dashboard.fetch();
+      const { jobs, nodes } = await ctx.dashboard.fetch();
       return {
         dbReady: true,
         jobs: {
@@ -99,6 +100,9 @@ async function loadStats(): Promise<SplashStats> {
           pending: jobs.filter((j) => ["created", "queued", "staged"].includes(j.status)).length,
           running: jobs.filter((j) => j.status === "running").length,
         },
+        clusterNodes: nodes
+          .filter((node) => node.runner === "slurm")
+          .map((node) => `${node.name} (${node.status})`),
       };
     });
   } catch (error) {
@@ -418,7 +422,7 @@ async function* executeSlashCommand(
     return;
   }
 
-  // ── Delegate to CLI binary (Ticket 12: no shell quotes around binPath) ─────
+  // ── Delegate to the CLI executable ─────────────────────────────────────────
   const { runCommand } = await import("@eigengrid/runners");
   const cwd = process.cwd();
   const raw = process.argv[1] ?? "apps/cli/bin/eigengrid.ts";
@@ -665,7 +669,7 @@ export function Splash(): ReactNode {
         type: "SYSTEM_MESSAGE",
         level: stats.dbReady ? "info" : "warn",
         text: stats.dbReady
-          ? `Workspace snapshot · ${statusStr}\nUse eigengrid dashboard for live operations.`
+          ? `Workspace snapshot · ${statusStr}${stats.clusterNodes?.length ? `\nSlurm nodes · ${stats.clusterNodes.join(", ")}` : ""}\nUse eigengrid dashboard for live operations.`
           : statusStr,
       });
       setBootDone(true);

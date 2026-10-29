@@ -28,6 +28,7 @@ import {
   validateMdProtocolTool,
 } from "./scientific-catalog-tools";
 import { createOperatorInfoTool } from "./operator-info-tool";
+import { clusterNodeRecords } from "../services/cluster-inventory";
 import { OperatorPermissions } from "../services/operator-permissions";
 import { readFileTool, writeFileTool, runCommandTool } from "./operator-file-tools";
 
@@ -120,8 +121,55 @@ export async function createAgentRuntime(options?: AgentRuntimeOptions): Promise
   registry.register(listJobsTool);
   registry.register(getJobStatusTool);
   registry.register(readLogTool);
-  registry.register(listNodesTool);
-  registry.register(inspectNodeTool);
+  registry.register({
+    ...listNodesTool,
+    async execute(ctx: ToolContext, input: Parameters<typeof listNodesTool.execute>[1]) {
+      try {
+        const nodes = await clusterNodeRecords();
+        return nodes
+          ? { ok: true, data: { nodes, total: nodes.length } }
+          : listNodesTool.execute(ctx, input);
+      } catch (error) {
+        return {
+          ok: false,
+          error: {
+            code: "CLUSTER_UNAVAILABLE",
+            message: error instanceof Error ? error.message : String(error),
+          },
+        };
+      }
+    },
+  });
+  registry.register({
+    ...inspectNodeTool,
+    async execute(ctx: ToolContext, input: Parameters<typeof inspectNodeTool.execute>[1]) {
+      try {
+        const nodes = await clusterNodeRecords();
+        if (!nodes) return inspectNodeTool.execute(ctx, input);
+        const node = nodes.find((n) => n.id === input.nodeId || n.name === input.nodeId);
+        return node
+          ? {
+              ok: true,
+              data: { ok: true, node, message: `Slurm node ${node.name}: ${node.status}` },
+            }
+          : {
+              ok: false,
+              error: {
+                code: "NODE_NOT_FOUND",
+                message: "Node not found in the live Slurm inventory",
+              },
+            };
+      } catch (error) {
+        return {
+          ok: false,
+          error: {
+            code: "CLUSTER_UNAVAILABLE",
+            message: error instanceof Error ? error.message : String(error),
+          },
+        };
+      }
+    },
+  });
   registry.register(listArtifactsTool);
   registry.register(listResultsTool);
   registry.register(listEventsTool);

@@ -52,6 +52,7 @@ ORCA and other engines require separate installations and appropriate licenses.
 - [Operation, identity and recovery](docs/operations.md)
 - [Development and verification](CONTRIBUTING.md)
 - [Security reporting](SECURITY.md)
+- [Shared cluster installation and inventory](docs/cluster.md)
 - [Release packages and verification](docs/releases.md)
 - [Third-party components and fixture provenance](THIRD_PARTY_NOTICES.md)
 

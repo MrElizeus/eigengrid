@@ -11,6 +11,7 @@ import { resultsCommand } from "./commands/results";
 import { eventsCommand } from "./commands/events";
 import { timelineCommand } from "./commands/timeline";
 import { nodeCommand } from "./commands/node";
+import { clusterCommand } from "./commands/cluster";
 import { dashboardCommand } from "./commands/dashboard";
 import { agentCommand } from "./commands/agent";
 import { agentSessionCommand } from "./commands/agent-session";
@@ -80,6 +81,7 @@ export async function main(): Promise<void> {
     .command(eventsCommand)
     .command(timelineCommand)
     .command(nodeCommand)
+    .command(clusterCommand)
     .command(dashboardCommand)
     .command(agentCommand)
     .command(agentSessionCommand)
