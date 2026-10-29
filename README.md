@@ -65,3 +65,5 @@ not claim expert review or scientific qualification. Advanced catalogs and
 study-specific implementations are not part of this distribution.
 
 See [publication scope](docs/publication.md) and [external catalogs](docs/catalogs.md).
+
+Release automation and cluster updates are described in [continuous delivery](docs/continuous-delivery.md).

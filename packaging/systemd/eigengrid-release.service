@@ -1,0 +1,20 @@
+[Unit]
+Description=Install validated EigenGrid releases
+Wants=network-online.target
+After=network-online.target eigengrid-head.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /usr/local/lib/eigengrid-deploy/pull_release.py
+UMask=0077
+TimeoutStartSec=30min
+Nice=10
+IOSchedulingClass=idle
+MemoryMax=2G
+TasksMax=256
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true

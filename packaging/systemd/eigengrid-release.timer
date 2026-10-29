@@ -1,0 +1,11 @@
+[Unit]
+Description=Watch for validated EigenGrid releases
+
+[Timer]
+OnBootSec=2min
+OnUnitInactiveSec=5min
+RandomizedDelaySec=30s
+Unit=eigengrid-release.service
+
+[Install]
+WantedBy=timers.target

@@ -9,16 +9,15 @@ permissions:
 jobs:
   commits:
     name: Conventional commits
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository || !github.event.repository.private
-    runs-on: ${{ github.event.repository.private && fromJSON('["self-hosted", "linux", "x64", "eigengrid-ci-rootless"]') || fromJSON('["ubuntu-24.04"]') }}
-    # The private runner can wait up to one hour for the shared job slot.
-    timeout-minutes: ${{ github.event.repository.private && 90 || 5 }}
+    runs-on: ${{ github.event_name != 'pull_request' && fromJSON('["self-hosted", "linux", "x64", "eigengrid-ci-rootless"]') || fromJSON('["ubuntu-24.04"]') }}
+    # The rootless runner can wait up to one hour for the shared job slot.
+    timeout-minutes: ${{ github.event_name != 'pull_request' && 90 || 5 }}
     defaults:
       run:
         shell: bash
     steps:
-      - name: Verify private runner isolation
-        if: github.event.repository.private
+      - name: Verify rootless runner isolation
+        if: runner.environment == 'self-hosted'
         run: |
           set -euo pipefail
           test "$(id -u)" -ne 0
@@ -44,7 +43,7 @@ jobs:
       - name: Check new commits and pull request title
         run: node scripts/check-commits.mjs --ci
       - name: Remove private test fixtures
-        if: always() && github.event.repository.private
+        if: always() && runner.environment == 'self-hosted'
         run: |
           if [[ -n "${TMPDIR:-}" && "$TMPDIR" == "${EIGENGRID_CI_SCRATCH:?}"/job.* && -d "$TMPDIR" ]]; then
             test ! -L "$TMPDIR"
