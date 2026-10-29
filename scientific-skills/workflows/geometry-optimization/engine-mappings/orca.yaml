@@ -1,0 +1,12 @@
+{
+  "schema": "eigengrid.engine-mapping/v1",
+  "engine": "orca",
+  "engine_range": ">=5.0.0 <7.0.0",
+  "maturity": "advisory",
+  "renderable": false,
+  "executable": false,
+  "validated": false,
+  "notes": "This mapping declares compatibility vocabulary only. It supplies no command, shell, runner, or execution authority.",
+  "observable_fields":
+    ["normal termination", "declared convergence evidence", "immutable input identity"],
+}

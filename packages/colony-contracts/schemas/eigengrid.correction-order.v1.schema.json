@@ -1,0 +1,315 @@
+{
+  "$ref": "#/definitions/eigengrid.correction-order.v1",
+  "definitions": {
+    "eigengrid.correction-order.v1": {
+      "type": "object",
+      "properties": {
+        "schema": { "type": "string", "const": "eigengrid.correction-order.v1" },
+        "correctionId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+-]*$"
+        },
+        "requestId": {
+          "$ref": "#/definitions/eigengrid.correction-order.v1/properties/correctionId"
+        },
+        "idempotencyKey": {
+          "$ref": "#/definitions/eigengrid.correction-order.v1/properties/correctionId"
+        },
+        "correlationId": {
+          "$ref": "#/definitions/eigengrid.correction-order.v1/properties/correctionId"
+        },
+        "causationId": {
+          "$ref": "#/definitions/eigengrid.correction-order.v1/properties/correctionId"
+        },
+        "originalWorkOrderId": {
+          "$ref": "#/definitions/eigengrid.correction-order.v1/properties/correctionId"
+        },
+        "attempt": { "type": "integer", "exclusiveMinimum": 0 },
+        "species": {
+          "type": "object",
+          "properties": {
+            "schema": { "type": "string", "const": "eigengrid.species-identity.v1" },
+            "coordinate": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 16,
+                  "maxLength": 180,
+                  "pattern": "^eigengrid\\.[a-z0-9]+(?:-[a-z0-9]+)*\\/v[1-9]\\d*$"
+                },
+                "version": {
+                  "type": "string",
+                  "maxLength": 128,
+                  "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-(?:0|[1-9]\\d*|\\d*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"
+                }
+              },
+              "required": ["id", "version"],
+              "additionalProperties": false
+            },
+            "contractDigest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+          },
+          "required": ["schema", "coordinate", "contractDigest"],
+          "additionalProperties": false
+        },
+        "caste": {
+          "type": "string",
+          "enum": [
+            "governor",
+            "architect",
+            "scout",
+            "forager",
+            "builder",
+            "operator",
+            "critic",
+            "verifier",
+            "sentinel",
+            "steward",
+            "medic",
+            "integrator"
+          ]
+        },
+        "previousCandidateDigest": {
+          "$ref": "#/definitions/eigengrid.correction-order.v1/properties/species/properties/contractDigest"
+        },
+        "previousWorkResultDigest": {
+          "$ref": "#/definitions/eigengrid.correction-order.v1/properties/species/properties/contractDigest"
+        },
+        "verificationResultDigest": {
+          "$ref": "#/definitions/eigengrid.correction-order.v1/properties/species/properties/contractDigest"
+        },
+        "failedCriteria": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "criterionId": {
+                "$ref": "#/definitions/eigengrid.correction-order.v1/properties/correctionId"
+              },
+              "defect": { "type": "string", "minLength": 1, "maxLength": 8192 },
+              "evidenceIds": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/eigengrid.correction-order.v1/properties/correctionId"
+                },
+                "minItems": 1
+              }
+            },
+            "required": ["criterionId", "defect", "evidenceIds"],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        },
+        "defectEvidence": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/definitions/eigengrid.correction-order.v1/properties/correctionId"
+              },
+              "kind": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+              },
+              "digest": {
+                "$ref": "#/definitions/eigengrid.correction-order.v1/properties/species/properties/contractDigest"
+              },
+              "trustClass": {
+                "type": "string",
+                "enum": [
+                  "authoritative_state",
+                  "validated_skill",
+                  "external_evidence",
+                  "model_hypothesis",
+                  "untrusted_retrieved_text"
+                ]
+              },
+              "uri": { "type": "string", "minLength": 1, "maxLength": 2048 },
+              "claim": { "type": "string", "minLength": 1, "maxLength": 16384 },
+              "accessedAt": { "type": "string", "format": "date-time" }
+            },
+            "required": ["id", "kind", "digest", "trustClass"],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        },
+        "permittedScope": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "repository_path",
+                  "mission_object",
+                  "operation",
+                  "artifact",
+                  "evidence",
+                  "skill",
+                  "capability",
+                  "network_origin"
+                ]
+              },
+              "selector": { "type": "string", "minLength": 1, "maxLength": 2048 },
+              "access": { "type": "string", "enum": ["read", "candidate_write", "invoke"] }
+            },
+            "required": ["kind", "selector", "access"],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        },
+        "preservedSuccess": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "criterionId": {
+                "$ref": "#/definitions/eigengrid.correction-order.v1/properties/correctionId"
+              },
+              "candidateDigest": {
+                "$ref": "#/definitions/eigengrid.correction-order.v1/properties/species/properties/contractDigest"
+              },
+              "evidenceIds": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/eigengrid.correction-order.v1/properties/correctionId"
+                },
+                "minItems": 1
+              }
+            },
+            "required": ["criterionId", "candidateDigest", "evidenceIds"],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        },
+        "remainingBudget": {
+          "type": "object",
+          "properties": {
+            "wallTimeMs": { "type": "integer", "exclusiveMinimum": 0 },
+            "inputTokens": { "type": "integer", "minimum": 0 },
+            "outputTokens": { "type": "integer", "minimum": 0 },
+            "costMicrounits": { "type": "integer", "minimum": 0 },
+            "effects": { "type": "integer", "minimum": 0 },
+            "corrections": { "type": "integer", "minimum": 0 },
+            "modelCalls": { "type": "integer", "minimum": 0 },
+            "computeSeconds": { "type": "integer", "minimum": 0 },
+            "storageBytes": { "type": "integer", "minimum": 0 },
+            "networkBytes": { "type": "integer", "minimum": 0 },
+            "deadline": {
+              "$ref": "#/definitions/eigengrid.correction-order.v1/properties/defectEvidence/items/properties/accessedAt"
+            }
+          },
+          "required": [
+            "wallTimeMs",
+            "inputTokens",
+            "outputTokens",
+            "costMicrounits",
+            "effects",
+            "corrections",
+            "modelCalls",
+            "computeSeconds",
+            "storageBytes",
+            "networkBytes"
+          ],
+          "additionalProperties": false
+        },
+        "expectedProgressSignal": {
+          "type": "object",
+          "properties": {
+            "description": { "type": "string", "minLength": 1, "maxLength": 4096 },
+            "priorEvidenceDigest": {
+              "$ref": "#/definitions/eigengrid.correction-order.v1/properties/species/properties/contractDigest"
+            },
+            "requiredDelta": { "type": "string", "minLength": 1, "maxLength": 4096 }
+          },
+          "required": ["description", "priorEvidenceDigest", "requiredDelta"],
+          "additionalProperties": false
+        },
+        "prohibitedRedesign": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 4096 },
+          "minItems": 1
+        },
+        "requiredReverification": {
+          "type": "object",
+          "properties": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "$ref": "#/definitions/eigengrid.correction-order.v1/properties/correctionId"
+                },
+                "version": {
+                  "$ref": "#/definitions/eigengrid.correction-order.v1/properties/species/properties/coordinate/properties/version"
+                },
+                "digest": {
+                  "$ref": "#/definitions/eigengrid.correction-order.v1/properties/species/properties/contractDigest"
+                }
+              },
+              "required": ["id", "version", "digest"],
+              "additionalProperties": false
+            },
+            "criterionIds": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/eigengrid.correction-order.v1/properties/correctionId"
+              },
+              "minItems": 1
+            },
+            "independent": { "type": "boolean", "const": true }
+          },
+          "required": ["schema", "criterionIds", "independent"],
+          "additionalProperties": false
+        },
+        "escalationCondition": {
+          "type": "object",
+          "properties": {
+            "id": { "$ref": "#/definitions/eigengrid.correction-order.v1/properties/correctionId" },
+            "trigger": { "type": "string", "minLength": 1, "maxLength": 4096 },
+            "destination": { "type": "string", "enum": ["frontier", "human", "owner", "blocked"] }
+          },
+          "required": ["id", "trigger", "destination"],
+          "additionalProperties": false
+        },
+        "correctionDigest": {
+          "$ref": "#/definitions/eigengrid.correction-order.v1/properties/species/properties/contractDigest"
+        }
+      },
+      "required": [
+        "schema",
+        "correctionId",
+        "requestId",
+        "idempotencyKey",
+        "correlationId",
+        "causationId",
+        "originalWorkOrderId",
+        "attempt",
+        "species",
+        "caste",
+        "previousCandidateDigest",
+        "previousWorkResultDigest",
+        "verificationResultDigest",
+        "failedCriteria",
+        "defectEvidence",
+        "permittedScope",
+        "preservedSuccess",
+        "remainingBudget",
+        "expectedProgressSignal",
+        "prohibitedRedesign",
+        "requiredReverification",
+        "escalationCondition",
+        "correctionDigest"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://eigengrid.dev/schemas/colony/eigengrid.correction-order.v1.schema.json",
+  "title": "eigengrid.correction-order.v1 runtime contract"
+}

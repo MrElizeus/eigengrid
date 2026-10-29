@@ -1,0 +1,32 @@
+{
+  "name": "@eigengrid/colony-contracts",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./compatibility": "./src/compatibility.ts",
+    "./contracts": "./src/contracts.ts",
+    "./digest": "./src/digest.ts",
+    "./primitives": "./src/primitives.ts",
+    "./registry": "./src/registry.ts",
+    "./species": "./src/species.ts",
+    "./compatibility/*": "./compatibility/*",
+    "./schemas/*": "./schemas/*",
+    "./vectors/*": "./vectors/*",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "generate": "bun run scripts/generate.ts",
+    "test": "bun test src"
+  },
+  "dependencies": {
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "ajv": "^8.17.1",
+    "prettier": "^3.5.0",
+    "zod-to-json-schema": "^3.25.2"
+  }
+}

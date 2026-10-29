@@ -1,0 +1,41 @@
+{
+  "schema": "eigengrid.protocol-fragment/v1",
+  "id": "validation.minimum-validation.validate-local-minimum",
+  "version": "1.0.0",
+  "capability": "validation.minimum-validation",
+  "required_inputs":
+    [
+      "optimized structure digest",
+      "optimization convergence evidence",
+      "complete frequencies and mode vectors",
+      "exact method-state identity",
+    ],
+  "missing_input_behavior": "block",
+  "steps":
+    [
+      {
+        "id": "verify-inputs",
+        "kind": "validation",
+        "reason": "Fail closed before planning from incomplete or mismatched evidence.",
+      },
+      {
+        "id": "validate-local-minimum",
+        "kind": "assessment",
+        "reason": "A scientific assessment must distinguish operational success from the evidence needed for a local-minimum claim.",
+      },
+      {
+        "id": "record-evidence",
+        "kind": "provenance",
+        "reason": "Persist exact skill, fragment, input, output, and decision references.",
+      },
+    ],
+  "acceptance":
+    [
+      "optimization converged",
+      "frequency record is complete",
+      "no relevant imaginary modes remain",
+      "structure is chemically plausible within stated scope",
+    ],
+  "retry_policy": { "maximum_attempts": 1, "material_change": "new_decision_and_exact_approval" },
+  "effect_authority": "none",
+}

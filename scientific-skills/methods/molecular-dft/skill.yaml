@@ -1,0 +1,81 @@
+{
+  "schema": "eigengrid.scientific-skill/v1",
+  "id": "methods.molecular-dft",
+  "version": "1.0.0",
+  "title": "Molecular density-functional theory",
+  "status": "active",
+  "summary": "Plan molecular DFT with explicit functional, basis, state, numerical controls, applicability limits, and validation obligations.",
+  "knowledge_level": "draft",
+  "capability_levels":
+    {
+      "reference": true,
+      "advisory": true,
+      "plannable": true,
+      "renderable": {},
+      "executable": {},
+      "validated": {},
+    },
+  "domains": ["molecular-electronic-structure"],
+  "domain_maturity": { "molecular-electronic-structure": "plannable" },
+  "engine_compatibility": { "orca": ">=5.0.0 <7.0.0" },
+  "requires":
+    [
+      {
+        "id": "foundations.charge-spin-symmetry",
+        "range": ">=1.0.0 <2.0.0",
+        "reason": "Molecular density-functional theory requires the declared foundations.charge-spin-symmetry capability.",
+      },
+      {
+        "id": "foundations.basis-ecp-relativity",
+        "range": ">=1.0.0 <2.0.0",
+        "reason": "Molecular density-functional theory requires the declared foundations.basis-ecp-relativity capability.",
+      },
+      {
+        "id": "foundations.numerical-convergence",
+        "range": ">=1.0.0 <2.0.0",
+        "reason": "Molecular density-functional theory requires the declared foundations.numerical-convergence capability.",
+      },
+    ],
+  "recommends":
+    [
+      {
+        "id": "methods.dispersion",
+        "range": ">=1.0.0 <2.0.0",
+        "reason": "Consult methods.dispersion when its applicability conditions are present.",
+      },
+      {
+        "id": "methods.continuum-solvation",
+        "range": ">=1.0.0 <2.0.0",
+        "reason": "Consult methods.continuum-solvation when its applicability conditions are present.",
+      },
+    ],
+  "conflicts": [],
+  "required_inputs":
+    [
+      "molecular structure",
+      "charge",
+      "multiplicity",
+      "functional",
+      "basis specification",
+      "target property",
+    ],
+  "missing_input_behavior": "Block the protocol when charge, multiplicity, functional, basis, or physical model is unresolved. Do not fill these fields from model preference.",
+  "assets":
+    {
+      "concepts": "concepts/",
+      "rules": "decision-rules/",
+      "protocols": "protocols/",
+      "references": "references/",
+      "evals": "evals/",
+      "mappings": "engine-mappings/",
+    },
+  "helpers": [],
+  "review":
+    {
+      "status": "unreviewed",
+      "owner_role": "computational-chemist",
+      "evidence_ids": [],
+      "notes": "Unreviewed draft. No expert review, benchmark support, engine validation, or production certification is claimed.",
+    },
+  "provenance": { "created_by": "model" },
+}

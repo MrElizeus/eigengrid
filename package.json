@@ -1,0 +1,68 @@
+{
+  "name": "eigengrid",
+  "version": "1.0.0-rc.1",
+  "private": true,
+  "license": "MIT",
+  "packageManager": "bun@1.3.14",
+  "type": "module",
+  "bin": {
+    "eigengrid": "./apps/cli/bin/eigengrid"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "bun --watch apps/cli/bin/eigengrid.ts",
+    "eigengrid": "bun run apps/cli/bin/eigengrid.ts",
+    "build": "bun build --compile --outfile=dist/eigengrid apps/cli/bin/eigengrid.ts",
+    "build:native": "node scripts/release/build.mjs",
+    "test": "bun run test:ts && bun run test:py",
+    "test:ts": "bun run build && bun test --timeout 20000",
+    "test:py": "PYTHONPATH=python/src python -m pytest tests/py",
+    "typecheck": "tsc",
+    "lint": "oxlint . --deny-warnings",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "format:changed": "bun scripts/check-format-changed.ts",
+    "hooks:install": "node scripts/install-hooks.mjs",
+    "commits:check": "node scripts/check-commits.mjs",
+    "commits:test": "node --test scripts/check-commits.test.mjs",
+    "quality": "bun run typecheck && bun run lint && bun run format:check && bun run test",
+    "verify:distribution": "bun scripts/release/smoke.ts",
+    "package:native": "node scripts/release/package.mjs",
+    "verify:package": "node scripts/release/verify-package.mjs",
+    "verify:workflow": "bash scripts/release/verify-workflow.sh",
+    "benchmark:journal": "bun scripts/release/benchmark-journal.ts",
+    "verify:publication": "python scripts/release/scan.py --public ."
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.14",
+    "@types/node": "^25.9.1",
+    "@types/pg": "^8.11.0",
+    "@types/tar": "^6.1.0",
+    "oxlint": "^0.16.0",
+    "prettier": "^3.5.0",
+    "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.85",
+    "@ai-sdk/openai": "^3.0.73",
+    "@ai-sdk/openai-compatible": "^2.0.51",
+    "@eigengrid/backup": "workspace:*",
+    "ai": "^6.0.208",
+    "ink-text-input": "^6.0.0",
+    "pg": "^8.13.0",
+    "tar": "7.5.22",
+    "zod": "^3.24.0",
+    "zod-to-json-schema": "^3.25.2"
+  },
+  "overrides": {
+    "esbuild": "0.28.2",
+    "shell-quote": "1.10.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MrElizeus/eigengrid.git"
+  }
+}

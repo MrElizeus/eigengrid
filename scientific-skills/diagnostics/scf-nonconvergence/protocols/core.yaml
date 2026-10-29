@@ -1,0 +1,41 @@
+{
+  "schema": "eigengrid.protocol-fragment/v1",
+  "id": "diagnostics.scf-nonconvergence.diagnose-scf-failure",
+  "version": "1.0.0",
+  "capability": "diagnostics.scf-nonconvergence",
+  "required_inputs":
+    [
+      "immutable input artifact",
+      "complete output or parser evidence",
+      "approved method, basis, charge, and multiplicity",
+      "attempt history",
+    ],
+  "missing_input_behavior": "block",
+  "steps":
+    [
+      {
+        "id": "verify-inputs",
+        "kind": "validation",
+        "reason": "Fail closed before planning from incomplete or mismatched evidence.",
+      },
+      {
+        "id": "diagnose-scf-failure",
+        "kind": "diagnosis",
+        "reason": "A retry must not silently change charge, multiplicity, method, basis, physical model, or objective.",
+      },
+      {
+        "id": "record-evidence",
+        "kind": "provenance",
+        "reason": "Persist exact skill, fragment, input, output, and decision references.",
+      },
+    ],
+  "acceptance":
+    [
+      "failure evidence is attributed",
+      "remediation class is explicit",
+      "retry bounds are finite",
+      "material fields remain immutable without approval",
+    ],
+  "retry_policy": { "maximum_attempts": 1, "material_change": "new_decision_and_exact_approval" },
+  "effect_authority": "none",
+}

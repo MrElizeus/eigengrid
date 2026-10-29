@@ -1,0 +1,61 @@
+{
+  "schema": "eigengrid.scientific-skill/v1",
+  "id": "workflows.frequencies-and-thermochemistry",
+  "version": "1.0.0",
+  "title": "Frequencies and molecular thermochemistry",
+  "status": "active",
+  "summary": "Plan harmonic frequency evidence and bounded thermochemistry interpretation for a previously optimized molecular structure.",
+  "knowledge_level": "draft",
+  "capability_levels":
+    {
+      "reference": true,
+      "advisory": true,
+      "plannable": true,
+      "renderable": {},
+      "executable": {},
+      "validated": {},
+    },
+  "domains": ["molecular-electronic-structure"],
+  "domain_maturity": { "molecular-electronic-structure": "plannable" },
+  "engine_compatibility": { "orca": ">=5.0.0 <7.0.0" },
+  "requires":
+    [
+      {
+        "id": "workflows.geometry-optimization",
+        "range": ">=1.0.0 <2.0.0",
+        "reason": "Frequencies and molecular thermochemistry requires the declared workflows.geometry-optimization capability.",
+      },
+      {
+        "id": "foundations.numerical-convergence",
+        "range": ">=1.0.0 <2.0.0",
+        "reason": "Frequencies and molecular thermochemistry requires the declared foundations.numerical-convergence capability.",
+      },
+    ],
+  "recommends": [],
+  "conflicts": [],
+  "required_inputs":
+    [
+      "optimized structure artifact",
+      "same approved scientific model",
+      "temperature and standard-state intent when thermochemistry is requested",
+    ],
+  "missing_input_behavior": "Block the frequency work unit if the optimized artifact or exact method-state identity is missing; block thermochemistry interpretation without conditions.",
+  "assets":
+    {
+      "concepts": "concepts/",
+      "rules": "decision-rules/",
+      "protocols": "protocols/",
+      "references": "references/",
+      "evals": "evals/",
+      "mappings": "engine-mappings/",
+    },
+  "helpers": [],
+  "review":
+    {
+      "status": "unreviewed",
+      "owner_role": "computational-chemist",
+      "evidence_ids": [],
+      "notes": "Unreviewed draft. No expert review, benchmark support, engine validation, or production certification is claimed.",
+    },
+  "provenance": { "created_by": "model" },
+}

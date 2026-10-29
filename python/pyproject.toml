@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools==84.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "eigengrid-chem"
+version = "1.0.0rc1"
+description = "EigenGrid computational chemistry Python package"
+authors = [
+    { name = "Eliseo Huetagoyena" },
+]
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+dependencies = [
+    "pydantic>=2.0,<3",
+]
+
+[project.urls]
+Repository = "https://github.com/MrElizeus/eigengrid"
+Documentation = "https://github.com/MrElizeus/eigengrid/tree/main/docs"
+
+[project.scripts]
+eigengrid-chem = "eigengrid_chem.__main__:main"
+
+[project.optional-dependencies]
+dev = [
+    "build==1.5.0",
+    "pytest>=8",
+    "pytest-cov>=5",
+    "ruff>=0.8",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests/py"]
+pythonpath = ["python/src"]
+addopts = "-v"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.coverage.run]
+source = ["eigengrid_chem"]
+
+[tool.setuptools.packages.find]
+where = ["src"]

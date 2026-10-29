@@ -1,0 +1,44 @@
+{
+  "schema": "eigengrid.scientific-skill/v1",
+  "id": "foundations.numerical-convergence",
+  "version": "1.0.0",
+  "title": "Numerical convergence controls",
+  "status": "active",
+  "summary": "Separate bounded numerical convergence controls from material changes to method, basis, state, physical model, or objective.",
+  "knowledge_level": "draft",
+  "capability_levels":
+    {
+      "reference": true,
+      "advisory": true,
+      "plannable": true,
+      "renderable": {},
+      "executable": {},
+      "validated": {},
+    },
+  "domains": ["molecular-electronic-structure"],
+  "domain_maturity": { "molecular-electronic-structure": "plannable" },
+  "engine_compatibility": { "orca": ">=5.0.0 <7.0.0" },
+  "requires": [],
+  "recommends": [],
+  "conflicts": [],
+  "required_inputs":
+    ["calculation kind", "declared numerical thresholds", "target scientific precision"],
+  "missing_input_behavior": "Use conservative explicit defaults only when the approved policy names them; otherwise block and request numerical acceptance thresholds.",
+  "assets":
+    {
+      "concepts": "concepts/",
+      "rules": "decision-rules/",
+      "protocols": "protocols/",
+      "references": "references/",
+      "evals": "evals/",
+    },
+  "helpers": [],
+  "review":
+    {
+      "status": "unreviewed",
+      "owner_role": "computational-chemist",
+      "evidence_ids": [],
+      "notes": "Unreviewed draft. No expert review, benchmark support, engine validation, or production certification is claimed.",
+    },
+  "provenance": { "created_by": "model" },
+}

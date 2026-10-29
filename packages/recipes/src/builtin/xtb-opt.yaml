@@ -1,0 +1,15 @@
+id: xtb-opt
+software: xtb
+description: xTB geometry optimization
+input_extensions:
+  - .xyz
+commands:
+  local:
+    run: "xtb {{input}} --opt > {{output}}"
+outputs:
+  main_log: "{{basename}}.out"
+parser:
+  name: xtb
+resources:
+  default_cores: 4
+  default_memory_gb: 4

@@ -1,0 +1,30 @@
+{
+  "provenance": {
+    "kind": "anonymized-format-regression",
+    "note": "Derived from Slurm 23.11.4 replies. Site names and binding identity are anonymized; this fixture does not certify a deployment. Source interpretation: Reply 43 withheld from transport. Comment was empty in running sacct, present in squeue, and populated in terminal sacct. Initial transport classified the absence as conflict and never resubmitted."
+  },
+  "binding": {
+    "schemaVersion": "eigengrid.slurm-submission-binding/v1",
+    "operationId": "operation-slurm-submission-20260920-a",
+    "requestDigest": "3a0ef4fa3141f967b6fb9dea8f55943c4fab1fdecc1ffafb3e08a0f8f236daf6",
+    "admissionDigest": "4deb53d9526b9dc5d4cac5306cce7b9eb5920afb6899ed13008be3286e1a23ae",
+    "scriptDigest": "384e75db0d0d61b0d4d140342d83016e16a6a318e47e638651431ab1d7b5406e",
+    "siteProfileDigest": "a881db2007c94650d50e2cfb5043b7bbdf3cf0d907edc9e035a616c765a24948",
+    "cluster": "fixture-cluster",
+    "uid": 2101,
+    "notBefore": "2026-09-20T05:26:16.487Z",
+    "expiresAt": "2026-09-20T05:36:16.487Z",
+    "resources": {
+      "partition": "chem",
+      "node": "worker-01",
+      "account": "chem",
+      "cpus": 1,
+      "memoryMiB": 128,
+      "walltimeSeconds": 180
+    },
+    "bindingDigest": "c35c52929554c190b3fa054fb815a4ed0ceec1f65351fa65ac55d33c1f690a29"
+  },
+  "runningAccounting": "43|fixture-cluster|2101|2026-09-20T05:27:09Z|egv1-c35c52929554c190b3fa054fb815a4ed0ceec1f65351fa65ac55d33c1f690a29|",
+  "runningQueue": "43|2101|2026-09-20T05:27:09Z|egv1-c35c52929554c190b3fa054fb815a4ed0ceec1f65351fa65ac55d33c1f690a29|egv1:c35c52929554c190b3fa054fb815a4ed0ceec1f65351fa65ac55d33c1f690a29",
+  "terminalAccounting": "43|fixture-cluster|2101|2026-09-20T05:27:09Z|egv1-c35c52929554c190b3fa054fb815a4ed0ceec1f65351fa65ac55d33c1f690a29|egv1:c35c52929554c190b3fa054fb815a4ed0ceec1f65351fa65ac55d33c1f690a29"
+}

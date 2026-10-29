@@ -1,0 +1,2 @@
+{"id": "foundations.numerical-convergence.positive", "kind": "positive", "query": "numerical convergence thresholds precision grid quadrature iterations", "expected_included": ["foundations.numerical-convergence"], "expected_excluded": [], "expected_top": "foundations.numerical-convergence"}
+{"id": "foundations.numerical-convergence.negative", "kind": "negative", "query": "qsar descriptor dataset split leakage regression prediction", "expected_included": [], "expected_excluded": ["foundations.numerical-convergence"]}

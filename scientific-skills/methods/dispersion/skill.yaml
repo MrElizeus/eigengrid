@@ -1,0 +1,51 @@
+{
+  "schema": "eigengrid.scientific-skill/v1",
+  "id": "methods.dispersion",
+  "version": "1.0.0",
+  "title": "Dispersion treatment",
+  "status": "active",
+  "summary": "Make dispersion treatment and its compatibility with the base molecular method an explicit scientific decision.",
+  "knowledge_level": "draft",
+  "capability_levels":
+    {
+      "reference": true,
+      "advisory": true,
+      "plannable": true,
+      "renderable": {},
+      "executable": {},
+      "validated": {},
+    },
+  "domains": ["molecular-electronic-structure"],
+  "domain_maturity": { "molecular-electronic-structure": "plannable" },
+  "engine_compatibility": { "orca": ">=5.0.0 <7.0.0" },
+  "requires":
+    [
+      {
+        "id": "foundations.numerical-convergence",
+        "range": ">=1.0.0 <2.0.0",
+        "reason": "Dispersion treatment requires the declared foundations.numerical-convergence capability.",
+      },
+    ],
+  "recommends": [],
+  "conflicts": [],
+  "required_inputs": ["base method", "target property", "interaction regime"],
+  "missing_input_behavior": "Record dispersion treatment as unresolved and block a claim that depends on weak interactions; do not append a correction implicitly.",
+  "assets":
+    {
+      "concepts": "concepts/",
+      "rules": "decision-rules/",
+      "protocols": "protocols/",
+      "references": "references/",
+      "evals": "evals/",
+      "mappings": "engine-mappings/",
+    },
+  "helpers": [],
+  "review":
+    {
+      "status": "unreviewed",
+      "owner_role": "computational-chemist",
+      "evidence_ids": [],
+      "notes": "Unreviewed draft. No expert review, benchmark support, engine validation, or production certification is claimed.",
+    },
+  "provenance": { "created_by": "model" },
+}

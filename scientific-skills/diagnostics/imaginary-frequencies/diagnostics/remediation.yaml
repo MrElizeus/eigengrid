@@ -1,0 +1,46 @@
+{
+  "schema": "eigengrid.diagnostic/v1",
+  "id": "diagnostics.imaginary-frequencies.classification",
+  "version": "1.0.0",
+  "requires_evidence":
+    [
+      "immutable input",
+      "complete output",
+      "operation receipt or reconciled state",
+      "approved scientific fields",
+    ],
+  "classes":
+    [
+      {
+        "id": "operational",
+        "description": "Recover or reconcile receipts, artifacts, environment, or lifecycle state without changing scientific input.",
+        "approval": "not_scientific_change",
+        "allowed_changes": ["collection retry", "parse retry", "status reconciliation"],
+      },
+      {
+        "id": "numerically_bounded",
+        "description": "Apply a finite policy-allowed numerical control while preserving the exact scientific model.",
+        "approval": "policy_bounded",
+        "allowed_changes":
+          [
+            "iteration limit within policy",
+            "optimizer trust radius within policy",
+            "numerical threshold tightening within policy",
+          ],
+      },
+      {
+        "id": "scientifically_material",
+        "description": "Propose a new reviewed decision; never execute it as an automatic retry.",
+        "approval": "new_exact_revision_approval",
+        "prohibited_automatic_changes":
+          ["charge", "multiplicity", "method", "basis", "physical_model", "objective"],
+      },
+    ],
+  "fail_closed_on":
+    [
+      "ambiguous external effect",
+      "artifact corruption",
+      "parser incompleteness",
+      "missing immutable field",
+    ],
+}

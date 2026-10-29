@@ -1,0 +1,25 @@
+{
+  "schema": "eigengrid.decision-rule/v1",
+  "id": "foundations.basis-ecp-relativity.core",
+  "version": "1.0.0",
+  "question": "Does the proposed basis cover every element and the stated property?",
+  "when":
+    {
+      "all":
+        [
+          { "fact": "inputs.complete", "operator": "equals", "value": true },
+          { "fact": "applicability.confirmed", "operator": "equals", "value": true },
+        ],
+    },
+  "recommendation":
+    {
+      "action": "record a complete basis/ECP/relativity assignment and flag diffuse or heavy-element applicability questions",
+      "strength": "conditional",
+    },
+  "rationale": "Basis coverage and physical treatment materially affect the scientific model and cannot be repaired silently.",
+  "risk_class": 2,
+  "approval": "required_if_material_field_changes",
+  "immutable_fields": ["objective", "charge", "multiplicity", "method", "basis", "physical_model"],
+  "evidence": { "level": "draft", "references": [] },
+  "limitations": "This draft provides decision structure, not benchmark-backed basis recommendations. Escalate heavy elements, anions, weak binding, near-linear dependence, or precision claims.",
+}

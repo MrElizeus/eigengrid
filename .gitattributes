@@ -1,0 +1,7 @@
+# Fixed-width AMBER byte fixtures intentionally retain engine whitespace.
+tests/fixtures/amber/*.prmtop -whitespace
+tests/fixtures/amber/*.inpcrd -whitespace
+tests/fixtures/amber/*.mdout -whitespace
+tests/fixtures/amber/*.mdinfo -whitespace
+# Preserve verbatim third-party license text.
+notices/** -whitespace

@@ -1,0 +1,35 @@
+{
+  "$ref": "#/definitions/eigengrid.species-identity.v1",
+  "definitions": {
+    "eigengrid.species-identity.v1": {
+      "type": "object",
+      "properties": {
+        "schema": { "type": "string", "const": "eigengrid.species-identity.v1" },
+        "coordinate": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 180,
+              "pattern": "^eigengrid\\.[a-z0-9]+(?:-[a-z0-9]+)*\\/v[1-9]\\d*$"
+            },
+            "version": {
+              "type": "string",
+              "maxLength": 128,
+              "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-(?:0|[1-9]\\d*|\\d*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"
+            }
+          },
+          "required": ["id", "version"],
+          "additionalProperties": false
+        },
+        "contractDigest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+      },
+      "required": ["schema", "coordinate", "contractDigest"],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://eigengrid.dev/schemas/colony/eigengrid.species-identity.v1.schema.json",
+  "title": "eigengrid.species-identity.v1 runtime contract"
+}

@@ -1,0 +1,94 @@
+                          *****************************
+                          *  ORCA 6.0.0 (ES64L)      *
+                          *****************************
+
+                                 WATER
+                        Single Point Calculation
+
+  B3LYP/G def2-TZVP Opt Freq
+  Charge =    0  Multiplicity = 1
+
+  COORDINATES (ANGSTROEM)
+
+  O      0.000000      0.000000      0.119000
+  H      0.000000      0.756000     -0.469000
+  H      0.000000     -0.756000     -0.469000
+
+  -----------------------------
+  ORCA METHOD: B3LYP
+  -----------------------------
+
+  GENERAL OPTIONS:
+  RI-J    false
+  TIGHTSCF true
+  MAXSCF  50
+
+  -----------------------------
+  SCF CONVERGENCE
+  -----------------------------
+
+  CYCLE    ENERGY          DELTA
+     1   -76.4089537232   0.00000000
+     2   -76.4189123456   0.00995862
+     3   -76.4245678901   0.00565554
+     4   -76.4250012345   0.00043334
+     5   -76.4250109876   0.00000975
+
+  **** CONVERGENCE REACHED ****
+
+  -----------------------------
+  FINAL SINGLE POINT ENERGY
+  -----------------------------
+
+  ENERGY = -76.42501099 Eh
+
+  -----------------------------
+  CARTESIAN GRADIENT NORM
+  -----------------------------
+
+  GNORM = 0.00001234
+
+  -----------------------------
+  ORBITAL ENERGIES
+  -----------------------------
+
+  HOMO: -0.387654 Eh  (alpha)
+  LUMO:  0.123456 Eh  (alpha)
+  HOMO-LUMO GAP: 0.511110 Eh  (13.91 eV)
+
+  -----------------------------
+  VIBRATIONAL FREQUENCIES
+  -----------------------------
+
+  Mode    Frequency      IR Intensity
+          (cm^-1)        (km/mol)
+    1     1642.35         65.43
+    2     3821.57          2.35
+    3     3942.12          0.99
+
+  -----------------------------
+  NORMAL MODES
+  -----------------------------
+
+  Mode 1:    0.00    0.00    0.12    0.00    0.00   -0.08    0.00    0.00   -0.08
+
+  Mode 2:    0.00    0.12    0.00    0.00   -0.12    0.00    0.00   -0.12    0.00
+
+  Mode 3:    0.00    0.00    0.00    0.00    0.05    0.00    0.00   -0.05    0.00
+
+  -----------------------------
+  THERMOCHEMISTRY
+  -----------------------------
+
+  Temperature:   298.15 K
+  Pressure:        1.00 atm
+
+  Zero-point energy:             0.021234 Eh
+  Entropy:                      45.678 cal/(mol*K)
+  Enthalpy correction:           0.025011 Eh
+  Gibbs free energy correction:  0.003456 Eh
+
+  TOTAL CPU TIME:      0 days    0 hours   12 minutes    3 seconds
+  TOTAL WALL TIME:     0 days    0 hours   15 minutes    7 seconds
+
+  ****ORCA TERMINATED NORMALLY****

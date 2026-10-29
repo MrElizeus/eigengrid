@@ -1,0 +1,168 @@
+{
+  "provenance": {
+    "kind": "anonymized-format-regression",
+    "note": "Derived from Slurm 23.11.4 replies. Site names and binding identity are anonymized; this fixture does not certify a deployment. Source interpretation: Real OOM after ConstrainSwapSpace=yes/AllowedSwapSpace=0; allocation signal 125 is Slurm SIG_OOM, not the engine Linux SIGKILL 9; cgroup-probe memory.swap.max=0."
+  },
+  "text": "37|OUT_OF_MEMORY|0:125|00:00:01||128M|1|2|0:0|2101|2026-09-20T00:48:27Z|fixture-cluster|worker-01|None\n37.batch|OUT_OF_MEMORY|0:125|00:00:01|44K||1|2|||2026-09-20T00:48:27Z|fixture-cluster|worker-01|\n38|COMPLETED|0:0|00:01:31||128M|1|2|0:0|2101|2026-09-20T00:48:27Z|fixture-cluster|worker-01|None\n38.batch|COMPLETED|0:0|00:01:31|11136K||1|2|||2026-09-20T00:48:27Z|fixture-cluster|worker-01|\n",
+  "native": {
+    "meta": {
+      "plugin": {
+        "type": "",
+        "name": "",
+        "data_parser": "data_parser/v0.0.40",
+        "accounting_storage": "accounting_storage/slurmdbd"
+      },
+      "slurm": {
+        "version": {
+          "major": "23",
+          "micro": "4",
+          "minor": "11"
+        },
+        "release": "23.11.4",
+        "cluster": "fixture-cluster"
+      }
+    },
+    "errors": [],
+    "warnings": [],
+    "jobs": [
+      {
+        "job_id": 37,
+        "cluster": "fixture-cluster",
+        "user": "eliseo",
+        "time": {
+          "submission": 1789865307
+        },
+        "state": {
+          "current": ["OUT_OF_MEMORY"],
+          "reason": "None"
+        },
+        "exit_code": {
+          "status": ["SIGNALED"],
+          "return_code": {
+            "set": false,
+            "infinite": false,
+            "number": 0
+          },
+          "signal": {
+            "id": {
+              "set": true,
+              "infinite": false,
+              "number": 125
+            },
+            "name": "125"
+          }
+        },
+        "derived_exit_code": {
+          "status": ["SUCCESS"],
+          "return_code": {
+            "set": true,
+            "infinite": false,
+            "number": 0
+          },
+          "signal": {
+            "id": {
+              "set": false,
+              "infinite": false,
+              "number": 0
+            },
+            "name": ""
+          }
+        },
+        "steps": [
+          {
+            "step": {
+              "id": "37.batch",
+              "name": "batch"
+            },
+            "state": ["OUT_OF_MEMORY"],
+            "exit_code": {
+              "status": ["SIGNALED"],
+              "return_code": {
+                "set": false,
+                "infinite": false,
+                "number": 0
+              },
+              "signal": {
+                "id": {
+                  "set": true,
+                  "infinite": false,
+                  "number": 125
+                },
+                "name": "125"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "job_id": 38,
+        "cluster": "fixture-cluster",
+        "user": "eliseo",
+        "time": {
+          "submission": 1789865307
+        },
+        "state": {
+          "current": ["COMPLETED"],
+          "reason": "None"
+        },
+        "exit_code": {
+          "status": ["SUCCESS"],
+          "return_code": {
+            "set": true,
+            "infinite": false,
+            "number": 0
+          },
+          "signal": {
+            "id": {
+              "set": false,
+              "infinite": false,
+              "number": 0
+            },
+            "name": ""
+          }
+        },
+        "derived_exit_code": {
+          "status": ["SUCCESS"],
+          "return_code": {
+            "set": true,
+            "infinite": false,
+            "number": 0
+          },
+          "signal": {
+            "id": {
+              "set": false,
+              "infinite": false,
+              "number": 0
+            },
+            "name": ""
+          }
+        },
+        "steps": [
+          {
+            "step": {
+              "id": "38.batch",
+              "name": "batch"
+            },
+            "state": ["COMPLETED"],
+            "exit_code": {
+              "status": ["SUCCESS"],
+              "return_code": {
+                "set": true,
+                "infinite": false,
+                "number": 0
+              },
+              "signal": {
+                "id": {
+                  "set": false,
+                  "infinite": false,
+                  "number": 0
+                },
+                "name": ""
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

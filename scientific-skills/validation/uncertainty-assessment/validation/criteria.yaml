@@ -1,0 +1,23 @@
+{
+  "schema": "eigengrid.validation-criteria/v1",
+  "id": "validation.uncertainty-assessment.criteria",
+  "version": "1.0.0",
+  "criteria":
+    [
+      { "id": "criterion-1", "statement": "uncertainty sources are enumerated", "required": true },
+      {
+        "id": "criterion-2",
+        "statement": "unsupported quantitative bounds are absent",
+        "required": true,
+      },
+      { "id": "criterion-3", "statement": "claim scope matches evidence", "required": true },
+    ],
+  "outcomes": ["pass", "fail", "indeterminate"],
+  "indeterminate_when":
+    [
+      "required evidence is missing",
+      "artifact identity is inconsistent",
+      "parser completeness is not established",
+    ],
+  "scientific_claim_limit": "This draft structures uncertainty but supplies no benchmark-derived error bars. Escalate quantitative accuracy claims and out-of-domain extrapolation.",
+}

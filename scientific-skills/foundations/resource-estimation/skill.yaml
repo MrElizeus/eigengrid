@@ -1,0 +1,51 @@
+{
+  "schema": "eigengrid.scientific-skill/v1",
+  "id": "foundations.resource-estimation",
+  "version": "1.0.0",
+  "title": "Scientific resource estimation",
+  "status": "active",
+  "summary": "Estimate bounded cores, memory, scratch, and wall time from declared workload features without changing scientific assumptions.",
+  "knowledge_level": "draft",
+  "capability_levels":
+    {
+      "reference": true,
+      "advisory": true,
+      "plannable": true,
+      "renderable": {},
+      "executable": {},
+      "validated": {},
+    },
+  "domains": ["molecular-electronic-structure"],
+  "domain_maturity": { "molecular-electronic-structure": "plannable" },
+  "engine_compatibility": { "orca": ">=5.0.0 <7.0.0" },
+  "requires":
+    [
+      {
+        "id": "representations.molecular-structures",
+        "range": ">=1.0.0 <2.0.0",
+        "reason": "Scientific resource estimation requires the declared representations.molecular-structures capability.",
+      },
+    ],
+  "recommends": [],
+  "conflicts": [],
+  "required_inputs":
+    ["atom count", "method family", "basis size or workload class", "calculation kind"],
+  "missing_input_behavior": "Return an explicit unknown estimate with the missing workload features; never invent a precise wall time or memory value.",
+  "assets":
+    {
+      "concepts": "concepts/",
+      "rules": "decision-rules/",
+      "protocols": "protocols/",
+      "references": "references/",
+      "evals": "evals/",
+    },
+  "helpers": [],
+  "review":
+    {
+      "status": "unreviewed",
+      "owner_role": "computational-chemist",
+      "evidence_ids": [],
+      "notes": "Unreviewed draft. No expert review, benchmark support, engine validation, or production certification is claimed.",
+    },
+  "provenance": { "created_by": "model" },
+}

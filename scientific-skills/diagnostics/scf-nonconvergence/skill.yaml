@@ -1,0 +1,74 @@
+{
+  "schema": "eigengrid.scientific-skill/v1",
+  "id": "diagnostics.scf-nonconvergence",
+  "version": "1.0.0",
+  "title": "SCF nonconvergence diagnosis",
+  "status": "active",
+  "summary": "Classify SCF failures from evidence and separate operational recovery, bounded numerical remediation, and scientifically material replanning.",
+  "knowledge_level": "draft",
+  "capability_levels":
+    {
+      "reference": true,
+      "advisory": true,
+      "plannable": true,
+      "renderable": {},
+      "executable": {},
+      "validated": {},
+    },
+  "domains": ["molecular-electronic-structure"],
+  "domain_maturity": { "molecular-electronic-structure": "plannable" },
+  "engine_compatibility": { "orca": ">=5.0.0 <7.0.0" },
+  "requires":
+    [
+      {
+        "id": "methods.molecular-dft",
+        "range": ">=1.0.0 <2.0.0",
+        "reason": "SCF nonconvergence diagnosis requires the declared methods.molecular-dft capability.",
+      },
+      {
+        "id": "foundations.numerical-convergence",
+        "range": ">=1.0.0 <2.0.0",
+        "reason": "SCF nonconvergence diagnosis requires the declared foundations.numerical-convergence capability.",
+      },
+    ],
+  "recommends":
+    [
+      {
+        "id": "foundations.charge-spin-symmetry",
+        "range": ">=1.0.0 <2.0.0",
+        "reason": "Consult foundations.charge-spin-symmetry when its applicability conditions are present.",
+      },
+      {
+        "id": "foundations.basis-ecp-relativity",
+        "range": ">=1.0.0 <2.0.0",
+        "reason": "Consult foundations.basis-ecp-relativity when its applicability conditions are present.",
+      },
+    ],
+  "conflicts": [],
+  "required_inputs":
+    [
+      "immutable input artifact",
+      "complete output or parser evidence",
+      "approved method, basis, charge, and multiplicity",
+      "attempt history",
+    ],
+  "missing_input_behavior": "Do not diagnose from a truncated status line. Reconcile the operation and collect immutable logs before recommending remediation.",
+  "assets":
+    {
+      "concepts": "concepts/",
+      "rules": "decision-rules/",
+      "protocols": "protocols/",
+      "references": "references/",
+      "evals": "evals/",
+      "diagnostics": "diagnostics/",
+    },
+  "helpers": [],
+  "review":
+    {
+      "status": "unreviewed",
+      "owner_role": "computational-chemist",
+      "evidence_ids": [],
+      "notes": "Unreviewed draft. No expert review, benchmark support, engine validation, or production certification is claimed.",
+    },
+  "provenance": { "created_by": "model" },
+}

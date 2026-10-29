@@ -1,0 +1,1 @@
+{"id": "methods.continuum-solvation.composition", "requested": ["methods.continuum-solvation"], "include_optional": false, "expected_nodes": ["foundations.charge-spin-symmetry", "methods.continuum-solvation", "representations.molecular-structures"], "expected_absent": [], "engine": {"id": "orca", "version": "6.0.0"}, "domains": ["molecular-electronic-structure"]}

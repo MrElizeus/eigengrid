@@ -1,0 +1,2 @@
+{"id": "validation.minimum-validation.positive", "kind": "positive", "query": "minimum validation local minimum evidence completeness stationary point claim", "expected_included": ["validation.minimum-validation"], "expected_excluded": [], "expected_top": "validation.minimum-validation"}
+{"id": "validation.minimum-validation.negative", "kind": "negative", "query": "thermostat timestep dynamics integration", "expected_included": [], "expected_excluded": ["validation.minimum-validation"]}

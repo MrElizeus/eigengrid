@@ -1,0 +1,57 @@
+{
+  "schema": "eigengrid.scientific-skill/v1",
+  "id": "validation.uncertainty-assessment",
+  "version": "1.0.0",
+  "title": "Scientific uncertainty assessment",
+  "status": "active",
+  "summary": "State model, numerical, structural, and interpretation uncertainty without converting unsupported precision into confidence.",
+  "knowledge_level": "draft",
+  "capability_levels":
+    {
+      "reference": true,
+      "advisory": true,
+      "plannable": true,
+      "renderable": {},
+      "executable": {},
+      "validated": {},
+    },
+  "domains": ["molecular-electronic-structure"],
+  "domain_maturity": { "molecular-electronic-structure": "plannable" },
+  "engine_compatibility": { "orca": ">=5.0.0 <7.0.0" },
+  "requires":
+    [
+      {
+        "id": "validation.minimum-validation",
+        "range": ">=1.0.0 <2.0.0",
+        "reason": "Scientific uncertainty assessment requires the declared validation.minimum-validation capability.",
+      },
+    ],
+  "recommends": [],
+  "conflicts": [],
+  "required_inputs":
+    [
+      "validated observations",
+      "model and basis identity",
+      "assumptions and applicability limits",
+      "requested confidence",
+    ],
+  "missing_input_behavior": "Return uncertainty as indeterminate and enumerate missing evidence; never manufacture an interval or confidence level.",
+  "assets":
+    {
+      "concepts": "concepts/",
+      "rules": "decision-rules/",
+      "protocols": "protocols/",
+      "references": "references/",
+      "evals": "evals/",
+      "validation": "validation/",
+    },
+  "helpers": [],
+  "review":
+    {
+      "status": "unreviewed",
+      "owner_role": "computational-chemist",
+      "evidence_ids": [],
+      "notes": "Unreviewed draft. No expert review, benchmark support, engine validation, or production certification is claimed.",
+    },
+  "provenance": { "created_by": "model" },
+}

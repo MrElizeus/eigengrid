@@ -1,0 +1,387 @@
+{
+  "$ref": "#/definitions/eigengrid.agent-work-result.v1",
+  "definitions": {
+    "eigengrid.agent-work-result.v1": {
+      "type": "object",
+      "properties": {
+        "schema": { "type": "string", "const": "eigengrid.agent-work-result.v1" },
+        "workOrderId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+-]*$"
+        },
+        "requestId": {
+          "$ref": "#/definitions/eigengrid.agent-work-result.v1/properties/workOrderId"
+        },
+        "idempotencyKey": {
+          "$ref": "#/definitions/eigengrid.agent-work-result.v1/properties/workOrderId"
+        },
+        "correlationId": {
+          "$ref": "#/definitions/eigengrid.agent-work-result.v1/properties/workOrderId"
+        },
+        "causationId": {
+          "$ref": "#/definitions/eigengrid.agent-work-result.v1/properties/workOrderId"
+        },
+        "species": {
+          "type": "object",
+          "properties": {
+            "schema": { "type": "string", "const": "eigengrid.species-identity.v1" },
+            "coordinate": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 16,
+                  "maxLength": 180,
+                  "pattern": "^eigengrid\\.[a-z0-9]+(?:-[a-z0-9]+)*\\/v[1-9]\\d*$"
+                },
+                "version": {
+                  "type": "string",
+                  "maxLength": 128,
+                  "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-(?:0|[1-9]\\d*|\\d*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"
+                }
+              },
+              "required": ["id", "version"],
+              "additionalProperties": false
+            },
+            "contractDigest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+          },
+          "required": ["schema", "coordinate", "contractDigest"],
+          "additionalProperties": false
+        },
+        "caste": {
+          "type": "string",
+          "enum": [
+            "governor",
+            "architect",
+            "scout",
+            "forager",
+            "builder",
+            "operator",
+            "critic",
+            "verifier",
+            "sentinel",
+            "steward",
+            "medic",
+            "integrator"
+          ]
+        },
+        "status": { "type": "string", "enum": ["success", "partial", "blocked", "failed"] },
+        "observedBaseIdentity": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": ["repository", "mission", "operation", "artifact"]
+            },
+            "id": { "$ref": "#/definitions/eigengrid.agent-work-result.v1/properties/workOrderId" },
+            "revision": {
+              "anyOf": [
+                { "type": "integer", "minimum": 0 },
+                { "type": "string", "minLength": 1, "maxLength": 256 }
+              ]
+            },
+            "digest": {
+              "$ref": "#/definitions/eigengrid.agent-work-result.v1/properties/species/properties/contractDigest"
+            }
+          },
+          "required": ["kind", "id", "revision", "digest"],
+          "additionalProperties": false
+        },
+        "summary": { "type": "string", "minLength": 1, "maxLength": 16384 },
+        "candidates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/definitions/eigengrid.agent-work-result.v1/properties/workOrderId"
+              },
+              "kind": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+              },
+              "digest": {
+                "$ref": "#/definitions/eigengrid.agent-work-result.v1/properties/species/properties/contractDigest"
+              },
+              "trustClass": { "type": "string", "const": "model_hypothesis" },
+              "uri": { "type": "string", "minLength": 1, "maxLength": 2048 },
+              "claim": { "type": "string", "minLength": 1, "maxLength": 16384 },
+              "accessedAt": { "type": "string", "format": "date-time" }
+            },
+            "required": ["id", "kind", "digest", "trustClass"],
+            "additionalProperties": false
+          }
+        },
+        "affectedResources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "repository_path",
+                  "mission_object",
+                  "operation",
+                  "artifact",
+                  "evidence",
+                  "skill",
+                  "capability",
+                  "network_origin"
+                ]
+              },
+              "selector": { "type": "string", "minLength": 1, "maxLength": 2048 },
+              "access": { "type": "string", "enum": ["read", "candidate_write", "invoke"] }
+            },
+            "required": ["kind", "selector", "access"],
+            "additionalProperties": false
+          }
+        },
+        "attemptedOperations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "operationId": {
+                "$ref": "#/definitions/eigengrid.agent-work-result.v1/properties/workOrderId"
+              },
+              "idempotencyKey": {
+                "$ref": "#/definitions/eigengrid.agent-work-result.v1/properties/workOrderId"
+              },
+              "capabilityId": {
+                "$ref": "#/definitions/eigengrid.agent-work-result.v1/properties/candidates/items/properties/kind"
+              },
+              "status": {
+                "type": "string",
+                "enum": ["requested", "denied", "completed", "failed", "unknown"]
+              },
+              "receiptIds": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/eigengrid.agent-work-result.v1/properties/workOrderId"
+                }
+              }
+            },
+            "required": ["operationId", "idempotencyKey", "capabilityId", "status", "receiptIds"],
+            "additionalProperties": false
+          }
+        },
+        "toolReceipts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/definitions/eigengrid.agent-work-result.v1/properties/workOrderId"
+              },
+              "kind": {
+                "$ref": "#/definitions/eigengrid.agent-work-result.v1/properties/candidates/items/properties/kind"
+              },
+              "digest": {
+                "$ref": "#/definitions/eigengrid.agent-work-result.v1/properties/species/properties/contractDigest"
+              },
+              "trustClass": {
+                "type": "string",
+                "enum": [
+                  "authoritative_state",
+                  "validated_skill",
+                  "external_evidence",
+                  "model_hypothesis",
+                  "untrusted_retrieved_text"
+                ]
+              },
+              "uri": {
+                "$ref": "#/definitions/eigengrid.agent-work-result.v1/properties/candidates/items/properties/uri"
+              },
+              "claim": {
+                "$ref": "#/definitions/eigengrid.agent-work-result.v1/properties/candidates/items/properties/claim"
+              },
+              "accessedAt": {
+                "$ref": "#/definitions/eigengrid.agent-work-result.v1/properties/candidates/items/properties/accessedAt"
+              }
+            },
+            "required": ["id", "kind", "digest", "trustClass"],
+            "additionalProperties": false
+          }
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/eigengrid.agent-work-result.v1/properties/toolReceipts/items"
+          },
+          "minItems": 1
+        },
+        "criteria": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "criterionId": {
+                "$ref": "#/definitions/eigengrid.agent-work-result.v1/properties/workOrderId"
+              },
+              "verdict": { "type": "string", "enum": ["pass", "fail", "blocked", "inconclusive"] },
+              "evidenceIds": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/eigengrid.agent-work-result.v1/properties/workOrderId"
+                }
+              },
+              "explanation": { "type": "string", "minLength": 1, "maxLength": 8192 }
+            },
+            "required": ["criterionId", "verdict", "evidenceIds", "explanation"],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        },
+        "deviations": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 4096 }
+        },
+        "blockers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "$ref": "#/definitions/eigengrid.agent-work-result.v1/properties/candidates/items/properties/kind"
+              },
+              "message": { "type": "string", "minLength": 1, "maxLength": 8192 },
+              "evidenceIds": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/eigengrid.agent-work-result.v1/properties/workOrderId"
+                }
+              },
+              "retryable": { "type": "boolean" }
+            },
+            "required": ["code", "message", "evidenceIds", "retryable"],
+            "additionalProperties": false
+          }
+        },
+        "unrelatedChanges": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 4096 }
+        },
+        "selfReview": {
+          "type": "object",
+          "properties": {
+            "summary": { "type": "string", "minLength": 1, "maxLength": 8192 },
+            "checks": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1, "maxLength": 4096 }
+            }
+          },
+          "required": ["summary", "checks"],
+          "additionalProperties": false
+        },
+        "modelIdentity": {
+          "type": "object",
+          "properties": {
+            "provider": {
+              "$ref": "#/definitions/eigengrid.agent-work-result.v1/properties/candidates/items/properties/kind"
+            },
+            "model": {
+              "$ref": "#/definitions/eigengrid.agent-work-result.v1/properties/workOrderId"
+            },
+            "revision": {
+              "$ref": "#/definitions/eigengrid.agent-work-result.v1/properties/workOrderId"
+            },
+            "qualificationId": {
+              "$ref": "#/definitions/eigengrid.agent-work-result.v1/properties/workOrderId"
+            },
+            "invocationId": {
+              "$ref": "#/definitions/eigengrid.agent-work-result.v1/properties/workOrderId"
+            }
+          },
+          "required": ["provider", "model", "revision", "qualificationId", "invocationId"],
+          "additionalProperties": false
+        },
+        "usage": {
+          "type": "object",
+          "properties": {
+            "wallTimeMs": { "type": "integer", "minimum": 0 },
+            "inputTokens": { "type": "integer", "minimum": 0 },
+            "outputTokens": { "type": "integer", "minimum": 0 },
+            "costMicrounits": { "type": "integer", "minimum": 0 },
+            "effects": { "type": "integer", "minimum": 0 },
+            "corrections": { "type": "integer", "minimum": 0 },
+            "modelCalls": { "type": "integer", "minimum": 0 },
+            "computeSeconds": { "type": "integer", "minimum": 0 },
+            "storageBytes": { "type": "integer", "minimum": 0 },
+            "networkBytes": { "type": "integer", "minimum": 0 }
+          },
+          "required": [
+            "wallTimeMs",
+            "inputTokens",
+            "outputTokens",
+            "costMicrounits",
+            "effects",
+            "corrections",
+            "modelCalls",
+            "computeSeconds",
+            "storageBytes",
+            "networkBytes"
+          ],
+          "additionalProperties": false
+        },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "limitations": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 4096 }
+        },
+        "memoryCandidates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/eigengrid.agent-work-result.v1/properties/candidates/items"
+          }
+        },
+        "skillCandidates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/eigengrid.agent-work-result.v1/properties/candidates/items"
+          }
+        },
+        "resultDigest": {
+          "$ref": "#/definitions/eigengrid.agent-work-result.v1/properties/species/properties/contractDigest"
+        }
+      },
+      "required": [
+        "schema",
+        "workOrderId",
+        "requestId",
+        "idempotencyKey",
+        "correlationId",
+        "species",
+        "caste",
+        "status",
+        "observedBaseIdentity",
+        "summary",
+        "candidates",
+        "affectedResources",
+        "attemptedOperations",
+        "toolReceipts",
+        "evidence",
+        "criteria",
+        "deviations",
+        "blockers",
+        "unrelatedChanges",
+        "selfReview",
+        "modelIdentity",
+        "usage",
+        "confidence",
+        "limitations",
+        "memoryCandidates",
+        "skillCandidates",
+        "resultDigest"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://eigengrid.dev/schemas/colony/eigengrid.agent-work-result.v1.schema.json",
+  "title": "eigengrid.agent-work-result.v1 runtime contract"
+}

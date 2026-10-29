@@ -1,0 +1,19 @@
+{
+  "name": "@eigengrid/biomolecular-prep",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*"
+  },
+  "scripts": {
+    "test": "bun test tests",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@eigengrid/scientific-schema": "workspace:*"
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "schema": "eigengrid.protocol-fragment/v1",
+  "id": "methods.molecular-dft.plan-molecular-dft",
+  "version": "1.0.0",
+  "capability": "methods.molecular-dft",
+  "required_inputs":
+    [
+      "molecular structure",
+      "charge",
+      "multiplicity",
+      "functional",
+      "basis specification",
+      "target property",
+    ],
+  "missing_input_behavior": "block",
+  "steps":
+    [
+      {
+        "id": "verify-inputs",
+        "kind": "validation",
+        "reason": "Fail closed before planning from incomplete or mismatched evidence.",
+      },
+      {
+        "id": "plan-molecular-dft",
+        "kind": "planning",
+        "reason": "A plausible DFT input is not evidence that the approximation is scientifically adequate.",
+      },
+      {
+        "id": "record-evidence",
+        "kind": "provenance",
+        "reason": "Persist exact skill, fragment, input, output, and decision references.",
+      },
+    ],
+  "acceptance":
+    [
+      "functional and basis are explicit",
+      "charge and multiplicity are preserved",
+      "numerical and physical models are attributable",
+      "validation work is planned",
+    ],
+  "retry_policy": { "maximum_attempts": 1, "material_change": "new_decision_and_exact_approval" },
+  "effect_authority": "none",
+}

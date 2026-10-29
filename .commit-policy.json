@@ -1,0 +1,16 @@
+{
+  "headerMaxLength": 100,
+  "types": [
+    "feat",
+    "fix",
+    "docs",
+    "refactor",
+    "perf",
+    "test",
+    "build",
+    "ci",
+    "chore",
+    "style",
+    "revert"
+  ]
+}

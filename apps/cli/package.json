@@ -1,0 +1,46 @@
+{
+  "name": "@eigengrid/cli",
+  "version": "1.0.0-rc.1",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "eigengrid": "./bin/eigengrid.ts",
+    "eigengrid-head": "./bin/eigengrid-head.ts",
+    "eigengrid-worker": "./bin/eigengrid-worker.ts"
+  },
+  "dependencies": {
+    "@eigengrid/agent": "workspace:*",
+    "@eigengrid/amber-adapter": "workspace:*",
+    "@eigengrid/backup": "workspace:*",
+    "@eigengrid/config": "workspace:*",
+    "@eigengrid/core": "workspace:*",
+    "@eigengrid/db": "workspace:*",
+    "@eigengrid/events": "workspace:*",
+    "@eigengrid/mission-runtime": "workspace:*",
+    "@eigengrid/protocol": "workspace:*",
+    "@eigengrid/python-bridge": "workspace:*",
+    "@eigengrid/recipes": "workspace:*",
+    "@eigengrid/runners": "workspace:*",
+    "@eigengrid/scheduler": "workspace:*",
+    "@eigengrid/scientific-agent": "workspace:*",
+    "@eigengrid/scientific-schema": "workspace:*",
+    "@eigengrid/scientific-skills": "workspace:*",
+    "@eigengrid/slurm": "workspace:*",
+    "@eigengrid/tool-registry": "workspace:*",
+    "@eigengrid/worker": "workspace:*",
+    "@eigengrid/worker-agent": "workspace:*",
+    "chalk": "^5.6.2",
+    "ink": "^5.0.0",
+    "ink-text-input": "^6.0.0",
+    "react": "^18.3.0",
+    "wrap-ansi": "9.0.2",
+    "yargs": "^17.7.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "@types/yargs": "^17.0.0",
+    "react-devtools-core": "^4.19.1"
+  }
+}

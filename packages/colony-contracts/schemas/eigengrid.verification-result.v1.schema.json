@@ -1,0 +1,275 @@
+{
+  "$ref": "#/definitions/eigengrid.verification-result.v1",
+  "definitions": {
+    "eigengrid.verification-result.v1": {
+      "type": "object",
+      "properties": {
+        "schema": { "type": "string", "const": "eigengrid.verification-result.v1" },
+        "verificationId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+-]*$"
+        },
+        "requestId": {
+          "$ref": "#/definitions/eigengrid.verification-result.v1/properties/verificationId"
+        },
+        "correlationId": {
+          "$ref": "#/definitions/eigengrid.verification-result.v1/properties/verificationId"
+        },
+        "causationId": {
+          "$ref": "#/definitions/eigengrid.verification-result.v1/properties/verificationId"
+        },
+        "workOrderId": {
+          "$ref": "#/definitions/eigengrid.verification-result.v1/properties/verificationId"
+        },
+        "workResultDigest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+        "candidateDigest": {
+          "$ref": "#/definitions/eigengrid.verification-result.v1/properties/workResultDigest"
+        },
+        "observedBaseIdentity": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": ["repository", "mission", "operation", "artifact"]
+            },
+            "id": {
+              "$ref": "#/definitions/eigengrid.verification-result.v1/properties/verificationId"
+            },
+            "revision": {
+              "anyOf": [
+                { "type": "integer", "minimum": 0 },
+                { "type": "string", "minLength": 1, "maxLength": 256 }
+              ]
+            },
+            "digest": {
+              "$ref": "#/definitions/eigengrid.verification-result.v1/properties/workResultDigest"
+            }
+          },
+          "required": ["kind", "id", "revision", "digest"],
+          "additionalProperties": false
+        },
+        "verifierInvocationId": {
+          "$ref": "#/definitions/eigengrid.verification-result.v1/properties/verificationId"
+        },
+        "verifierIdentity": {
+          "type": "object",
+          "properties": {
+            "provider": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 160,
+              "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+            },
+            "model": {
+              "$ref": "#/definitions/eigengrid.verification-result.v1/properties/verificationId"
+            },
+            "revision": {
+              "$ref": "#/definitions/eigengrid.verification-result.v1/properties/verificationId"
+            },
+            "qualificationId": {
+              "$ref": "#/definitions/eigengrid.verification-result.v1/properties/verificationId"
+            },
+            "invocationId": {
+              "$ref": "#/definitions/eigengrid.verification-result.v1/properties/verificationId"
+            }
+          },
+          "required": ["provider", "model", "revision", "qualificationId", "invocationId"],
+          "additionalProperties": false
+        },
+        "verdict": { "type": "string", "enum": ["pass", "fail", "blocked", "inconclusive"] },
+        "identityAndScope": {
+          "type": "object",
+          "properties": {
+            "verdict": {
+              "$ref": "#/definitions/eigengrid.verification-result.v1/properties/verdict"
+            },
+            "summary": { "type": "string", "minLength": 1, "maxLength": 8192 },
+            "evidenceIds": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/eigengrid.verification-result.v1/properties/verificationId"
+              }
+            }
+          },
+          "required": ["verdict", "summary", "evidenceIds"],
+          "additionalProperties": false
+        },
+        "contractConformance": {
+          "$ref": "#/definitions/eigengrid.verification-result.v1/properties/identityAndScope"
+        },
+        "protectedState": {
+          "$ref": "#/definitions/eigengrid.verification-result.v1/properties/identityAndScope"
+        },
+        "deterministicEvidence": {
+          "$ref": "#/definitions/eigengrid.verification-result.v1/properties/identityAndScope"
+        },
+        "scientificAssumptions": {
+          "$ref": "#/definitions/eigengrid.verification-result.v1/properties/identityAndScope"
+        },
+        "authorityBoundaries": {
+          "$ref": "#/definitions/eigengrid.verification-result.v1/properties/identityAndScope"
+        },
+        "provenanceCompleteness": {
+          "$ref": "#/definitions/eigengrid.verification-result.v1/properties/identityAndScope"
+        },
+        "budgetCompliance": {
+          "$ref": "#/definitions/eigengrid.verification-result.v1/properties/identityAndScope"
+        },
+        "introducedFailures": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "$ref": "#/definitions/eigengrid.verification-result.v1/properties/verifierIdentity/properties/provider"
+              },
+              "message": { "type": "string", "minLength": 1, "maxLength": 8192 },
+              "evidenceIds": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/eigengrid.verification-result.v1/properties/verificationId"
+                }
+              },
+              "retryable": { "type": "boolean" }
+            },
+            "required": ["code", "message", "evidenceIds", "retryable"],
+            "additionalProperties": false
+          }
+        },
+        "preExistingFailures": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/eigengrid.verification-result.v1/properties/introducedFailures/items"
+          }
+        },
+        "criteria": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "criterionId": {
+                "$ref": "#/definitions/eigengrid.verification-result.v1/properties/verificationId"
+              },
+              "verdict": {
+                "$ref": "#/definitions/eigengrid.verification-result.v1/properties/verdict"
+              },
+              "evidenceIds": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/eigengrid.verification-result.v1/properties/verificationId"
+                }
+              },
+              "explanation": { "type": "string", "minLength": 1, "maxLength": 8192 }
+            },
+            "required": ["criterionId", "verdict", "evidenceIds", "explanation"],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/definitions/eigengrid.verification-result.v1/properties/verificationId"
+              },
+              "kind": {
+                "$ref": "#/definitions/eigengrid.verification-result.v1/properties/verifierIdentity/properties/provider"
+              },
+              "digest": {
+                "$ref": "#/definitions/eigengrid.verification-result.v1/properties/workResultDigest"
+              },
+              "trustClass": {
+                "type": "string",
+                "enum": [
+                  "authoritative_state",
+                  "validated_skill",
+                  "external_evidence",
+                  "model_hypothesis",
+                  "untrusted_retrieved_text"
+                ]
+              },
+              "uri": { "type": "string", "minLength": 1, "maxLength": 2048 },
+              "claim": { "type": "string", "minLength": 1, "maxLength": 16384 },
+              "accessedAt": { "type": "string", "format": "date-time" }
+            },
+            "required": ["id", "kind", "digest", "trustClass"],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        },
+        "residualRisks": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 4096 }
+        },
+        "usage": {
+          "type": "object",
+          "properties": {
+            "wallTimeMs": { "type": "integer", "minimum": 0 },
+            "inputTokens": { "type": "integer", "minimum": 0 },
+            "outputTokens": { "type": "integer", "minimum": 0 },
+            "costMicrounits": { "type": "integer", "minimum": 0 },
+            "effects": { "type": "integer", "minimum": 0 },
+            "corrections": { "type": "integer", "minimum": 0 },
+            "modelCalls": { "type": "integer", "minimum": 0 },
+            "computeSeconds": { "type": "integer", "minimum": 0 },
+            "storageBytes": { "type": "integer", "minimum": 0 },
+            "networkBytes": { "type": "integer", "minimum": 0 }
+          },
+          "required": [
+            "wallTimeMs",
+            "inputTokens",
+            "outputTokens",
+            "costMicrounits",
+            "effects",
+            "corrections",
+            "modelCalls",
+            "computeSeconds",
+            "storageBytes",
+            "networkBytes"
+          ],
+          "additionalProperties": false
+        },
+        "resultDigest": {
+          "$ref": "#/definitions/eigengrid.verification-result.v1/properties/workResultDigest"
+        }
+      },
+      "required": [
+        "schema",
+        "verificationId",
+        "requestId",
+        "correlationId",
+        "causationId",
+        "workOrderId",
+        "workResultDigest",
+        "candidateDigest",
+        "observedBaseIdentity",
+        "verifierInvocationId",
+        "verifierIdentity",
+        "verdict",
+        "identityAndScope",
+        "contractConformance",
+        "protectedState",
+        "deterministicEvidence",
+        "scientificAssumptions",
+        "authorityBoundaries",
+        "provenanceCompleteness",
+        "budgetCompliance",
+        "introducedFailures",
+        "preExistingFailures",
+        "criteria",
+        "evidence",
+        "residualRisks",
+        "usage",
+        "resultDigest"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://eigengrid.dev/schemas/colony/eigengrid.verification-result.v1.schema.json",
+  "title": "eigengrid.verification-result.v1 runtime contract"
+}

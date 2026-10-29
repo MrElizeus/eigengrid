@@ -1,0 +1,55 @@
+ Entering Gaussian System, Link 1=g16c
+ Gaussian 16:  ES64L-G16RevC.01  Sun Jun 21 2026
+ %chk=formaldehyde.chk
+ #p RB3LYP/6-311++G(d,p) TD(NStates=5)
+
+ ---------------------------------------------------------
+ Formaldehyde TD-DFT
+ ---------------------------------------------------------
+
+ Symbolic Z-matrix:
+ Charge =  0   Multiplicity = 1
+ C
+ O   1   rco
+ H   1   rch   2   a
+ H   1   rch   2   a   3   180.0
+
+ Variables:
+ rco=1.210
+ rch=1.110
+ a=121.8
+
+                         ----------------------------
+                         Standard orientation:
+                         ----------------------------
+ Center     Atomic     Atomic              Coordinates (Angstroms)
+ Number     Number      Type              X           Y           Z
+ ------------------------------------------------------------
+    1          6           0        0.000000    0.000000   -0.529000
+    2          8           0        0.000000    0.000000    0.676000
+    3          1           0        0.000000    0.937000   -1.079000
+    4          1           0        0.000000   -0.937000   -1.079000
+ ------------------------------------------------------------
+
+ SCF Done:  E(RB3LYP) =  -114.4250109876    A.U. after    5 cycles
+
+ -------------------------------------------------------------------
+         TD-DFT/TDA Excitation Energies
+ -------------------------------------------------------------------
+
+ Excited State   1:   Singlet-A'      3.8800 eV  319.5 nm  f=0.0000
+      2a'' ->  3a''    0.67890
+
+ Excited State   2:   Singlet-A''     5.6900 eV  217.8 nm  f=0.0178
+      5a'  ->  3a''    0.65432
+
+ Excited State   3:   Singlet-A'      7.1200 eV  174.1 nm  f=0.3120
+      5a'  ->  3a''    0.62345
+
+ Excited State   4:   Singlet-A'      8.4500 eV  146.7 nm  f=0.0000
+      4a'  ->  3a''    0.55432
+
+ Excited State   5:   Singlet-A'      9.2300 eV  134.3 nm  f=0.0456
+      4a'  ->  3a''    0.53421
+
+ Normal termination of Gaussian 16.

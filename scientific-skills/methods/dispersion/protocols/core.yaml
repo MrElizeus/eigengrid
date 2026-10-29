@@ -1,0 +1,34 @@
+{
+  "schema": "eigengrid.protocol-fragment/v1",
+  "id": "methods.dispersion.declare-dispersion-treatment",
+  "version": "1.0.0",
+  "capability": "methods.dispersion",
+  "required_inputs": ["base method", "target property", "interaction regime"],
+  "missing_input_behavior": "block",
+  "steps":
+    [
+      {
+        "id": "verify-inputs",
+        "kind": "validation",
+        "reason": "Fail closed before planning from incomplete or mismatched evidence.",
+      },
+      {
+        "id": "declare-dispersion-treatment",
+        "kind": "planning",
+        "reason": "Adding or changing dispersion changes the scientific model and requires exact-revision approval.",
+      },
+      {
+        "id": "record-evidence",
+        "kind": "provenance",
+        "reason": "Persist exact skill, fragment, input, output, and decision references.",
+      },
+    ],
+  "acceptance":
+    [
+      "dispersion choice is explicit",
+      "compatibility is checked",
+      "absence is justified when scientifically relevant",
+    ],
+  "retry_policy": { "maximum_attempts": 1, "material_change": "new_decision_and_exact_approval" },
+  "effect_authority": "none",
+}

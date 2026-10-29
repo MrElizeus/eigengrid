@@ -1,0 +1,40 @@
+{
+  "schema": "eigengrid.protocol-fragment/v1",
+  "id": "diagnostics.imaginary-frequencies.diagnose-imaginary-modes",
+  "version": "1.0.0",
+  "capability": "diagnostics.imaginary-frequencies",
+  "required_inputs":
+    [
+      "complete frequencies",
+      "normal-mode vectors",
+      "claimed stationary-point type",
+      "matching structure and model digests",
+    ],
+  "missing_input_behavior": "block",
+  "steps":
+    [
+      {
+        "id": "verify-inputs",
+        "kind": "validation",
+        "reason": "Fail closed before planning from incomplete or mismatched evidence.",
+      },
+      {
+        "id": "diagnose-imaginary-modes",
+        "kind": "diagnosis",
+        "reason": "Small numerical modes and genuine downhill coordinates require different, explicitly justified responses.",
+      },
+      {
+        "id": "record-evidence",
+        "kind": "provenance",
+        "reason": "Persist exact skill, fragment, input, output, and decision references.",
+      },
+    ],
+  "acceptance":
+    [
+      "all expected modes parsed",
+      "relevant displacement is described",
+      "minimum claim fails closed on unresolved relevant modes",
+    ],
+  "retry_policy": { "maximum_attempts": 1, "material_change": "new_decision_and_exact_approval" },
+  "effect_authority": "none",
+}

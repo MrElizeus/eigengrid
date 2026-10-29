@@ -1,0 +1,2 @@
+{"id": "representations.molecular-structures.positive", "kind": "positive", "query": "molecular structure atom coordinates connectivity representation identity", "expected_included": ["representations.molecular-structures"], "expected_excluded": [], "expected_top": "representations.molecular-structures"}
+{"id": "representations.molecular-structures.negative", "kind": "negative", "query": "analyze a periodic crystal k point mesh and plane wave cutoff", "expected_included": [], "expected_excluded": ["representations.molecular-structures"]}

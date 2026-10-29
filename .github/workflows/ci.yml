@@ -1,0 +1,114 @@
+name: Software verification
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: verification-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository || !github.event.repository.private
+    runs-on: ${{ github.event.repository.private && fromJSON('["self-hosted", "linux", "x64", "eigengrid-ci-rootless"]') || fromJSON('["ubuntu-24.04"]') }}
+    timeout-minutes: ${{ github.event.repository.private && 90 || 45 }}
+    defaults:
+      run:
+        shell: bash
+    services:
+      postgres:
+        image: postgres:16.15-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4
+        env:
+          POSTGRES_USER: eigengrid_ci
+          POSTGRES_DB: eigengrid_ci
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 127.0.0.1:54339:5432
+        options: >-
+          --memory 1g --memory-swap 1g --pids-limit 256
+          --tmpfs /var/lib/postgresql/data:rw,nosuid,nodev,size=512m,mode=0700
+          --health-cmd "pg_isready -U eigengrid_ci -d eigengrid_ci"
+          --health-interval 5s --health-timeout 3s --health-retries 12
+    env:
+      EIGENGRID_TEST_POSTGRES_URL: postgresql://eigengrid_ci@127.0.0.1:54339/eigengrid_ci
+      EIGENGRID_TEST_CONTAINER_RUNTIME: docker
+      EIGENGRID_TEST_MD_IMAGE: docker.io/library/python@sha256:1aaa65a85fda306ffb8b910824d4e93bdce61e212c7e87168123ea3073b41a1a
+      EIGENGRID_CI_EXTENDED_TIMEOUTS: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Verify private runner isolation
+        if: github.event.repository.private
+        run: |
+          set -euo pipefail
+          test "$(id -u)" -ne 0
+          if sudo -n true >/dev/null 2>&1; then exit 1; fi
+          test "$DOCKER_HOST" = "unix:///run/user/$(id -u)/docker.sock"
+          docker info --format '{{json .SecurityOptions}}' | grep -q rootless
+          scratch="${EIGENGRID_CI_SCRATCH:?A private CI scratch mount is required}"
+          test ! -L "$scratch"
+          test "$(findmnt -n -o FSTYPE -M "$scratch")" = tmpfs
+          test "$(stat -c %u "$scratch")" = "$(id -u)"
+          fixtures="$(mktemp -d "$scratch/job.XXXXXXXX")"
+          echo "TMPDIR=$fixtures" >> "$GITHUB_ENV"
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Enforce public distribution policy
+        run: python3 scripts/release/scan.py --public .
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install locked dependencies
+        run: |
+          bun install --frozen-lockfile
+          python -m pip install --require-hashes -r python/requirements-linux-x64-py313.lock
+          python -m pip install --no-deps --no-build-isolation -e ./python
+      - name: Static quality
+        run: |
+          bun run typecheck
+          bun run lint
+          bun run format:check
+      - name: Native build and installed tool execution
+        run: |
+          bun run build
+          bun run build:native
+          bun run verify:distribution
+      - name: Reproducible release package
+        run: |
+          node scripts/release/package.mjs dist/native dist/packages
+          node scripts/release/package.mjs dist/native dist/packages-repeat
+          cmp dist/packages/SHA256SUMS dist/packages-repeat/SHA256SUMS
+          cmp dist/packages/release.json dist/packages-repeat/release.json
+          cmp dist/packages/*.tar.gz dist/packages-repeat/*.tar.gz
+      - name: Prepare protected integration fixture
+        run: |
+          docker pull "$EIGENGRID_TEST_MD_IMAGE"
+          chmod -R a+rX "$GITHUB_WORKSPACE"
+          chmod a+rx "$(command -v bun)"
+      - name: Complete TypeScript suite with disposable PostgreSQL
+        run: |
+          umask 0022
+          bun run test:ts
+      - name: Python regressions
+        run: |
+          PYTEST_ADDOPTS="--basetemp=${TMPDIR:-$RUNNER_TEMP}/p" bun run test:py
+      - name: Distribution hygiene
+        run: python scripts/release/scan.py .
+      - name: Remove private test fixtures
+        if: always() && github.event.repository.private
+        run: |
+          if [[ -n "${TMPDIR:-}" && "$TMPDIR" == "${EIGENGRID_CI_SCRATCH:?}"/job.* && -d "$TMPDIR" ]]; then
+            test ! -L "$TMPDIR"
+            test "$(stat -c %u "$TMPDIR")" = "$(id -u)"
+            chmod -R u+rwX "$TMPDIR"
+            find "$TMPDIR" -xdev -mindepth 1 -delete
+            rmdir "$TMPDIR"
+          fi

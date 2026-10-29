@@ -1,0 +1,1 @@
+{"id": "foundations.charge-spin-symmetry.composition", "requested": ["foundations.charge-spin-symmetry"], "include_optional": false, "expected_nodes": ["foundations.charge-spin-symmetry", "representations.molecular-structures"], "expected_absent": [], "engine": {"id": "orca", "version": "6.0.0"}, "domains": ["molecular-electronic-structure"]}

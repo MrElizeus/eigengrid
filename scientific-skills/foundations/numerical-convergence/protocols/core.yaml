@@ -1,0 +1,31 @@
+{
+  "schema": "eigengrid.protocol-fragment/v1",
+  "id": "foundations.numerical-convergence.set-numerical-acceptance",
+  "version": "1.0.0",
+  "capability": "foundations.numerical-convergence",
+  "required_inputs":
+    ["calculation kind", "declared numerical thresholds", "target scientific precision"],
+  "missing_input_behavior": "block",
+  "steps":
+    [
+      {
+        "id": "verify-inputs",
+        "kind": "validation",
+        "reason": "Fail closed before planning from incomplete or mismatched evidence.",
+      },
+      {
+        "id": "set-numerical-acceptance",
+        "kind": "planning",
+        "reason": "Numerical remediation may improve solution of the same equations but must not become an unrecorded model change.",
+      },
+      {
+        "id": "record-evidence",
+        "kind": "provenance",
+        "reason": "Persist exact skill, fragment, input, output, and decision references.",
+      },
+    ],
+  "acceptance":
+    ["thresholds are explicit", "bounded retries are finite", "material fields remain unchanged"],
+  "retry_policy": { "maximum_attempts": 1, "material_change": "new_decision_and_exact_approval" },
+  "effect_authority": "none",
+}

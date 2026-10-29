@@ -1,0 +1,314 @@
+{
+  "schemaVersion": "eigengrid.amber-pilot-candidate/v1",
+  "id": "ace-ala-nme-explicit-cpu-v1",
+  "revision": 1,
+  "status": "candidate",
+  "scope": "m2_technical_pilot",
+  "executionEligibility": "blocked_pending_am02_and_scientific_review",
+  "system": {
+    "solute": {
+      "identity": "ACE-ALA-NME",
+      "stereochemistry": "L",
+      "terminalCaps": ["ACE", "NME"]
+    },
+    "forceFields": {
+      "protein": "ff14SB",
+      "water": "TIP3P"
+    },
+    "solvation": {
+      "boxShape": "orthorhombic",
+      "paddingAngstrom": 12,
+      "netCharge": 0,
+      "addedSalt": false,
+      "maximumAtomCount": 5000
+    },
+    "nonbonded": {
+      "cutoffAngstrom": 8,
+      "electrostatics": "PME"
+    }
+  },
+  "outputCadence": {
+    "energyEverySteps": 100,
+    "trajectoryEverySteps": 1000,
+    "checkpointEverySteps": 5000
+  },
+  "resources": {
+    "executionClass": "cpu_serial_only",
+    "gpuCount": 0,
+    "mpiEnabled": false,
+    "calibrationState": "pending_calibration"
+  },
+  "stages": [
+    {
+      "id": "min-01",
+      "sequence": 1,
+      "kind": "minimization",
+      "ensemble": "none",
+      "stepCount": 2000,
+      "durationPs": null,
+      "timeStepFs": null,
+      "temperature": { "initialKelvin": null, "targetKelvin": null },
+      "pressureBar": null,
+      "restraints": { "selection": "heavy_solute", "forceConstantKcalMolAngstrom2": 10 },
+      "shake": { "enabled": false, "tolerance": null, "maximumIterations": null },
+      "thermostat": { "kind": "none", "collisionFrequencyPerPs": null },
+      "barostat": { "kind": "none", "relaxationTimePs": null },
+      "minimization": {
+        "maximumCycles": 2000,
+        "steepestDescentCycles": 1000,
+        "convergenceCriterion": null
+      },
+      "parentCheckpoint": "none",
+      "checkpointOutput": "required",
+      "unresolvedDecisionIds": ["m2-minimization-convergence"]
+    },
+    {
+      "id": "min-02",
+      "sequence": 2,
+      "kind": "minimization",
+      "ensemble": "none",
+      "stepCount": 2000,
+      "durationPs": null,
+      "timeStepFs": null,
+      "temperature": { "initialKelvin": null, "targetKelvin": null },
+      "pressureBar": null,
+      "restraints": { "selection": "none", "forceConstantKcalMolAngstrom2": 0 },
+      "shake": { "enabled": false, "tolerance": null, "maximumIterations": null },
+      "thermostat": { "kind": "none", "collisionFrequencyPerPs": null },
+      "barostat": { "kind": "none", "relaxationTimePs": null },
+      "minimization": {
+        "maximumCycles": 2000,
+        "steepestDescentCycles": 1000,
+        "convergenceCriterion": null
+      },
+      "parentCheckpoint": "required",
+      "checkpointOutput": "required",
+      "unresolvedDecisionIds": ["m2-minimization-convergence"]
+    },
+    {
+      "id": "heating",
+      "sequence": 3,
+      "kind": "heating",
+      "ensemble": "nvt",
+      "stepCount": 25000,
+      "durationPs": 25,
+      "timeStepFs": 1,
+      "temperature": { "initialKelvin": 10, "targetKelvin": 300 },
+      "pressureBar": null,
+      "restraints": { "selection": "heavy_solute", "forceConstantKcalMolAngstrom2": 2 },
+      "shake": { "enabled": true, "tolerance": null, "maximumIterations": 3001 },
+      "thermostat": { "kind": "langevin", "collisionFrequencyPerPs": 2 },
+      "barostat": { "kind": "none", "relaxationTimePs": null },
+      "minimization": {
+        "maximumCycles": null,
+        "steepestDescentCycles": null,
+        "convergenceCriterion": null
+      },
+      "parentCheckpoint": "required",
+      "checkpointOutput": "required",
+      "unresolvedDecisionIds": ["m2-shake-controls", "m2-rng-seed-policy"]
+    },
+    {
+      "id": "equilibration-01",
+      "sequence": 4,
+      "kind": "equilibration",
+      "ensemble": "npt",
+      "stepCount": 50000,
+      "durationPs": 50,
+      "timeStepFs": 1,
+      "temperature": { "initialKelvin": 300, "targetKelvin": 300 },
+      "pressureBar": 1,
+      "restraints": { "selection": "heavy_solute", "forceConstantKcalMolAngstrom2": 1 },
+      "shake": { "enabled": true, "tolerance": null, "maximumIterations": 3001 },
+      "thermostat": { "kind": "langevin", "collisionFrequencyPerPs": 2 },
+      "barostat": { "kind": "monte_carlo_isotropic", "relaxationTimePs": null },
+      "minimization": {
+        "maximumCycles": null,
+        "steepestDescentCycles": null,
+        "convergenceCriterion": null
+      },
+      "parentCheckpoint": "required",
+      "checkpointOutput": "required",
+      "unresolvedDecisionIds": [
+        "m2-shake-controls",
+        "m2-monte-carlo-barostat",
+        "m2-rng-seed-policy"
+      ]
+    },
+    {
+      "id": "equilibration-02",
+      "sequence": 5,
+      "kind": "equilibration",
+      "ensemble": "npt",
+      "stepCount": 50000,
+      "durationPs": 50,
+      "timeStepFs": 1,
+      "temperature": { "initialKelvin": 300, "targetKelvin": 300 },
+      "pressureBar": 1,
+      "restraints": { "selection": "none", "forceConstantKcalMolAngstrom2": 0 },
+      "shake": { "enabled": true, "tolerance": null, "maximumIterations": 3001 },
+      "thermostat": { "kind": "langevin", "collisionFrequencyPerPs": 2 },
+      "barostat": { "kind": "monte_carlo_isotropic", "relaxationTimePs": null },
+      "minimization": {
+        "maximumCycles": null,
+        "steepestDescentCycles": null,
+        "convergenceCriterion": null
+      },
+      "parentCheckpoint": "required",
+      "checkpointOutput": "required",
+      "unresolvedDecisionIds": [
+        "m2-shake-controls",
+        "m2-monte-carlo-barostat",
+        "m2-rng-seed-policy"
+      ]
+    },
+    {
+      "id": "production-01",
+      "sequence": 6,
+      "kind": "production",
+      "ensemble": "npt",
+      "stepCount": 50000,
+      "durationPs": 50,
+      "timeStepFs": 1,
+      "temperature": { "initialKelvin": 300, "targetKelvin": 300 },
+      "pressureBar": 1,
+      "restraints": { "selection": "none", "forceConstantKcalMolAngstrom2": 0 },
+      "shake": { "enabled": true, "tolerance": null, "maximumIterations": 3001 },
+      "thermostat": { "kind": "langevin", "collisionFrequencyPerPs": 2 },
+      "barostat": { "kind": "monte_carlo_isotropic", "relaxationTimePs": null },
+      "minimization": {
+        "maximumCycles": null,
+        "steepestDescentCycles": null,
+        "convergenceCriterion": null
+      },
+      "parentCheckpoint": "required",
+      "checkpointOutput": "required",
+      "unresolvedDecisionIds": [
+        "m2-shake-controls",
+        "m2-monte-carlo-barostat",
+        "m2-rng-seed-policy",
+        "m2-production-replica-set"
+      ]
+    },
+    {
+      "id": "production-02",
+      "sequence": 7,
+      "kind": "production",
+      "ensemble": "npt",
+      "stepCount": 50000,
+      "durationPs": 50,
+      "timeStepFs": 1,
+      "temperature": { "initialKelvin": 300, "targetKelvin": 300 },
+      "pressureBar": 1,
+      "restraints": { "selection": "none", "forceConstantKcalMolAngstrom2": 0 },
+      "shake": { "enabled": true, "tolerance": null, "maximumIterations": 3001 },
+      "thermostat": { "kind": "langevin", "collisionFrequencyPerPs": 2 },
+      "barostat": { "kind": "monte_carlo_isotropic", "relaxationTimePs": null },
+      "minimization": {
+        "maximumCycles": null,
+        "steepestDescentCycles": null,
+        "convergenceCriterion": null
+      },
+      "parentCheckpoint": "required",
+      "checkpointOutput": "required",
+      "unresolvedDecisionIds": [
+        "m2-shake-controls",
+        "m2-monte-carlo-barostat",
+        "m2-rng-seed-policy",
+        "m2-production-replica-set"
+      ]
+    }
+  ],
+  "decisions": [
+    {
+      "id": "m2-structure-and-caps",
+      "subject": "Exact ACE–ALA–NME source bytes, L stereochemistry, terminal caps and heavy-solute atom selection",
+      "source": "roadmap_candidate",
+      "state": "pending_preparation",
+      "blocksExecution": true,
+      "rationale": "AM-02 must create and verify exact source, topology, coordinates and AtomMap before render."
+    },
+    {
+      "id": "m2-force-field-materials",
+      "subject": "Exact ff14SB and TIP3P material source/version/file hashes",
+      "source": "roadmap_candidate",
+      "state": "pending_preparation",
+      "blocksExecution": true,
+      "rationale": "The candidate names force fields but has no published material binding."
+    },
+    {
+      "id": "m2-minimization-convergence",
+      "subject": "Minimization convergence semantics including drms and dx0",
+      "source": "roadmap_candidate",
+      "state": "pending_scientific_review",
+      "blocksExecution": true,
+      "rationale": "Maximum cycles alone do not establish convergence or authorize heating."
+    },
+    {
+      "id": "m2-shake-controls",
+      "subject": "SHAKE tolerance and exact supported Sander control mapping",
+      "source": "engineering_proposal",
+      "state": "pending_scientific_review",
+      "blocksExecution": true,
+      "rationale": "The candidate retains the known maximum iteration setting but no reviewed tolerance."
+    },
+    {
+      "id": "m2-monte-carlo-barostat",
+      "subject": "Monte Carlo isotropic barostat taup and attempt-frequency semantics",
+      "source": "engineering_proposal",
+      "state": "pending_scientific_review",
+      "blocksExecution": true,
+      "rationale": "NPT pressure alone is insufficient to define the production input."
+    },
+    {
+      "id": "m2-rng-seed-policy",
+      "subject": "Per-stage random-seed schedule and restart continuity",
+      "source": "roadmap_candidate",
+      "state": "pending_scientific_review",
+      "blocksExecution": true,
+      "rationale": "Seeds must be approved and persisted rather than generated at dispatch."
+    },
+    {
+      "id": "m2-production-replica-set",
+      "subject": "Production replica/segment identity for the two 50 ps segments",
+      "source": "roadmap_candidate",
+      "state": "pending_scientific_review",
+      "blocksExecution": true,
+      "rationale": "Production continuation requires an exact ReplicaSet and parent checkpoint authority."
+    },
+    {
+      "id": "m2-qc-and-cpptraj",
+      "subject": "QC estimators, windows, sample sizes, thresholds and CPPTRAJ reference/masks/imaging",
+      "source": "roadmap_candidate",
+      "state": "pending_scientific_review",
+      "blocksExecution": true,
+      "rationale": "No scientific assessment can be derived from a process exit or implicit defaults."
+    },
+    {
+      "id": "m2-resource-calibration",
+      "subject": "CPU memory, scratch and walltime limits measured for the actual prepared system",
+      "source": "engineering_proposal",
+      "state": "pending_calibration",
+      "blocksExecution": true,
+      "rationale": "The serial CPU profile has no calibrated resource envelope for this unpublished system."
+    }
+  ],
+  "blockingRequirements": [
+    {
+      "id": "am02-published-system",
+      "description": "AM-02 must publish exact topology, coordinates, AtomMap, solvation box and input material evidence.",
+      "blocksExecution": true
+    },
+    {
+      "id": "m2-exact-scientific-review",
+      "description": "An independent reviewer must approve the exact immutable protocol revision and material decisions.",
+      "blocksExecution": true
+    },
+    {
+      "id": "m2-canonical-path",
+      "description": "The MD driver, collection and reconciliation path must be qualified before this candidate may become a mission.",
+      "blocksExecution": true
+    }
+  ],
+  "candidateDigest": "338945ab101ad2456426703b1e0ac0bfa6f5cfeed7c944ebe1924d19f0fba18f"
+}

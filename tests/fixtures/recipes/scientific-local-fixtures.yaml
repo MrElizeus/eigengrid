@@ -1,0 +1,33 @@
+version: 1
+recipes:
+  - id: scientific-golden-orca-fixture
+    software: orca
+    engines: [local]
+    input_exts: [.xyz]
+    description: Deterministic ORCA-shaped optimization/frequency fixture for restart and provenance CI only.
+    default: false
+    resources:
+      cpus: 1
+      memory_mb: 64
+      walltime: "00:01:00"
+    run:
+      local:
+        command: >-
+          python3 -c 'import pathlib,sys; source=pathlib.Path(sys.argv[1]); rows=source.read_text(encoding="utf-8").splitlines(); assert rows and rows[0].strip()=="3"; output=["EIGENGRID DETERMINISTIC FIXTURE","**** CONVERGENCE REACHED ****","ENERGY = -76.400000 Eh","ORCA METHOD: B3LYP","def2-SVP","Charge = 0","Multiplicity = 1","CARTESIAN COORDINATES (ANGSTROEM)","---------------------------------","O 0.000000 0.000000 0.000000","H 0.758602 0.000000 0.504284","H -0.758602 0.000000 0.504284","","VIBRATIONAL FREQUENCIES","-----------------------","Mode Frequency","cm-1","1 1595.000","2 3657.000","3 3756.000","","TOTAL CPU TIME: 0 days 0 hours 0 minutes 0.010 seconds","TOTAL WALL TIME: 0 days 0 hours 0 minutes 0.015 seconds","****ORCA TERMINATED NORMALLY****"]; pathlib.Path(sys.argv[2]).write_text(chr(10).join(output)+chr(10),encoding="utf-8")' {{input}} {{output}}
+        output: scientific.out
+
+  - id: scientific-scf-failure-orca-fixture
+    software: orca
+    engines: [local]
+    input_exts: [.xyz]
+    description: Deterministic ORCA-shaped SCF nonconvergence fixture for skill-backed diagnosis tests only.
+    default: false
+    resources:
+      cpus: 1
+      memory_mb: 64
+      walltime: "00:01:00"
+    run:
+      local:
+        command: >-
+          python3 -c 'import pathlib,sys; source=pathlib.Path(sys.argv[1]); rows=source.read_text(encoding="utf-8").splitlines(); assert rows and rows[0].strip()=="3"; output=["EIGENGRID DETERMINISTIC FIXTURE","ORCA METHOD: B3LYP","def2-SVP","Charge = 0","Multiplicity = 1","SCF NOT CONVERGED AFTER 125 CYCLES","DIIS ERROR REMAINS ABOVE THRESHOLD","TOTAL CPU TIME: 0 days 0 hours 0 minutes 0.010 seconds","TOTAL WALL TIME: 0 days 0 hours 0 minutes 0.015 seconds"]; pathlib.Path(sys.argv[2]).write_text(chr(10).join(output)+chr(10),encoding="utf-8")' {{input}} {{output}}
+        output: scientific.out

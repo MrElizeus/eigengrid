@@ -1,0 +1,35 @@
+{
+  "schema": "eigengrid.protocol-fragment/v1",
+  "id": "foundations.resource-estimation.estimate-local-resources",
+  "version": "1.0.0",
+  "capability": "foundations.resource-estimation",
+  "required_inputs":
+    ["atom count", "method family", "basis size or workload class", "calculation kind"],
+  "missing_input_behavior": "block",
+  "steps":
+    [
+      {
+        "id": "verify-inputs",
+        "kind": "validation",
+        "reason": "Fail closed before planning from incomplete or mismatched evidence.",
+      },
+      {
+        "id": "estimate-local-resources",
+        "kind": "planning",
+        "reason": "Bounded resource estimates support safe scheduling without granting scheduler or process authority.",
+      },
+      {
+        "id": "record-evidence",
+        "kind": "provenance",
+        "reason": "Persist exact skill, fragment, input, output, and decision references.",
+      },
+    ],
+  "acceptance":
+    [
+      "assumptions are explicit",
+      "requested resources fit the capability profile",
+      "uncertainty is not presented as a guarantee",
+    ],
+  "retry_policy": { "maximum_attempts": 1, "material_change": "new_decision_and_exact_approval" },
+  "effect_authority": "none",
+}

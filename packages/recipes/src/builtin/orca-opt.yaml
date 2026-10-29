@@ -1,0 +1,15 @@
+id: orca-opt
+software: orca
+description: ORCA geometry optimization
+input_extensions:
+  - .inp
+commands:
+  local:
+    run: "orca {{input}} > {{output}}"
+outputs:
+  main_log: "{{basename}}.out"
+parser:
+  name: orca
+resources:
+  default_cores: 8
+  default_memory_gb: 16

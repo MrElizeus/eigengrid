@@ -1,0 +1,35 @@
+{
+  "schema": "eigengrid.protocol-fragment/v1",
+  "id": "foundations.charge-spin-symmetry.validate-charge-and-multiplicity",
+  "version": "1.0.0",
+  "capability": "foundations.charge-spin-symmetry",
+  "required_inputs":
+    ["net molecular charge", "spin multiplicity", "element identities or electron count"],
+  "missing_input_behavior": "block",
+  "steps":
+    [
+      {
+        "id": "verify-inputs",
+        "kind": "validation",
+        "reason": "Fail closed before planning from incomplete or mismatched evidence.",
+      },
+      {
+        "id": "validate-charge-and-multiplicity",
+        "kind": "planning",
+        "reason": "A parity inconsistency is a blocking input error; a plausible parity is not evidence that the state is correct.",
+      },
+      {
+        "id": "record-evidence",
+        "kind": "provenance",
+        "reason": "Persist exact skill, fragment, input, output, and decision references.",
+      },
+    ],
+  "acceptance":
+    [
+      "charge is explicit",
+      "multiplicity is a positive integer",
+      "electron parity and multiplicity are not contradictory",
+    ],
+  "retry_policy": { "maximum_attempts": 1, "material_change": "new_decision_and_exact_approval" },
+  "effect_authority": "none",
+}

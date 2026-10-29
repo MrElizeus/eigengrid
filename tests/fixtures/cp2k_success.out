@@ -1,0 +1,35 @@
+  PROGRAM STARTED AT   2024-06-21 12:00:00
+
+  GLOBAL| Symmetry group of the crystal space group
+  GLOBAL| Number of symmetry operations : 1
+
+  QS| Method: GPW
+  QS| Number of electrons:                           24
+  QS| Number of occupied orbitals:                   12
+  QS| Number of spin channels:                       1
+
+  DFT| Functional: PBE
+
+  BASIS_SET| Basis set: DZVP-MOLOPT-SR-GTH
+
+  CELL| Volume [angstrom^3]:                    218.241
+  CELL| Vector a [angstrom]:      6.000    0.000    0.000
+  CELL| Vector b [angstrom]:      0.000    6.000    0.000
+  CELL| Vector c [angstrom]:      0.000    0.000    6.000
+
+  Coordinates:
+   O           1.0000000000        1.0000000000        1.0000000000
+   H           0.8000000000        1.2000000000        1.1000000000
+   H           1.2000000000        0.8000000000        1.1000000000
+
+  SCF WAVEFUNCTION OPTIMIZATION
+
+  Step     Energy                            Delta E   Gnorm   CGrade
+   1     -76.37045524534156       -76.37045524534156   0.045   0.012
+   2     -76.37045664535500       -76.37045664535500   0.001   0.003
+
+  ENERGY| Total FORCE_EVAL (QMMM) energy [Hartree] :             -76.37045664535500
+
+  SCF run converged in   2 steps
+
+  PROGRAM ENDED AT   2024-06-21 12:00:15

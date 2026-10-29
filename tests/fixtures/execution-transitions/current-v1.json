@@ -1,0 +1,161 @@
+{
+  "schemaVersion": 1,
+  "kind": "current-behavior-characterization",
+  "baseSha": "90d6aafc9c828ce509a5114d12f5d42ba07ce3e4",
+  "warning": "These traces describe pre-existing behavior. They are not the target lifecycle and must not be used as support claims.",
+  "jobAllowedTransitions": {
+    "created": ["queued"],
+    "queued": ["staged", "failed", "cancelled"],
+    "staged": ["running", "failed", "cancelled"],
+    "running": ["completed", "failed", "cancelled"],
+    "completed": ["parsed", "failed"],
+    "parsed": [],
+    "failed": [],
+    "cancelled": []
+  },
+  "attemptAllowedTransitions": {
+    "created": ["queued", "failed"],
+    "queued": ["staged", "failed", "cancelled"],
+    "staged": ["running", "failed", "cancelled"],
+    "running": ["completed", "failed", "cancelled"],
+    "completed": [],
+    "failed": [],
+    "cancelled": []
+  },
+  "surfaceTraces": {
+    "localSuccess": {
+      "operations": [
+        "job:created->queued:applied",
+        "attempt:create:local:created:applied",
+        "artifact:input:-:applied",
+        "attempt:created->queued:applied",
+        "attempt:queued->staged:applied",
+        "job:queued->staged:applied",
+        "attempt:staged->running:applied",
+        "job:staged->running:applied",
+        "event:process.started:applied",
+        "artifact:log:stdout:applied",
+        "artifact:log:stderr:applied",
+        "terminal:running->completed:applied"
+      ],
+      "events": [
+        "job:created->queued",
+        "attempt:create:local:created",
+        "attempt:created->queued",
+        "attempt:queued->staged",
+        "job:queued->staged",
+        "attempt:staged->running",
+        "job:staged->running",
+        "event:process.started",
+        "attempt:running->completed",
+        "job:running->completed",
+        "event:process.completed"
+      ],
+      "final": { "job": "completed", "attempt": "completed" }
+    },
+    "sshStage": {
+      "operations": [
+        "job:created->queued:applied",
+        "attempt:create:ssh:created:applied",
+        "artifact:input:-:applied",
+        "attempt:created->queued:applied",
+        "attempt:queued->staged:applied",
+        "job:queued->staged:applied"
+      ],
+      "events": [
+        "job:created->queued",
+        "attempt:create:ssh:created",
+        "attempt:created->queued",
+        "attempt:queued->staged",
+        "job:queued->staged"
+      ],
+      "final": { "job": "staged", "attempt": "staged" }
+    },
+    "sshStartAndCompletion": {
+      "operations": [
+        "event:process.started:applied",
+        "attempt:staged->running:applied",
+        "job:staged->running:applied",
+        "attempt:running->completed:applied",
+        "job:running->completed:applied",
+        "event:process.completed:applied"
+      ],
+      "events": [
+        "event:process.started",
+        "attempt:staged->running",
+        "job:staged->running",
+        "attempt:running->completed",
+        "job:running->completed",
+        "event:process.completed"
+      ],
+      "final": { "job": "completed", "attempt": "completed" },
+      "knownRisk": "process.started is appended before PID validation and before running state is durable"
+    },
+    "sshCancellation": {
+      "operations": ["attempt:running->cancelled:applied", "job:running->cancelled:applied"],
+      "events": ["attempt:running->cancelled", "job:running->cancelled"],
+      "final": { "job": "cancelled", "attempt": "cancelled" }
+    },
+    "workerCompletedSyncContradiction": {
+      "operations": [
+        "job:created->completed:rejected",
+        "attempt:created->completed:rejected",
+        "event:process.completed:applied"
+      ],
+      "events": ["event:process.completed"],
+      "final": { "job": "created", "attempt": "created" },
+      "serviceResult": { "ok": true, "syncedJobs": 1, "errors": [] },
+      "knownDefect": "transition failures are swallowed while a terminal event is appended and the sync reports success"
+    },
+    "slurmStageIllegalTransition": {
+      "operations": [
+        "job:created->queued:applied",
+        "attempt:create:slurm:created:applied",
+        "artifact:input:-:applied",
+        "event:slurm.artifact.registered:applied",
+        "attempt:created->staged:rejected"
+      ],
+      "events": [
+        "job:created->queued",
+        "attempt:create:slurm:created",
+        "event:slurm.artifact.registered"
+      ],
+      "final": { "job": "queued", "attempt": "created" },
+      "partialArtifacts": 1,
+      "knownDefect": "stage leaves partial durable state and never reaches sbatch"
+    },
+    "pbsStageIllegalTransition": {
+      "operations": [
+        "job:created->queued:applied",
+        "attempt:create:pbs:created:applied",
+        "artifact:input:-:applied",
+        "attempt:created->staged:rejected"
+      ],
+      "events": ["job:created->queued", "attempt:create:pbs:created"],
+      "final": { "job": "queued", "attempt": "created" },
+      "partialArtifacts": 1,
+      "knownDefect": "stage leaves partial durable state and never reaches qsub"
+    },
+    "legacyCancelTool": {
+      "operations": [
+        "job:queued->cancelled:applied",
+        "event:slurm.job.cancelled:applied",
+        "legacy-event:job:status:changed:applied"
+      ],
+      "final": { "job": "cancelled", "attempt": "queued" },
+      "knownRisk": "the generic tool does not transition the attempt and emits a Slurm event for a non-Slurm job"
+    },
+    "legacyParseTool": {
+      "operations": [
+        "event:parse.started:applied",
+        "result:completed:applied",
+        "event:result.saved:applied",
+        "event:parse.completed:applied"
+      ],
+      "events": ["event:parse.started", "event:result.saved", "event:parse.completed"],
+      "final": { "job": "completed", "attempt": "completed" },
+      "results": 1,
+      "knownRisk": "the tool persists a result and parse events without entering the canonical parsed state"
+    }
+  }
+}

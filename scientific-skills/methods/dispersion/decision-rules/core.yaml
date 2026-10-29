@@ -1,0 +1,25 @@
+{
+  "schema": "eigengrid.decision-rule/v1",
+  "id": "methods.dispersion.core",
+  "version": "1.0.0",
+  "question": "Is dispersion treatment explicit and compatible with the selected base method?",
+  "when":
+    {
+      "all":
+        [
+          { "fact": "inputs.complete", "operator": "equals", "value": true },
+          { "fact": "applicability.confirmed", "operator": "equals", "value": true },
+        ],
+    },
+  "recommendation":
+    {
+      "action": "record the treatment as part of the approved method specification",
+      "strength": "conditional",
+    },
+  "rationale": "Adding or changing dispersion changes the scientific model and requires exact-revision approval.",
+  "risk_class": 2,
+  "approval": "required_if_material_field_changes",
+  "immutable_fields": ["objective", "charge", "multiplicity", "method", "basis", "physical_model"],
+  "evidence": { "level": "draft", "references": [] },
+  "limitations": "This draft does not certify a particular correction for a domain. Escalate unsupported combinations, metallic systems, and benchmark-level accuracy claims.",
+}

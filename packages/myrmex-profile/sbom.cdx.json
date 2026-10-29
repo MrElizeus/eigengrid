@@ -1,0 +1,63 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "version": 1,
+  "metadata": {
+    "component": {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40eigengrid/myrmex-profile@0.1.0",
+      "name": "@eigengrid/myrmex-profile",
+      "version": "0.1.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:sbom-status",
+          "value": "source-placeholder; release pipeline must regenerate and attest"
+        }
+      ]
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40eigengrid/protocol@0.1.0",
+      "name": "@eigengrid/protocol",
+      "version": "0.1.0",
+      "scope": "required",
+      "properties": [
+        {
+          "name": "eigengrid:dependency-source",
+          "value": "workspace"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/zod@3.25.76",
+      "name": "zod",
+      "version": "3.25.76",
+      "scope": "required"
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:npm/%40eigengrid/myrmex-profile@0.1.0",
+      "dependsOn": ["pkg:npm/%40eigengrid/protocol@0.1.0", "pkg:npm/zod@3.25.76"]
+    },
+    {
+      "ref": "pkg:npm/%40eigengrid/protocol@0.1.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/zod@3.25.76",
+      "dependsOn": []
+    }
+  ]
+}

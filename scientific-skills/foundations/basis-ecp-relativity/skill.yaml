@@ -1,0 +1,44 @@
+{
+  "schema": "eigengrid.scientific-skill/v1",
+  "id": "foundations.basis-ecp-relativity",
+  "version": "1.0.0",
+  "title": "Basis sets, ECPs, and relativity",
+  "status": "active",
+  "summary": "Frame basis-set, effective-core-potential, diffuse-function, polarization, and relativistic choices as explicit material scientific decisions.",
+  "knowledge_level": "draft",
+  "capability_levels":
+    {
+      "reference": true,
+      "advisory": true,
+      "plannable": true,
+      "renderable": {},
+      "executable": {},
+      "validated": {},
+    },
+  "domains": ["molecular-electronic-structure"],
+  "domain_maturity": { "molecular-electronic-structure": "plannable" },
+  "engine_compatibility": { "orca": ">=5.0.0 <7.0.0" },
+  "requires": [],
+  "recommends": [],
+  "conflicts": [],
+  "required_inputs":
+    ["elements present", "target property", "method family", "required confidence"],
+  "missing_input_behavior": "Block plannable method selection until the basis family and treatment of elements outside its coverage are explicit.",
+  "assets":
+    {
+      "concepts": "concepts/",
+      "rules": "decision-rules/",
+      "protocols": "protocols/",
+      "references": "references/",
+      "evals": "evals/",
+    },
+  "helpers": [],
+  "review":
+    {
+      "status": "unreviewed",
+      "owner_role": "computational-chemist",
+      "evidence_ids": [],
+      "notes": "Unreviewed draft. No expert review, benchmark support, engine validation, or production certification is claimed.",
+    },
+  "provenance": { "created_by": "model" },
+}

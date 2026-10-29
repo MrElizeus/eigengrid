@@ -1,0 +1,16 @@
+{
+  "name": "@eigengrid/scientific-skills",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*"
+  },
+  "dependencies": {
+    "@eigengrid/scientific-schema": "workspace:*",
+    "zod": "^3.24.0"
+  }
+}

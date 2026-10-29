@@ -1,0 +1,17 @@
+{
+  "name": "@eigengrid/scheduler",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*",
+    "./wol": "./src/wol.ts"
+  },
+  "dependencies": {
+    "@eigengrid/core": "workspace:*",
+    "@eigengrid/events": "workspace:*"
+  }
+}

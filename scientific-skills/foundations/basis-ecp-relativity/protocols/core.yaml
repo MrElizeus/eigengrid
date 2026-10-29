@@ -1,0 +1,35 @@
+{
+  "schema": "eigengrid.protocol-fragment/v1",
+  "id": "foundations.basis-ecp-relativity.declare-basis-ecp-relativity",
+  "version": "1.0.0",
+  "capability": "foundations.basis-ecp-relativity",
+  "required_inputs":
+    ["elements present", "target property", "method family", "required confidence"],
+  "missing_input_behavior": "block",
+  "steps":
+    [
+      {
+        "id": "verify-inputs",
+        "kind": "validation",
+        "reason": "Fail closed before planning from incomplete or mismatched evidence.",
+      },
+      {
+        "id": "declare-basis-ecp-relativity",
+        "kind": "planning",
+        "reason": "Basis coverage and physical treatment materially affect the scientific model and cannot be repaired silently.",
+      },
+      {
+        "id": "record-evidence",
+        "kind": "provenance",
+        "reason": "Persist exact skill, fragment, input, output, and decision references.",
+      },
+    ],
+  "acceptance":
+    [
+      "every element has an explicit basis treatment",
+      "ECP and relativistic choices are recorded",
+      "unresolved diffuse-function need is surfaced",
+    ],
+  "retry_policy": { "maximum_attempts": 1, "material_change": "new_decision_and_exact_approval" },
+  "effect_authority": "none",
+}

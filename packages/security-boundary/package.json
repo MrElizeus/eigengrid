@@ -1,0 +1,27 @@
+{
+  "name": "@eigengrid/security-boundary",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./authorization": "./src/authorization.ts",
+    "./digest": "./src/digest.ts",
+    "./profiles": "./src/profiles.ts",
+    "./schemas": "./src/schemas.ts",
+    "./static-gate": "./src/static-gate.ts",
+    "./threat-gate": "./src/threat-gate.ts",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "gate:repository": "bun run scripts/check-static-security.ts --report-only",
+    "test": "bun test src scripts"
+  },
+  "dependencies": {
+    "zod": "^3.24.0"
+  }
+}

@@ -1,0 +1,349 @@
+{
+  "$ref": "#/definitions/eigengrid.context-pack.v1",
+  "definitions": {
+    "eigengrid.context-pack.v1": {
+      "type": "object",
+      "properties": {
+        "schema": { "type": "string", "const": "eigengrid.context-pack.v1" },
+        "requestId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+-]*$"
+        },
+        "correlationId": { "$ref": "#/definitions/eigengrid.context-pack.v1/properties/requestId" },
+        "causationId": { "$ref": "#/definitions/eigengrid.context-pack.v1/properties/requestId" },
+        "objective": { "type": "string", "minLength": 1, "maxLength": 16384 },
+        "species": {
+          "type": "object",
+          "properties": {
+            "schema": { "type": "string", "const": "eigengrid.species-identity.v1" },
+            "coordinate": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 16,
+                  "maxLength": 180,
+                  "pattern": "^eigengrid\\.[a-z0-9]+(?:-[a-z0-9]+)*\\/v[1-9]\\d*$"
+                },
+                "version": {
+                  "type": "string",
+                  "maxLength": 128,
+                  "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-(?:0|[1-9]\\d*|\\d*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"
+                }
+              },
+              "required": ["id", "version"],
+              "additionalProperties": false
+            },
+            "contractDigest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+          },
+          "required": ["schema", "coordinate", "contractDigest"],
+          "additionalProperties": false
+        },
+        "caste": {
+          "type": "string",
+          "enum": [
+            "governor",
+            "architect",
+            "scout",
+            "forager",
+            "builder",
+            "operator",
+            "critic",
+            "verifier",
+            "sentinel",
+            "steward",
+            "medic",
+            "integrator"
+          ]
+        },
+        "baseIdentity": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": ["repository", "mission", "operation", "artifact"]
+            },
+            "id": { "$ref": "#/definitions/eigengrid.context-pack.v1/properties/requestId" },
+            "revision": {
+              "anyOf": [
+                { "type": "integer", "minimum": 0 },
+                { "type": "string", "minLength": 1, "maxLength": 256 }
+              ]
+            },
+            "digest": {
+              "$ref": "#/definitions/eigengrid.context-pack.v1/properties/species/properties/contractDigest"
+            }
+          },
+          "required": ["kind", "id", "revision", "digest"],
+          "additionalProperties": false
+        },
+        "authoritativeFacts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "$ref": "#/definitions/eigengrid.context-pack.v1/properties/requestId" },
+              "kind": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 160,
+                "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+              },
+              "digest": {
+                "$ref": "#/definitions/eigengrid.context-pack.v1/properties/species/properties/contractDigest"
+              },
+              "trustClass": { "type": "string", "const": "authoritative_state" },
+              "uri": { "type": "string", "minLength": 1, "maxLength": 2048 },
+              "claim": { "type": "string", "minLength": 1, "maxLength": 16384 },
+              "accessedAt": { "type": "string", "format": "date-time" }
+            },
+            "required": ["id", "kind", "digest", "trustClass"],
+            "additionalProperties": false
+          }
+        },
+        "selectedSkillFragments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "$ref": "#/definitions/eigengrid.context-pack.v1/properties/requestId" },
+              "kind": {
+                "$ref": "#/definitions/eigengrid.context-pack.v1/properties/authoritativeFacts/items/properties/kind"
+              },
+              "digest": {
+                "$ref": "#/definitions/eigengrid.context-pack.v1/properties/species/properties/contractDigest"
+              },
+              "trustClass": { "type": "string", "const": "validated_skill" },
+              "uri": {
+                "$ref": "#/definitions/eigengrid.context-pack.v1/properties/authoritativeFacts/items/properties/uri"
+              },
+              "claim": {
+                "$ref": "#/definitions/eigengrid.context-pack.v1/properties/authoritativeFacts/items/properties/claim"
+              },
+              "accessedAt": {
+                "$ref": "#/definitions/eigengrid.context-pack.v1/properties/authoritativeFacts/items/properties/accessedAt"
+              }
+            },
+            "required": ["id", "kind", "digest", "trustClass"],
+            "additionalProperties": false
+          }
+        },
+        "externalEvidence": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "$ref": "#/definitions/eigengrid.context-pack.v1/properties/requestId" },
+              "kind": {
+                "$ref": "#/definitions/eigengrid.context-pack.v1/properties/authoritativeFacts/items/properties/kind"
+              },
+              "digest": {
+                "$ref": "#/definitions/eigengrid.context-pack.v1/properties/species/properties/contractDigest"
+              },
+              "trustClass": { "type": "string", "const": "external_evidence" },
+              "uri": {
+                "$ref": "#/definitions/eigengrid.context-pack.v1/properties/authoritativeFacts/items/properties/uri"
+              },
+              "claim": {
+                "$ref": "#/definitions/eigengrid.context-pack.v1/properties/authoritativeFacts/items/properties/claim"
+              },
+              "accessedAt": {
+                "$ref": "#/definitions/eigengrid.context-pack.v1/properties/authoritativeFacts/items/properties/accessedAt"
+              }
+            },
+            "required": ["id", "kind", "digest", "trustClass"],
+            "additionalProperties": false
+          }
+        },
+        "modelHypotheses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "$ref": "#/definitions/eigengrid.context-pack.v1/properties/requestId" },
+              "kind": {
+                "$ref": "#/definitions/eigengrid.context-pack.v1/properties/authoritativeFacts/items/properties/kind"
+              },
+              "digest": {
+                "$ref": "#/definitions/eigengrid.context-pack.v1/properties/species/properties/contractDigest"
+              },
+              "trustClass": { "type": "string", "const": "model_hypothesis" },
+              "uri": {
+                "$ref": "#/definitions/eigengrid.context-pack.v1/properties/authoritativeFacts/items/properties/uri"
+              },
+              "claim": {
+                "$ref": "#/definitions/eigengrid.context-pack.v1/properties/authoritativeFacts/items/properties/claim"
+              },
+              "accessedAt": {
+                "$ref": "#/definitions/eigengrid.context-pack.v1/properties/authoritativeFacts/items/properties/accessedAt"
+              }
+            },
+            "required": ["id", "kind", "digest", "trustClass"],
+            "additionalProperties": false
+          }
+        },
+        "untrustedRetrievedText": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "$ref": "#/definitions/eigengrid.context-pack.v1/properties/requestId" },
+              "kind": {
+                "$ref": "#/definitions/eigengrid.context-pack.v1/properties/authoritativeFacts/items/properties/kind"
+              },
+              "digest": {
+                "$ref": "#/definitions/eigengrid.context-pack.v1/properties/species/properties/contractDigest"
+              },
+              "trustClass": { "type": "string", "const": "untrusted_retrieved_text" },
+              "uri": {
+                "$ref": "#/definitions/eigengrid.context-pack.v1/properties/authoritativeFacts/items/properties/uri"
+              },
+              "claim": {
+                "$ref": "#/definitions/eigengrid.context-pack.v1/properties/authoritativeFacts/items/properties/claim"
+              },
+              "accessedAt": {
+                "$ref": "#/definitions/eigengrid.context-pack.v1/properties/authoritativeFacts/items/properties/accessedAt"
+              }
+            },
+            "required": ["id", "kind", "digest", "trustClass"],
+            "additionalProperties": false
+          }
+        },
+        "allowedEvidenceIds": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/eigengrid.context-pack.v1/properties/requestId" }
+        },
+        "knownContradictions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "$ref": "#/definitions/eigengrid.context-pack.v1/properties/requestId" },
+              "statement": { "type": "string", "minLength": 1, "maxLength": 8192 },
+              "evidenceIds": {
+                "type": "array",
+                "items": { "$ref": "#/definitions/eigengrid.context-pack.v1/properties/requestId" },
+                "minItems": 1
+              }
+            },
+            "required": ["id", "statement", "evidenceIds"],
+            "additionalProperties": false
+          }
+        },
+        "constraints": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 4096 }
+        },
+        "budgets": {
+          "type": "object",
+          "properties": {
+            "wallTimeMs": { "type": "integer", "exclusiveMinimum": 0 },
+            "inputTokens": { "type": "integer", "minimum": 0 },
+            "outputTokens": { "type": "integer", "minimum": 0 },
+            "costMicrounits": { "type": "integer", "minimum": 0 },
+            "effects": { "type": "integer", "minimum": 0 },
+            "corrections": { "type": "integer", "minimum": 0 },
+            "modelCalls": { "type": "integer", "minimum": 0 },
+            "computeSeconds": { "type": "integer", "minimum": 0 },
+            "storageBytes": { "type": "integer", "minimum": 0 },
+            "networkBytes": { "type": "integer", "minimum": 0 },
+            "deadline": {
+              "$ref": "#/definitions/eigengrid.context-pack.v1/properties/authoritativeFacts/items/properties/accessedAt"
+            }
+          },
+          "required": [
+            "wallTimeMs",
+            "inputTokens",
+            "outputTokens",
+            "costMicrounits",
+            "effects",
+            "corrections",
+            "modelCalls",
+            "computeSeconds",
+            "storageBytes",
+            "networkBytes"
+          ],
+          "additionalProperties": false
+        },
+        "allowedCapabilities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/eigengrid.context-pack.v1/properties/authoritativeFacts/items/properties/kind"
+          }
+        },
+        "prohibitedCapabilities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/eigengrid.context-pack.v1/properties/authoritativeFacts/items/properties/kind"
+          }
+        },
+        "expectedOutputSchema": {
+          "type": "object",
+          "properties": {
+            "id": { "$ref": "#/definitions/eigengrid.context-pack.v1/properties/requestId" },
+            "version": {
+              "$ref": "#/definitions/eigengrid.context-pack.v1/properties/species/properties/coordinate/properties/version"
+            },
+            "digest": {
+              "$ref": "#/definitions/eigengrid.context-pack.v1/properties/species/properties/contractDigest"
+            }
+          },
+          "required": ["id", "version", "digest"],
+          "additionalProperties": false
+        },
+        "acceptanceCriteria": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "$ref": "#/definitions/eigengrid.context-pack.v1/properties/requestId" },
+              "statement": { "type": "string", "minLength": 1, "maxLength": 8192 },
+              "verification": { "type": "string", "minLength": 1, "maxLength": 8192 },
+              "scientificallyMaterial": { "type": "boolean" }
+            },
+            "required": ["id", "statement", "verification", "scientificallyMaterial"],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        },
+        "sensitivePathExclusions": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 2048 }
+        },
+        "contextDigest": {
+          "$ref": "#/definitions/eigengrid.context-pack.v1/properties/species/properties/contractDigest"
+        }
+      },
+      "required": [
+        "schema",
+        "requestId",
+        "correlationId",
+        "objective",
+        "species",
+        "caste",
+        "baseIdentity",
+        "authoritativeFacts",
+        "selectedSkillFragments",
+        "externalEvidence",
+        "modelHypotheses",
+        "untrustedRetrievedText",
+        "allowedEvidenceIds",
+        "knownContradictions",
+        "constraints",
+        "budgets",
+        "allowedCapabilities",
+        "prohibitedCapabilities",
+        "expectedOutputSchema",
+        "acceptanceCriteria",
+        "sensitivePathExclusions",
+        "contextDigest"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://eigengrid.dev/schemas/colony/eigengrid.context-pack.v1.schema.json",
+  "title": "eigengrid.context-pack.v1 runtime contract"
+}

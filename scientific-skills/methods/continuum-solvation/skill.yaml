@@ -1,0 +1,57 @@
+{
+  "schema": "eigengrid.scientific-skill/v1",
+  "id": "methods.continuum-solvation",
+  "version": "1.0.0",
+  "title": "Continuum solvation models",
+  "status": "active",
+  "summary": "Represent solvent identity, continuum model, cavity, state conditions, and gas-versus-solution interpretation explicitly.",
+  "knowledge_level": "draft",
+  "capability_levels":
+    {
+      "reference": true,
+      "advisory": true,
+      "plannable": true,
+      "renderable": {},
+      "executable": {},
+      "validated": {},
+    },
+  "domains": ["molecular-electronic-structure"],
+  "domain_maturity": { "molecular-electronic-structure": "plannable" },
+  "engine_compatibility": { "orca": ">=5.0.0 <7.0.0" },
+  "requires":
+    [
+      {
+        "id": "representations.molecular-structures",
+        "range": ">=1.0.0 <2.0.0",
+        "reason": "Continuum solvation models requires the declared representations.molecular-structures capability.",
+      },
+      {
+        "id": "foundations.charge-spin-symmetry",
+        "range": ">=1.0.0 <2.0.0",
+        "reason": "Continuum solvation models requires the declared foundations.charge-spin-symmetry capability.",
+      },
+    ],
+  "recommends": [],
+  "conflicts": [],
+  "required_inputs":
+    ["solvent identity", "continuum model", "target property", "standard-state intent"],
+  "missing_input_behavior": "Block solution-phase planning when solvent or physical model is missing; never copy a solvent from an unrelated prior mission.",
+  "assets":
+    {
+      "concepts": "concepts/",
+      "rules": "decision-rules/",
+      "protocols": "protocols/",
+      "references": "references/",
+      "evals": "evals/",
+      "mappings": "engine-mappings/",
+    },
+  "helpers": [],
+  "review":
+    {
+      "status": "unreviewed",
+      "owner_role": "computational-chemist",
+      "evidence_ids": [],
+      "notes": "Unreviewed draft. No expert review, benchmark support, engine validation, or production certification is claimed.",
+    },
+  "provenance": { "created_by": "model" },
+}

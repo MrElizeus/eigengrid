@@ -1,0 +1,2838 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "version": 1,
+  "metadata": {
+    "component": {
+      "type": "application",
+      "name": "eigengrid",
+      "version": "1.0.0-rc.1"
+    },
+    "properties": [
+      {
+        "name": "eigengrid:bun-lock-sha256",
+        "value": "f674f7ee780a552853f5e7899db8a5dabc339c77382bbda931e9f2022a001030"
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "framework",
+      "name": "bun",
+      "version": "1.3.14",
+      "purl": "pkg:generic/bun@1.3.14",
+      "licenses": [
+        {
+          "license": {
+            "name": "Bun MIT and upstream linked-library terms; see included notice"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "license",
+          "url": "https://github.com/oven-sh/bun/blob/bun-v1.3.14/LICENSE.md"
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "bun@1.3.14/LICENSE.md"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@ai-sdk/anthropic",
+      "version": "3.0.85",
+      "purl": "pkg:npm/%40ai-sdk/anthropic@3.0.85",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "@ai-sdk_anthropic@3.0.85/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@ai-sdk/gateway",
+      "version": "3.0.133",
+      "purl": "pkg:npm/%40ai-sdk/gateway@3.0.133",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "@ai-sdk_gateway@3.0.133/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@ai-sdk/openai-compatible",
+      "version": "2.0.51",
+      "purl": "pkg:npm/%40ai-sdk/openai-compatible@2.0.51",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "@ai-sdk_openai-compatible@2.0.51/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@ai-sdk/openai",
+      "version": "3.0.73",
+      "purl": "pkg:npm/%40ai-sdk/openai@3.0.73",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "@ai-sdk_openai@3.0.73/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@ai-sdk/provider-utils",
+      "version": "4.0.30",
+      "purl": "pkg:npm/%40ai-sdk/provider-utils@4.0.30",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@ai-sdk/provider",
+      "version": "3.0.10",
+      "purl": "pkg:npm/%40ai-sdk/provider@3.0.10",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "@ai-sdk_provider@3.0.10/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@alcalzone/ansi-tokenize",
+      "version": "0.1.3",
+      "purl": "pkg:npm/%40alcalzone/ansi-tokenize@0.1.3",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@drizzle-team/brocli",
+      "version": "0.10.2",
+      "purl": "pkg:npm/%40drizzle-team/brocli@0.10.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@esbuild-kit/core-utils",
+      "version": "3.3.2",
+      "purl": "pkg:npm/%40esbuild-kit/core-utils@3.3.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "@esbuild-kit_core-utils@3.3.2/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@esbuild-kit/esm-loader",
+      "version": "2.6.5",
+      "purl": "pkg:npm/%40esbuild-kit/esm-loader@2.6.5",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "@esbuild-kit_esm-loader@2.6.5/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@esbuild/linux-x64",
+      "version": "0.28.2",
+      "purl": "pkg:npm/%40esbuild/linux-x64@0.28.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@isaacs/fs-minipass",
+      "version": "4.0.1",
+      "purl": "pkg:npm/%40isaacs/fs-minipass@4.0.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "ISC"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "@isaacs_fs-minipass@4.0.1/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@opentelemetry/api",
+      "version": "1.9.1",
+      "purl": "pkg:npm/%40opentelemetry/api@1.9.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "@opentelemetry_api@1.9.1/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@oxlint/linux-x64-gnu",
+      "version": "0.16.12",
+      "purl": "pkg:npm/%40oxlint/linux-x64-gnu@0.16.12",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "@oxlint_linux-x64-gnu@0.16.12/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@oxlint/linux-x64-musl",
+      "version": "0.16.12",
+      "purl": "pkg:npm/%40oxlint/linux-x64-musl@0.16.12",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "@oxlint_linux-x64-musl@0.16.12/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@standard-schema/spec",
+      "version": "1.1.0",
+      "purl": "pkg:npm/%40standard-schema/spec@1.1.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "@standard-schema_spec@1.1.0/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@types/bun",
+      "version": "1.3.14",
+      "purl": "pkg:npm/%40types/bun@1.3.14",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "@types_bun@1.3.14/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@types/node",
+      "version": "25.9.1",
+      "purl": "pkg:npm/%40types/node@25.9.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "@types_node@25.9.1/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@types/pg",
+      "version": "8.20.0",
+      "purl": "pkg:npm/%40types/pg@8.20.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "@types_pg@8.20.0/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@types/prop-types",
+      "version": "15.7.15",
+      "purl": "pkg:npm/%40types/prop-types@15.7.15",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "@types_prop-types@15.7.15/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@types/react",
+      "version": "18.3.31",
+      "purl": "pkg:npm/%40types/react@18.3.31",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "@types_react@18.3.31/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@types/tar",
+      "version": "6.1.13",
+      "purl": "pkg:npm/%40types/tar@6.1.13",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "@types_tar@6.1.13/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@types/yargs-parser",
+      "version": "21.0.3",
+      "purl": "pkg:npm/%40types/yargs-parser@21.0.3",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "@types_yargs-parser@21.0.3/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@types/yargs",
+      "version": "17.0.35",
+      "purl": "pkg:npm/%40types/yargs@17.0.35",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "@types_yargs@17.0.35/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@vercel/oidc",
+      "version": "3.2.0",
+      "purl": "pkg:npm/%40vercel/oidc@3.2.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "@vercel_oidc@3.2.0/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ai",
+      "version": "6.0.208",
+      "purl": "pkg:npm/ai@6.0.208",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "ai@6.0.208/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ajv",
+      "version": "8.20.0",
+      "purl": "pkg:npm/ajv@8.20.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "ajv@8.20.0/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ansi-escapes",
+      "version": "7.3.0",
+      "purl": "pkg:npm/ansi-escapes@7.3.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "ansi-escapes@7.3.0/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ansi-regex",
+      "version": "5.0.1",
+      "purl": "pkg:npm/ansi-regex@5.0.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "ansi-regex@5.0.1/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ansi-regex",
+      "version": "6.2.2",
+      "purl": "pkg:npm/ansi-regex@6.2.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "ansi-regex@6.2.2/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ansi-styles",
+      "version": "4.3.0",
+      "purl": "pkg:npm/ansi-styles@4.3.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "ansi-styles@4.3.0/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ansi-styles",
+      "version": "6.2.3",
+      "purl": "pkg:npm/ansi-styles@6.2.3",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "ansi-styles@6.2.3/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "auto-bind",
+      "version": "5.0.1",
+      "purl": "pkg:npm/auto-bind@5.0.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "auto-bind@5.0.1/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "buffer-from",
+      "version": "1.1.2",
+      "purl": "pkg:npm/buffer-from@1.1.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "buffer-from@1.1.2/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "bun-types",
+      "version": "1.3.14",
+      "purl": "pkg:npm/bun-types@1.3.14",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "chalk",
+      "version": "5.6.2",
+      "purl": "pkg:npm/chalk@5.6.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "chalk@5.6.2/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "chownr",
+      "version": "3.0.0",
+      "purl": "pkg:npm/chownr@3.0.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "BlueOak-1.0.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "chownr@3.0.0/LICENSE.md"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "cli-boxes",
+      "version": "3.0.0",
+      "purl": "pkg:npm/cli-boxes@3.0.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "cli-boxes@3.0.0/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "cli-cursor",
+      "version": "4.0.0",
+      "purl": "pkg:npm/cli-cursor@4.0.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "cli-cursor@4.0.0/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "cli-truncate",
+      "version": "4.0.0",
+      "purl": "pkg:npm/cli-truncate@4.0.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "cli-truncate@4.0.0/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "cliui",
+      "version": "8.0.1",
+      "purl": "pkg:npm/cliui@8.0.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "ISC"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "cliui@8.0.1/LICENSE.txt"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "code-excerpt",
+      "version": "4.0.0",
+      "purl": "pkg:npm/code-excerpt@4.0.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "code-excerpt@4.0.0/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "color-convert",
+      "version": "2.0.1",
+      "purl": "pkg:npm/color-convert@2.0.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "color-convert@2.0.1/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "color-name",
+      "version": "1.1.4",
+      "purl": "pkg:npm/color-name@1.1.4",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "color-name@1.1.4/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "convert-to-spaces",
+      "version": "2.0.1",
+      "purl": "pkg:npm/convert-to-spaces@2.0.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "convert-to-spaces@2.0.1/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "csstype",
+      "version": "3.2.3",
+      "purl": "pkg:npm/csstype@3.2.3",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "csstype@3.2.3/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "drizzle-kit",
+      "version": "0.31.10",
+      "purl": "pkg:npm/drizzle-kit@0.31.10",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "drizzle-orm",
+      "version": "0.45.2",
+      "purl": "pkg:npm/drizzle-orm@0.45.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "emoji-regex",
+      "version": "10.6.0",
+      "purl": "pkg:npm/emoji-regex@10.6.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "emoji-regex",
+      "version": "8.0.0",
+      "purl": "pkg:npm/emoji-regex@8.0.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "environment",
+      "version": "1.1.0",
+      "purl": "pkg:npm/environment@1.1.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "environment@1.1.0/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "es-toolkit",
+      "version": "1.47.0",
+      "purl": "pkg:npm/es-toolkit@1.47.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "es-toolkit@1.47.0/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "esbuild",
+      "version": "0.28.2",
+      "purl": "pkg:npm/esbuild@0.28.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "esbuild@0.28.2/LICENSE.md"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "escalade",
+      "version": "3.2.0",
+      "purl": "pkg:npm/escalade@3.2.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "escalade@3.2.0/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "escape-string-regexp",
+      "version": "2.0.0",
+      "purl": "pkg:npm/escape-string-regexp@2.0.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "escape-string-regexp@2.0.0/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "eventsource-parser",
+      "version": "3.1.0",
+      "purl": "pkg:npm/eventsource-parser@3.1.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "eventsource-parser@3.1.0/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "fast-deep-equal",
+      "version": "3.1.3",
+      "purl": "pkg:npm/fast-deep-equal@3.1.3",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "fast-deep-equal@3.1.3/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "fast-uri",
+      "version": "3.1.6",
+      "purl": "pkg:npm/fast-uri@3.1.6",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-3-Clause"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "fast-uri@3.1.6/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "get-caller-file",
+      "version": "2.0.5",
+      "purl": "pkg:npm/get-caller-file@2.0.5",
+      "licenses": [
+        {
+          "license": {
+            "name": "ISC"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "get-caller-file@2.0.5/LICENSE.md"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "get-east-asian-width",
+      "version": "1.6.0",
+      "purl": "pkg:npm/get-east-asian-width@1.6.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "get-east-asian-width@1.6.0/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "get-tsconfig",
+      "version": "4.14.0",
+      "purl": "pkg:npm/get-tsconfig@4.14.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "get-tsconfig@4.14.0/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "indent-string",
+      "version": "5.0.0",
+      "purl": "pkg:npm/indent-string@5.0.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "indent-string@5.0.0/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ink-text-input",
+      "version": "6.0.0",
+      "purl": "pkg:npm/ink-text-input@6.0.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "ink-text-input@6.0.0/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ink",
+      "version": "5.2.1",
+      "purl": "pkg:npm/ink@5.2.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "ink@5.2.1/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "is-fullwidth-code-point",
+      "version": "3.0.0",
+      "purl": "pkg:npm/is-fullwidth-code-point@3.0.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "is-fullwidth-code-point@3.0.0/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "is-fullwidth-code-point",
+      "version": "4.0.0",
+      "purl": "pkg:npm/is-fullwidth-code-point@4.0.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "is-fullwidth-code-point@4.0.0/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "is-fullwidth-code-point",
+      "version": "5.1.0",
+      "purl": "pkg:npm/is-fullwidth-code-point@5.1.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "is-fullwidth-code-point@5.1.0/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "is-in-ci",
+      "version": "1.0.0",
+      "purl": "pkg:npm/is-in-ci@1.0.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "is-in-ci@1.0.0/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "jose",
+      "version": "6.2.13",
+      "purl": "pkg:npm/jose@6.2.13",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "jose@6.2.13/LICENSE.md"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "js-tokens",
+      "version": "4.0.0",
+      "purl": "pkg:npm/js-tokens@4.0.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "js-tokens@4.0.0/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "json-schema-traverse",
+      "version": "1.0.0",
+      "purl": "pkg:npm/json-schema-traverse@1.0.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "json-schema-traverse@1.0.0/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "json-schema",
+      "version": "0.4.0",
+      "purl": "pkg:npm/json-schema@0.4.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "(AFL-2.1 OR BSD-3-Clause)"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "json-schema@0.4.0/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "loose-envify",
+      "version": "1.4.0",
+      "purl": "pkg:npm/loose-envify@1.4.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "loose-envify@1.4.0/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "mimic-fn",
+      "version": "2.1.0",
+      "purl": "pkg:npm/mimic-fn@2.1.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "mimic-fn@2.1.0/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "minipass",
+      "version": "4.2.8",
+      "purl": "pkg:npm/minipass@4.2.8",
+      "licenses": [
+        {
+          "license": {
+            "name": "ISC"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "minipass@4.2.8/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "minipass",
+      "version": "7.1.3",
+      "purl": "pkg:npm/minipass@7.1.3",
+      "licenses": [
+        {
+          "license": {
+            "name": "BlueOak-1.0.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "minipass@7.1.3/LICENSE.md"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "minizlib",
+      "version": "3.1.0",
+      "purl": "pkg:npm/minizlib@3.1.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "minizlib@3.1.0/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "onetime",
+      "version": "5.1.2",
+      "purl": "pkg:npm/onetime@5.1.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "onetime@5.1.2/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "oxlint",
+      "version": "0.16.12",
+      "purl": "pkg:npm/oxlint@0.16.12",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "oxlint@0.16.12/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "patch-console",
+      "version": "2.0.0",
+      "purl": "pkg:npm/patch-console@2.0.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "patch-console@2.0.0/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pg-cloudflare",
+      "version": "1.4.0",
+      "purl": "pkg:npm/pg-cloudflare@1.4.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "pg-cloudflare@1.4.0/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pg-connection-string",
+      "version": "2.14.0",
+      "purl": "pkg:npm/pg-connection-string@2.14.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "pg-connection-string@2.14.0/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pg-int8",
+      "version": "1.0.1",
+      "purl": "pkg:npm/pg-int8@1.0.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "ISC"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "pg-int8@1.0.1/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pg-pool",
+      "version": "3.14.0",
+      "purl": "pkg:npm/pg-pool@3.14.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "pg-pool@3.14.0/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pg-protocol",
+      "version": "1.15.0",
+      "purl": "pkg:npm/pg-protocol@1.15.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "pg-protocol@1.15.0/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pg-types",
+      "version": "2.2.0",
+      "purl": "pkg:npm/pg-types@2.2.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pg",
+      "version": "8.22.0",
+      "purl": "pkg:npm/pg@8.22.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "pg@8.22.0/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pgpass",
+      "version": "1.0.5",
+      "purl": "pkg:npm/pgpass@1.0.5",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "postgres-array",
+      "version": "2.0.0",
+      "purl": "pkg:npm/postgres-array@2.0.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "postgres-array@2.0.0/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "postgres-bytea",
+      "version": "1.0.1",
+      "purl": "pkg:npm/postgres-bytea@1.0.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "postgres-bytea@1.0.1/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "postgres-date",
+      "version": "1.0.7",
+      "purl": "pkg:npm/postgres-date@1.0.7",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "postgres-date@1.0.7/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "postgres-interval",
+      "version": "1.2.0",
+      "purl": "pkg:npm/postgres-interval@1.2.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "postgres-interval@1.2.0/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "prettier",
+      "version": "3.8.3",
+      "purl": "pkg:npm/prettier@3.8.3",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "prettier@3.8.3/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "react-devtools-core",
+      "version": "4.28.5",
+      "purl": "pkg:npm/react-devtools-core@4.28.5",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "react-reconciler",
+      "version": "0.29.2",
+      "purl": "pkg:npm/react-reconciler@0.29.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "react-reconciler@0.29.2/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "react",
+      "version": "18.3.1",
+      "purl": "pkg:npm/react@18.3.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "react@18.3.1/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "require-directory",
+      "version": "2.1.1",
+      "purl": "pkg:npm/require-directory@2.1.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "require-directory@2.1.1/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "require-from-string",
+      "version": "2.0.2",
+      "purl": "pkg:npm/require-from-string@2.0.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "require-from-string@2.0.2/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "resolve-pkg-maps",
+      "version": "1.0.0",
+      "purl": "pkg:npm/resolve-pkg-maps@1.0.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "resolve-pkg-maps@1.0.0/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "restore-cursor",
+      "version": "4.0.0",
+      "purl": "pkg:npm/restore-cursor@4.0.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "restore-cursor@4.0.0/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "scheduler",
+      "version": "0.23.2",
+      "purl": "pkg:npm/scheduler@0.23.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "scheduler@0.23.2/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "shell-quote",
+      "version": "1.10.0",
+      "purl": "pkg:npm/shell-quote@1.10.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "shell-quote@1.10.0/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "signal-exit",
+      "version": "3.0.7",
+      "purl": "pkg:npm/signal-exit@3.0.7",
+      "licenses": [
+        {
+          "license": {
+            "name": "ISC"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "signal-exit@3.0.7/LICENSE.txt"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "slice-ansi",
+      "version": "5.0.0",
+      "purl": "pkg:npm/slice-ansi@5.0.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "slice-ansi@5.0.0/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "slice-ansi",
+      "version": "7.1.2",
+      "purl": "pkg:npm/slice-ansi@7.1.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "slice-ansi@7.1.2/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "source-map-support",
+      "version": "0.5.21",
+      "purl": "pkg:npm/source-map-support@0.5.21",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "source-map-support@0.5.21/LICENSE.md"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "source-map",
+      "version": "0.6.1",
+      "purl": "pkg:npm/source-map@0.6.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-3-Clause"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "source-map@0.6.1/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "split2",
+      "version": "4.2.0",
+      "purl": "pkg:npm/split2@4.2.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "ISC"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "split2@4.2.0/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "stack-utils",
+      "version": "2.0.6",
+      "purl": "pkg:npm/stack-utils@2.0.6",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "stack-utils@2.0.6/LICENSE.md"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "string-width",
+      "version": "4.2.3",
+      "purl": "pkg:npm/string-width@4.2.3",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "string-width@4.2.3/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "string-width",
+      "version": "7.2.0",
+      "purl": "pkg:npm/string-width@7.2.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "string-width@7.2.0/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "strip-ansi",
+      "version": "6.0.1",
+      "purl": "pkg:npm/strip-ansi@6.0.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "strip-ansi@6.0.1/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "strip-ansi",
+      "version": "7.2.0",
+      "purl": "pkg:npm/strip-ansi@7.2.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "strip-ansi@7.2.0/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "tar",
+      "version": "7.5.22",
+      "purl": "pkg:npm/tar@7.5.22",
+      "licenses": [
+        {
+          "license": {
+            "name": "BlueOak-1.0.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "tar@7.5.22/LICENSE.md"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "tsx",
+      "version": "4.23.12",
+      "purl": "pkg:npm/tsx@4.23.12",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "tsx@4.23.12/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "type-fest",
+      "version": "4.41.0",
+      "purl": "pkg:npm/type-fest@4.41.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "(MIT OR CC0-1.0)"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "typescript",
+      "version": "5.9.3",
+      "purl": "pkg:npm/typescript@5.9.3",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "typescript@5.9.3/LICENSE.txt"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "undici-types",
+      "version": "7.24.6",
+      "purl": "pkg:npm/undici-types@7.24.6",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "undici-types@7.24.6/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "widest-line",
+      "version": "5.0.0",
+      "purl": "pkg:npm/widest-line@5.0.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "widest-line@5.0.0/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "wrap-ansi",
+      "version": "7.0.0",
+      "purl": "pkg:npm/wrap-ansi@7.0.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "wrap-ansi@7.0.0/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "wrap-ansi",
+      "version": "9.0.2",
+      "purl": "pkg:npm/wrap-ansi@9.0.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "wrap-ansi@9.0.2/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ws",
+      "version": "7.5.13",
+      "purl": "pkg:npm/ws@7.5.13",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "ws@7.5.13/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ws",
+      "version": "8.21.0",
+      "purl": "pkg:npm/ws@8.21.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "ws@8.21.0/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "xtend",
+      "version": "4.0.2",
+      "purl": "pkg:npm/xtend@4.0.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "xtend@4.0.2/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "y18n",
+      "version": "5.0.8",
+      "purl": "pkg:npm/y18n@5.0.8",
+      "licenses": [
+        {
+          "license": {
+            "name": "ISC"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "y18n@5.0.8/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "yallist",
+      "version": "5.0.0",
+      "purl": "pkg:npm/yallist@5.0.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "BlueOak-1.0.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "yallist@5.0.0/LICENSE.md"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "yargs-parser",
+      "version": "21.1.1",
+      "purl": "pkg:npm/yargs-parser@21.1.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "ISC"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "yargs-parser@21.1.1/LICENSE.txt"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "yargs",
+      "version": "17.7.2",
+      "purl": "pkg:npm/yargs@17.7.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "yargs@17.7.2/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "yoga-layout",
+      "version": "3.2.1",
+      "purl": "pkg:npm/yoga-layout@3.2.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "zod-to-json-schema",
+      "version": "3.25.2",
+      "purl": "pkg:npm/zod-to-json-schema@3.25.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "ISC"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "zod-to-json-schema@3.25.2/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "zod",
+      "version": "3.25.76",
+      "purl": "pkg:npm/zod@3.25.76",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "zod@3.25.76/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "annotated-types",
+      "version": "0.8.0",
+      "purl": "pkg:pypi/annotated-types@0.8.0",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "f072f4d804ea359e4eaf198b1af7a8b0943881a87f31bb764f8bf219bb9419e0"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "build",
+      "version": "1.5.0",
+      "purl": "pkg:pypi/build@1.5.0",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "13f3eecb844759ab66efec90ca17639bbf14dc06cb2fdf37a9010322d9c50a6f"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "coverage",
+      "version": "7.16.2",
+      "purl": "pkg:pypi/coverage@7.16.2",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "4358b9c8c0125b460407f3017c6cce8156e904b32772c5630d27112f52bdbfe5"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache-2.0"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "iniconfig",
+      "version": "2.3.1",
+      "purl": "pkg:pypi/iniconfig@2.3.1",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "9121e2c1fdb355232495be3194c8dfe87ccc2d5dee45947b78e68f499790d7a7"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "packaging",
+      "version": "26.3",
+      "purl": "pkg:pypi/packaging@26.3",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache-2.0 OR BSD-2-Clause"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pluggy",
+      "version": "1.7.0",
+      "purl": "pkg:pypi/pluggy@1.7.0",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "7dd7b0d8832ba3cb632c306926ded123429211b83641b35dc5c41ad2d34f9bec"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pydantic_core",
+      "version": "2.46.4",
+      "purl": "pkg:pypi/pydantic-core@2.46.4",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "9551187363ffc0de2a00b2e47c25aeaeb1020b69b668762966df15fc5659dd5a"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pydantic",
+      "version": "2.13.4",
+      "purl": "pkg:pypi/pydantic@2.13.4",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "45a282cde31d808236fd7ea9d919b128653c8b38b393d1c4ab335c62924d9aba"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "Pygments",
+      "version": "2.21.0",
+      "purl": "pkg:pypi/pygments@2.21.0",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "2363c69b61c4a97c838da3b130dcd6468f4848992b21a82f2a63ec34377137d9"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-2-Clause"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pyproject_hooks",
+      "version": "1.3.3",
+      "purl": "pkg:pypi/pyproject-hooks@1.3.3",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "5fc53fdac9f7bd63fbcdc868fb5f90b4784d78a53a3d3388cd738b807441a20b"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pytest-cov",
+      "version": "7.0.0",
+      "purl": "pkg:pypi/pytest-cov@7.0.0",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "3b8e9558b16cc1479da72058bdecf8073661c7f57f7d3c5f22a1c23507f2d861"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pytest",
+      "version": "9.1.1",
+      "purl": "pkg:pypi/pytest@9.1.1",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "37a86b45efb9a47a61a36449063e8e18d0cab3161329fc099eb21783169c4f0c"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ruff",
+      "version": "0.16.0",
+      "purl": "pkg:pypi/ruff@0.16.0",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "4f11a8d11010301d0a398a2fdef67691feca7294da6aef55e2150e8fa2cd520b"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "setuptools",
+      "version": "84.0.0",
+      "purl": "pkg:pypi/setuptools@84.0.0",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "51a52592b3b99e102b609654876bd65f19f999935166d1352678931132b0c670"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "typing_extensions",
+      "version": "4.16.0",
+      "purl": "pkg:pypi/typing-extensions@4.16.0",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "name": "PSF-2.0"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "typing-inspection",
+      "version": "0.4.4",
+      "purl": "pkg:pypi/typing-inspection@0.4.4",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "65b8397ba37ccbce054456aaccddfc91e6e3083c92824df348d96ca832f3f147"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ]
+    }
+  ]
+}

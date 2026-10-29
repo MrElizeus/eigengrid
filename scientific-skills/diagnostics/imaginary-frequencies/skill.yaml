@@ -1,0 +1,57 @@
+{
+  "schema": "eigengrid.scientific-skill/v1",
+  "id": "diagnostics.imaginary-frequencies",
+  "version": "1.0.0",
+  "title": "Imaginary-frequency diagnosis",
+  "status": "active",
+  "summary": "Interpret negative harmonic modes using magnitude, eigenvector character, numerical sensitivity, and the intended stationary-point claim.",
+  "knowledge_level": "draft",
+  "capability_levels":
+    {
+      "reference": true,
+      "advisory": true,
+      "plannable": true,
+      "renderable": {},
+      "executable": {},
+      "validated": {},
+    },
+  "domains": ["molecular-electronic-structure"],
+  "domain_maturity": { "molecular-electronic-structure": "plannable" },
+  "engine_compatibility": { "orca": ">=5.0.0 <7.0.0" },
+  "requires":
+    [
+      {
+        "id": "workflows.frequencies-and-thermochemistry",
+        "range": ">=1.0.0 <2.0.0",
+        "reason": "Imaginary-frequency diagnosis requires the declared workflows.frequencies-and-thermochemistry capability.",
+      },
+    ],
+  "recommends": [],
+  "conflicts": [],
+  "required_inputs":
+    [
+      "complete frequencies",
+      "normal-mode vectors",
+      "claimed stationary-point type",
+      "matching structure and model digests",
+    ],
+  "missing_input_behavior": "Block interpretation until all expected modes and vectors are available; do not infer a minimum from an incomplete parser result.",
+  "assets":
+    {
+      "concepts": "concepts/",
+      "rules": "decision-rules/",
+      "protocols": "protocols/",
+      "references": "references/",
+      "evals": "evals/",
+      "diagnostics": "diagnostics/",
+    },
+  "helpers": [],
+  "review":
+    {
+      "status": "unreviewed",
+      "owner_role": "computational-chemist",
+      "evidence_ids": [],
+      "notes": "Unreviewed draft. No expert review, benchmark support, engine validation, or production certification is claimed.",
+    },
+  "provenance": { "created_by": "model" },
+}

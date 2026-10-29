@@ -1,0 +1,63 @@
+{
+  "schema": "eigengrid.colony-schema-artifacts.v1",
+  "package": "@eigengrid/colony-contracts",
+  "packageVersion": "0.1.0",
+  "protocol": "eigengrid.colony@1.0.0",
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "contracts": [
+    {
+      "schema": "eigengrid.context-pack.v1",
+      "version": "1.0.0",
+      "file": "eigengrid.context-pack.v1.schema.json",
+      "digest": "sha256:028df764d647c47d36a930452fd8109c6f7d8626b52ecd5657ee0e7822b52f8a"
+    },
+    {
+      "schema": "eigengrid.agent-work-order.v1",
+      "version": "1.0.0",
+      "file": "eigengrid.agent-work-order.v1.schema.json",
+      "digest": "sha256:a2fb009a5e2c41b45e5624878e25f32a34358622c9d557e6761eb0858292dacd"
+    },
+    {
+      "schema": "eigengrid.agent-work-result.v1",
+      "version": "1.0.0",
+      "file": "eigengrid.agent-work-result.v1.schema.json",
+      "digest": "sha256:07b9518394bcc1556dd4820ef5ae7fe40c83e456882bd84d02077ea9a0467d1d"
+    },
+    {
+      "schema": "eigengrid.verification-request.v1",
+      "version": "1.0.0",
+      "file": "eigengrid.verification-request.v1.schema.json",
+      "digest": "sha256:ed7335eb5c317659d7a359d5b14fb165e985ae33c9b1f831a4a3e2ca59892d3d"
+    },
+    {
+      "schema": "eigengrid.verification-result.v1",
+      "version": "1.0.0",
+      "file": "eigengrid.verification-result.v1.schema.json",
+      "digest": "sha256:e4656352f62c05f7fb734537633e300e48c1d763f8203a85491c1e85d342daac"
+    },
+    {
+      "schema": "eigengrid.correction-order.v1",
+      "version": "1.0.0",
+      "file": "eigengrid.correction-order.v1.schema.json",
+      "digest": "sha256:800070202d0da36cc12f0234c27ab41650a26645d23724ee973eeb6f5effb0f5"
+    },
+    {
+      "schema": "eigengrid.species-identity.v1",
+      "version": "1.0.0",
+      "file": "eigengrid.species-identity.v1.schema.json",
+      "digest": "sha256:00db79e2b576373cb95e700287e493e755e1abdce2fb8370e91f8c3fb8d42800"
+    },
+    {
+      "schema": "eigengrid.species-contract.v1",
+      "version": "1.0.0",
+      "file": "eigengrid.species-contract.v1.schema.json",
+      "digest": "sha256:4b37a0fe2e4a6269e94dc25a345a2bfa4d76724e209c062682ca9ed7d00908de"
+    },
+    {
+      "schema": "eigengrid.colony-compatibility-manifest.v1",
+      "version": "1.0.0",
+      "file": "eigengrid.colony-compatibility-manifest.v1.schema.json",
+      "digest": "sha256:161fb0fba3cf4a89a76071cf3fa4f1220c7f4df358fef7e77f719df129d150ac"
+    }
+  ]
+}

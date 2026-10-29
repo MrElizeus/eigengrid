@@ -1,0 +1,25 @@
+{
+  "schema": "eigengrid.decision-rule/v1",
+  "id": "diagnostics.imaginary-frequencies.core",
+  "version": "1.0.0",
+  "question": "Does an imaginary mode invalidate the claimed minimum?",
+  "when":
+    {
+      "all":
+        [
+          { "fact": "inputs.complete", "operator": "equals", "value": true },
+          { "fact": "applicability.confirmed", "operator": "equals", "value": true },
+        ],
+    },
+  "recommendation":
+    {
+      "action": "inspect magnitude and displacement, test only bounded numerical sensitivity, and reject a minimum claim when a relevant mode remains",
+      "strength": "conditional",
+    },
+  "rationale": "Small numerical modes and genuine downhill coordinates require different, explicitly justified responses.",
+  "risk_class": 2,
+  "approval": "required_if_material_field_changes",
+  "immutable_fields": ["objective", "charge", "multiplicity", "method", "basis", "physical_model"],
+  "evidence": { "level": "draft", "references": [] },
+  "limitations": "A frequency magnitude alone cannot establish physical relevance. Escalate chemically meaningful distortions, multiple relevant modes, or transition-state claims.",
+}

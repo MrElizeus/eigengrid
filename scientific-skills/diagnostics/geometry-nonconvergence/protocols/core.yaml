@@ -1,0 +1,40 @@
+{
+  "schema": "eigengrid.protocol-fragment/v1",
+  "id": "diagnostics.geometry-nonconvergence.diagnose-geometry-failure",
+  "version": "1.0.0",
+  "capability": "diagnostics.geometry-nonconvergence",
+  "required_inputs":
+    [
+      "optimization trace",
+      "initial and last valid structures",
+      "approved model fields",
+      "convergence thresholds and attempt history",
+    ],
+  "missing_input_behavior": "block",
+  "steps":
+    [
+      {
+        "id": "verify-inputs",
+        "kind": "validation",
+        "reason": "Fail closed before planning from incomplete or mismatched evidence.",
+      },
+      {
+        "id": "diagnose-geometry-failure",
+        "kind": "diagnosis",
+        "reason": "Optimization controls and restart points must remain attributable to avoid accidental scientific drift.",
+      },
+      {
+        "id": "record-evidence",
+        "kind": "provenance",
+        "reason": "Persist exact skill, fragment, input, output, and decision references.",
+      },
+    ],
+  "acceptance":
+    [
+      "last valid geometry digest is identified",
+      "failure class is explicit",
+      "retry is bounded or approval is requested",
+    ],
+  "retry_policy": { "maximum_attempts": 1, "material_change": "new_decision_and_exact_approval" },
+  "effect_authority": "none",
+}

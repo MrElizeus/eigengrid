@@ -1,0 +1,26 @@
+{
+  "schema": "eigengrid.colony-compatibility-manifest.v1",
+  "package": { "name": "@eigengrid/colony-contracts", "version": "0.1.0" },
+  "protocol": { "id": "eigengrid.colony", "version": "1.0.0" },
+  "provides": [
+    { "kind": "protocol", "id": "eigengrid.colony", "version": "1.0.0" },
+    { "kind": "contract", "id": "eigengrid.context-pack.v1", "version": "1.0.0" },
+    { "kind": "contract", "id": "eigengrid.agent-work-order.v1", "version": "1.0.0" },
+    { "kind": "contract", "id": "eigengrid.agent-work-result.v1", "version": "1.0.0" },
+    { "kind": "contract", "id": "eigengrid.verification-request.v1", "version": "1.0.0" },
+    { "kind": "contract", "id": "eigengrid.verification-result.v1", "version": "1.0.0" },
+    { "kind": "contract", "id": "eigengrid.correction-order.v1", "version": "1.0.0" },
+    { "kind": "contract", "id": "eigengrid.species-identity.v1", "version": "1.0.0" },
+    { "kind": "contract", "id": "eigengrid.species-contract.v1", "version": "1.0.0" },
+    { "kind": "contract", "id": "eigengrid.colony-compatibility-manifest.v1", "version": "1.0.0" },
+    { "kind": "species_schema", "id": "eigengrid.species", "version": "1.0.0" }
+  ],
+  "requires": [],
+  "featureFlags": [
+    "canonical-sha256-digests",
+    "neutral-candidate-contracts",
+    "strict-unknown-fields"
+  ],
+  "unknownFieldPolicy": "reject",
+  "manifestDigest": "sha256:da97bcebc1d6c677b81afc1afc86a7724b0e33cc3917412b37ab03bbc586d1fd"
+}

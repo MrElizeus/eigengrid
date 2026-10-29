@@ -1,0 +1,43 @@
+{
+  "schema": "eigengrid.protocol-fragment/v1",
+  "id": "workflows.geometry-optimization.optimize-molecular-geometry",
+  "version": "1.0.0",
+  "capability": "workflows.geometry-optimization",
+  "required_inputs":
+    [
+      "starting structure",
+      "charge",
+      "multiplicity",
+      "method",
+      "basis",
+      "optimization acceptance thresholds",
+    ],
+  "missing_input_behavior": "block",
+  "steps":
+    [
+      {
+        "id": "verify-inputs",
+        "kind": "validation",
+        "reason": "Fail closed before planning from incomplete or mismatched evidence.",
+      },
+      {
+        "id": "optimize-molecular-geometry",
+        "kind": "planning",
+        "reason": "A normal optimizer exit is operational evidence, not sufficient scientific validation.",
+      },
+      {
+        "id": "record-evidence",
+        "kind": "provenance",
+        "reason": "Persist exact skill, fragment, input, output, and decision references.",
+      },
+    ],
+  "acceptance":
+    [
+      "normal termination",
+      "declared optimizer thresholds are met",
+      "final coordinates are captured immutably",
+      "minimum validation remains required",
+    ],
+  "retry_policy": { "maximum_attempts": 1, "material_change": "new_decision_and_exact_approval" },
+  "effect_authority": "none",
+}

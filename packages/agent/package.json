@@ -1,0 +1,23 @@
+{
+  "name": "@eigengrid/agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*"
+  },
+  "dependencies": {
+    "@eigengrid/agent-runtime": "workspace:*",
+    "@eigengrid/core": "workspace:*",
+    "@eigengrid/events": "workspace:*",
+    "@eigengrid/model-gateway": "workspace:*",
+    "@eigengrid/protocol": "workspace:*",
+    "@eigengrid/scientific-skills": "workspace:*",
+    "@eigengrid/tool-registry": "workspace:*",
+    "ai": "^6.0.208",
+    "jose": "6.2.13"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "schema": "eigengrid.decision-rule/v1",
+  "id": "diagnostics.geometry-nonconvergence.core",
+  "version": "1.0.0",
+  "question": "Is the geometry failure operational, numerically bounded, or scientifically material?",
+  "when":
+    {
+      "all":
+        [
+          { "fact": "inputs.complete", "operator": "equals", "value": true },
+          { "fact": "applicability.confirmed", "operator": "equals", "value": true },
+        ],
+    },
+  "recommendation":
+    {
+      "action": "select only a finite no-model-change retry or request a reviewed material replan",
+      "strength": "conditional",
+    },
+  "rationale": "Optimization controls and restart points must remain attributable to avoid accidental scientific drift.",
+  "risk_class": 2,
+  "approval": "required_if_material_field_changes",
+  "immutable_fields": ["objective", "charge", "multiplicity", "method", "basis", "physical_model"],
+  "evidence": { "level": "draft", "references": [] },
+  "limitations": "More steps do not repair an inappropriate state or method. Escalate bond breaking, fragmentation, unintended isomerization, or changes to constraints and physical model.",
+}

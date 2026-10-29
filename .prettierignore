@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.venv/
+coverage/
+__pycache__/
+.pytest_cache/
+notices/
+# Scientific corpus and byte/schema fixtures preserve their exact content identities.
+scientific-skills/
+tests/fixtures/
+packages/*/schemas/
+bun.lock

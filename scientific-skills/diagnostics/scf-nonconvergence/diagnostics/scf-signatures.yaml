@@ -1,0 +1,29 @@
+{
+  "schema": "eigengrid.diagnostic-signatures/v1",
+  "id": "diagnostics.scf-nonconvergence.signatures",
+  "version": "1.0.0",
+  "signatures":
+    [
+      {
+        "id": "iteration-limit",
+        "evidence": ["SCF not accepted", "configured iteration limit reached"],
+        "classification": "numerically_bounded_candidate",
+        "bounded_options":
+          ["increase iteration ceiling within policy", "enable a policy-approved convergence aid"],
+        "must_not_change":
+          ["charge", "multiplicity", "method", "basis", "physical_model", "objective"],
+      },
+      {
+        "id": "oscillation-or-state-instability",
+        "evidence": ["energy or density oscillation", "state or occupation instability indicator"],
+        "classification": "scientifically_material_candidate",
+        "action": "block automatic retry and request scientific review of state/model adequacy",
+      },
+      {
+        "id": "missing-or-truncated-output",
+        "evidence": ["no terminal marker", "artifact ends mid-record"],
+        "classification": "operational_or_ambiguous",
+        "action": "reconcile effect and artifact collection before scientific diagnosis",
+      },
+    ],
+}

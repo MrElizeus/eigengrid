@@ -1,0 +1,2 @@
+{"id": "foundations.basis-ecp-relativity.positive", "kind": "positive", "query": "basis set ecp relativity diffuse polarization heavy element", "expected_included": ["foundations.basis-ecp-relativity"], "expected_excluded": [], "expected_top": "foundations.basis-ecp-relativity"}
+{"id": "foundations.basis-ecp-relativity.negative", "kind": "negative", "query": "collect a completed job log after process restart", "expected_included": [], "expected_excluded": ["foundations.basis-ecp-relativity"]}

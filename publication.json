@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "eigengrid.publication-policy/v1",
+  "visibility": "public",
+  "catalogSkillIds": [
+    "representations.molecular-structures",
+    "foundations.charge-spin-symmetry",
+    "foundations.basis-ecp-relativity",
+    "foundations.numerical-convergence",
+    "methods.molecular-dft",
+    "methods.dispersion",
+    "methods.continuum-solvation",
+    "workflows.geometry-optimization",
+    "workflows.frequencies-and-thermochemistry",
+    "diagnostics.scf-nonconvergence",
+    "diagnostics.geometry-nonconvergence",
+    "diagnostics.imaginary-frequencies",
+    "validation.minimum-validation",
+    "validation.uncertainty-assessment",
+    "foundations.resource-estimation"
+  ],
+  "scope": ["source", "git-history", "release-artifacts"]
+}

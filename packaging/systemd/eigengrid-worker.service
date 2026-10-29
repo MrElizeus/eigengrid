@@ -1,0 +1,50 @@
+[Unit]
+Description=EigenGrid deterministic Worker
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=exec
+User=eigengrid-worker
+Group=eigengrid-worker
+EnvironmentFile=-/etc/eigengrid/worker.env
+WorkingDirectory=/var/lib/eigengrid/worker
+ExecStart=/usr/local/lib/eigengrid/eigengrid-worker --scratch-dir ${EIGENGRID_WORKER_SCRATCH_DIR}
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=45s
+KillMode=control-group
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/eigengrid/worker /var/log/eigengrid /scratch/eigengrid
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictSUIDSGID=yes
+RestrictRealtime=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+ProcSubset=pid
+ProtectProc=invisible
+DevicePolicy=closed
+CapabilityBoundingSet=
+AmbientCapabilities=
+IPAddressDeny=any
+TasksMax=256
+MemoryMax=4G
+CPUQuota=200%
+AppArmorProfile=eigengrid-worker
+LoadCredential=worker-identity:/etc/eigengrid/credentials/worker-identity
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

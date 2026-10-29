@@ -1,0 +1,39 @@
+{
+  "schema": "eigengrid.protocol-fragment/v1",
+  "id": "workflows.frequencies-and-thermochemistry.frequency-and-thermochemistry",
+  "version": "1.0.0",
+  "capability": "workflows.frequencies-and-thermochemistry",
+  "required_inputs":
+    [
+      "optimized structure artifact",
+      "same approved scientific model",
+      "temperature and standard-state intent when thermochemistry is requested",
+    ],
+  "missing_input_behavior": "block",
+  "steps":
+    [
+      {
+        "id": "verify-inputs",
+        "kind": "validation",
+        "reason": "Fail closed before planning from incomplete or mismatched evidence.",
+      },
+      {
+        "id": "frequency-and-thermochemistry",
+        "kind": "planning",
+        "reason": "Frequency signs and mode character distinguish a candidate minimum from a saddle point but require chemical interpretation.",
+      },
+      {
+        "id": "record-evidence",
+        "kind": "provenance",
+        "reason": "Persist exact skill, fragment, input, output, and decision references.",
+      },
+    ],
+  "acceptance":
+    [
+      "frequency job terminates normally",
+      "all expected modes parse",
+      "mode signs and vectors support the claimed stationary point",
+    ],
+  "retry_policy": { "maximum_attempts": 1, "material_change": "new_decision_and_exact_approval" },
+  "effect_authority": "none",
+}

@@ -1,0 +1,2 @@
+{"id": "foundations.charge-spin-symmetry.positive", "kind": "positive", "query": "charge spin multiplicity electron count open shell state", "expected_included": ["foundations.charge-spin-symmetry"], "expected_excluded": [], "expected_top": "foundations.charge-spin-symmetry"}
+{"id": "foundations.charge-spin-symmetry.negative", "kind": "negative", "query": "estimate wall time memory cores for a geometry job", "expected_included": [], "expected_excluded": ["foundations.charge-spin-symmetry"]}

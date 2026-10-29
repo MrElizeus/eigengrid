@@ -1,0 +1,1 @@
+{"id": "representations.molecular-structures.composition", "requested": ["representations.molecular-structures"], "include_optional": false, "expected_nodes": ["representations.molecular-structures"], "expected_absent": [], "engine": {"id": "orca", "version": "6.0.0"}, "domains": ["molecular-electronic-structure"]}

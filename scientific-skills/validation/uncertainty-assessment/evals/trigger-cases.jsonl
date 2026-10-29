@@ -1,0 +1,2 @@
+{"id": "validation.uncertainty-assessment.positive", "kind": "positive", "query": "uncertainty applicability sensitivity model basis confidence assessment", "expected_included": ["validation.uncertainty-assessment"], "expected_excluded": [], "expected_top": "validation.uncertainty-assessment"}
+{"id": "validation.uncertainty-assessment.negative", "kind": "negative", "query": "parse atomic coordinates from an xyz artifact", "expected_included": [], "expected_excluded": ["validation.uncertainty-assessment"]}

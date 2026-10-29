@@ -1,0 +1,76 @@
+                          *****************************
+                          *  ORCA 6.0.0 (ES64L)      *
+                          *****************************
+
+                                 FORMALDEHYDE
+                        TD-DFT Calculation
+
+  B3LYP/G def2-TZVP
+  Charge =    0  Multiplicity = 1
+
+  COORDINATES (ANGSTROEM)
+
+  C      0.000000      0.000000     -0.529000
+  O      0.000000      0.000000      0.676000
+  H      0.000000      0.937000     -1.079000
+  H      0.000000     -0.937000     -1.079000
+
+  -----------------------------
+  ORCA METHOD: B3LYP
+  -----------------------------
+
+  -----------------------------
+  SCF CONVERGENCE
+  -----------------------------
+
+  CYCLE    ENERGY          DELTA
+     1   -114.4089537232  0.00000000
+     2   -114.4189123456  0.00995862
+     3   -114.4245678901  0.00565554
+     4   -114.4250012345  0.00043334
+     5   -114.4250109876  0.00000975
+
+  **** CONVERGENCE REACHED ****
+
+  -----------------------------
+  FINAL SINGLE POINT ENERGY
+  -----------------------------
+
+  ENERGY = -114.42501099 Eh
+
+  -----------------------------
+  TD-DFT/TDA EXCITED STATES
+  -----------------------------
+
+  Number of roots requested:   5
+  Number of roots found:      5
+
+  STATE    ENERGY (eV)   WAVELENGTH (nm)   f          SYMMETRY
+    1       3.8800        319.5            0.0000     A'
+    2       5.6900        217.8            0.0178     A''
+    3       7.1200        174.1            0.3120     A'
+    4       8.4500        146.7            0.0000     A'
+    5       9.2300        134.3            0.0456     A'
+
+  -----------------------------
+  STATE 1:  E=3.8800 eV  f=0.0000
+  -----------------------------
+     n -> pi* transition (93%)
+     2a'' (HOMO) -> 3a'' (LUMO)  coefficient: 0.9678
+     1a'' -> 3a''                coefficient: 0.1234
+
+  -----------------------------
+  STATE 2:  E=5.6900 eV  f=0.0178
+  -----------------------------
+     pi -> pi* transition (87%)
+     5a' (HOMO-1) -> 3a'' (LUMO)  coefficient: 0.9345
+     4a' (HOMO-2) -> 3a'' (LUMO)  coefficient: 0.2345
+
+  -----------------------------
+  STATE 3:  E=7.1200 eV  f=0.3120
+  -----------------------------
+     pi -> pi* transition (78%)
+     5a' (HOMO-1) -> 3a'' (LUMO)  coefficient: 0.8845
+     4a' (HOMO-2) -> 3a'' (LUMO)  coefficient: 0.3120
+
+  ****ORCA TERMINATED NORMALLY****

@@ -1,0 +1,109 @@
+ Entering Gaussian System, Link 1=g16c
+ Gaussian 16:  ES64L-G16RevC.01  Sun Jun 21 2026
+ %chk=water.chk
+ #p RB3LYP/6-31G(d) Opt Freq
+
+ ---------------------------------------------------------
+ Water geometry optimisation and frequency calculation
+ ---------------------------------------------------------
+
+ Symbolic Z-matrix:
+ Charge =  0   Multiplicity = 1
+ O
+ H   1   r1
+ H   1   r2  2   a1
+
+ Variables:
+ r1=0.958
+ r2=0.958
+ a1=104.5
+
+                         ----------------------------
+                         Standard orientation:
+                         ----------------------------
+ Center     Atomic     Atomic              Coordinates (Angstroms)
+ Number     Number      Type              X           Y           Z
+ ------------------------------------------------------------
+    1          8           0        0.000000    0.000000    0.120000
+    2          1           0        0.000000    0.757000   -0.480000
+    3          1           0        0.000000   -0.757000   -0.480000
+ ------------------------------------------------------------
+
+                         ----------------------------
+                         Standard orientation:
+                         ----------------------------
+ Center     Atomic     Atomic              Coordinates (Angstroms)
+ Number     Number      Type              X           Y           Z
+ ------------------------------------------------------------
+    1          8           0        0.000000    0.000000    0.117000
+    2          1           0        0.000000    0.756000   -0.468000
+    3          1           0        0.000000   -0.756000   -0.468000
+ ------------------------------------------------------------
+
+                         ----------------------------
+                         Standard orientation:
+                         ----------------------------
+ Center     Atomic     Atomic              Coordinates (Angstroms)
+ Number     Number      Type              X           Y           Z
+ ------------------------------------------------------------
+    1          8           0        0.000000    0.000000    0.117600
+    2          1           0        0.000000    0.756500   -0.470400
+    3          1           0        0.000000   -0.756500   -0.470400
+ ------------------------------------------------------------
+
+ SCF Done:  E(RB3LYP) =  -76.4089537232     A.U. after    1 cycles
+ SCF Done:  E(RB3LYP) =  -76.4189123456     A.U. after    2 cycles
+ SCF Done:  E(RB3LYP) =  -76.4245678901     A.U. after    3 cycles
+ SCF Done:  E(RB3LYP) =  -76.4250012345     A.U. after    4 cycles
+ SCF Done:  E(RB3LYP) =  -76.4250109876     A.U. after    5 cycles
+
+ -------------------------------------------------------------------
+          Population analysis using the SCF density.
+ -------------------------------------------------------------------
+
+ -------------------------------------------------------------------
+                         Harmonic Frequencies (cm-1)
+ -------------------------------------------------------------------
+
+ Frequencies --  1642.3456                3821.5678                3942.1234
+ IR Inten    --    65.4321                  2.3456                   0.9876
+ Raman Activ --     1.2345                  0.5678                  34.5678
+
+                   Atom 1  XX  0.00000    0.12345    0.00000
+                   Atom 1  YY  0.00000    0.00000    0.08765
+                   Atom 1  ZZ  0.06789    0.00000    0.00000
+                   Atom 2  XX  0.00000   -0.12345   -0.04567
+                   Atom 2  YY  0.05678    0.00000    0.00000
+                   Atom 2  ZZ  0.00000    0.00000    0.03456
+                   Atom 3  XX  0.00000   -0.12345    0.04567
+                   Atom 3  YY  0.05678    0.00000    0.00000
+                   Atom 3  ZZ  0.00000    0.00000   -0.03456
+
+ -------------------------------------------------------------------
+                         Thermochemistry
+ -------------------------------------------------------------------
+
+ - Thermochemistry -
+ Temperature   298.150 Kelvin.  Pressure   1.00000 Atm.
+
+ Zero-point correction =       0.021234 (Hartree)
+ Thermal correction to Energy =        0.024567
+ Thermal correction to Enthalpy =      0.025011
+ Thermal correction to Gibbs Free Energy =    0.003456
+ Sum of electronic and zero-point Energies =        -76.403777
+ Sum of electronic and thermal Energies =           -76.400444
+ Sum of electronic and thermal Enthalpies =         -76.400000
+ Sum of electronic and thermal Free Energies =      -76.421555
+
+ E (Thermal)            0.024567
+ E (Trans)              0.000889
+ E (Rot)                0.000889
+ E (Vib)                0.022789
+ E (Elec)               0.000000
+ CV (Total)             6.234
+ S (Total)             45.678
+
+                            Job cpu time:  0 minutes  12.3 seconds
+                            Elapsed time:   0 minutes  15.7 seconds
+
+ Normal termination of Gaussian 16.

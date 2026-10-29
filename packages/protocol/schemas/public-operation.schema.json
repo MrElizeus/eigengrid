@@ -1,0 +1,157 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://eigengrid.dev/schemas/myrmex-public-operation/v1",
+  "title": "Myrmex request and EigenGrid receipt v1",
+  "oneOf": [{ "$ref": "#/$defs/Request" }, { "$ref": "#/$defs/Receipt" }],
+  "$defs": {
+    "Digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "DateTime": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\d|3[01])T(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|[+-](?:[01]\\d|2[0-3]):[0-5]\\d)$"
+    },
+    "Compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "eigengridVersion",
+        "publicProtocol",
+        "missionProtocol",
+        "colonySchema",
+        "skillSchema",
+        "evidenceSchema",
+        "profileVersion",
+        "codexSubstrateRange",
+        "featureFlags"
+      ],
+      "properties": {
+        "eigengridVersion": { "type": "string", "minLength": 1 },
+        "publicProtocol": { "type": "string", "const": "eigengrid.public.v1" },
+        "missionProtocol": { "type": "string", "minLength": 1 },
+        "colonySchema": { "type": "string", "minLength": 1 },
+        "skillSchema": { "type": "string", "minLength": 1 },
+        "evidenceSchema": { "type": "string", "minLength": 1 },
+        "databaseSchemaInformational": { "type": "integer", "minimum": 1 },
+        "profileVersion": { "type": "string", "minLength": 1 },
+        "codexSubstrateRange": { "type": "string", "minLength": 1 },
+        "featureFlags": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "Subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "id", "revision", "digest"],
+      "properties": {
+        "type": { "type": "string", "minLength": 1 },
+        "id": { "type": "string", "minLength": 1 },
+        "revision": {
+          "oneOf": [
+            { "type": "integer", "minimum": 1 },
+            { "type": "string", "minLength": 1 }
+          ]
+        },
+        "digest": { "$ref": "#/$defs/Digest" }
+      }
+    },
+    "AuthorityEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": { "type": "string", "minLength": 1 },
+        "id": { "type": "string", "minLength": 1 },
+        "digest": { "$ref": "#/$defs/Digest" },
+        "detail": { "type": "object", "additionalProperties": true }
+      }
+    },
+    "Request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "requestId",
+        "idempotencyKey",
+        "installationId",
+        "runId",
+        "principalId",
+        "operation",
+        "compatibility",
+        "subject",
+        "payload",
+        "authorityEvidence",
+        "expiresAt",
+        "requestDigest"
+      ],
+      "properties": {
+        "schema": { "type": "string", "const": "eigengrid.myrmex-operation-request.v1" },
+        "requestId": { "type": "string", "minLength": 1 },
+        "idempotencyKey": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "installationId": { "type": "string", "minLength": 1 },
+        "runId": { "type": "string", "minLength": 1 },
+        "principalId": { "type": "string", "minLength": 1 },
+        "operation": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "compatibility": { "$ref": "#/$defs/Compatibility" },
+        "subject": { "$ref": "#/$defs/Subject" },
+        "payload": { "type": "object", "additionalProperties": true },
+        "authorityEvidence": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/AuthorityEvidence" }
+        },
+        "expiresAt": { "$ref": "#/$defs/DateTime" },
+        "requestDigest": { "$ref": "#/$defs/Digest" }
+      }
+    },
+    "Receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "requestId",
+        "operationId",
+        "idempotencyKey",
+        "state",
+        "subject",
+        "correlationId",
+        "causationId",
+        "compatibility",
+        "confirmedAt",
+        "result",
+        "failure",
+        "receiptDigest"
+      ],
+      "properties": {
+        "schema": { "type": "string", "const": "eigengrid.myrmex-operation-receipt.v1" },
+        "requestId": { "type": "string", "minLength": 1 },
+        "operationId": { "type": "string", "minLength": 1 },
+        "idempotencyKey": { "type": "string", "minLength": 1 },
+        "state": {
+          "type": "string",
+          "enum": ["accepted", "pending", "confirmed", "failed", "ambiguous", "denied"]
+        },
+        "subject": { "$ref": "#/$defs/Subject" },
+        "correlationId": { "type": "string", "minLength": 1 },
+        "causationId": { "type": "string", "minLength": 1 },
+        "compatibility": { "$ref": "#/$defs/Compatibility" },
+        "confirmedAt": { "$ref": "#/$defs/DateTime" },
+        "result": { "type": ["object", "null"], "additionalProperties": true },
+        "failure": { "type": ["object", "null"], "additionalProperties": true },
+        "receiptDigest": { "$ref": "#/$defs/Digest" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "state": { "const": "confirmed" } }, "required": ["state"] },
+          "then": {
+            "properties": {
+              "result": { "type": "object", "additionalProperties": true },
+              "failure": { "type": "null" }
+            }
+          },
+          "else": { "properties": { "result": { "type": "null" } } }
+        }
+      ]
+    }
+  }
+}

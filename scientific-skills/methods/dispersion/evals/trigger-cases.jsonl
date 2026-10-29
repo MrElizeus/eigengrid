@@ -1,0 +1,2 @@
+{"id": "methods.dispersion.positive", "kind": "positive", "query": "dispersion london noncovalent weak interaction damping correction", "expected_included": ["methods.dispersion"], "expected_excluded": [], "expected_top": "methods.dispersion"}
+{"id": "methods.dispersion.negative", "kind": "negative", "query": "diagnose an SCF iteration oscillation and level shifting", "expected_included": [], "expected_excluded": ["methods.dispersion"]}

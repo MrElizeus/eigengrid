@@ -1,0 +1,16 @@
+id: gaussian-opt
+software: gaussian
+description: Gaussian geometry optimization
+input_extensions:
+  - .gjf
+  - .com
+commands:
+  local:
+    run: "g16 < {{input}} > {{output}}"
+outputs:
+  main_log: "{{basename}}.log"
+parser:
+  name: gaussian
+resources:
+  default_cores: 8
+  default_memory_gb: 16

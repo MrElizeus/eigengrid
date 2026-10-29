@@ -1,0 +1,2 @@
+{"id": "methods.molecular-dft.positive", "kind": "positive", "query": "molecular dft density functional kohn sham functional electronic structure", "expected_included": ["methods.molecular-dft"], "expected_excluded": [], "expected_top": "methods.molecular-dft"}
+{"id": "methods.molecular-dft.negative", "kind": "negative", "query": "qsar descriptors dataset split leakage regression prediction", "expected_included": [], "expected_excluded": ["methods.molecular-dft"]}

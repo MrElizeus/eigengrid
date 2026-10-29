@@ -1,0 +1,25 @@
+{
+  "schema": "eigengrid.decision-rule/v1",
+  "id": "foundations.charge-spin-symmetry.core",
+  "version": "1.0.0",
+  "question": "Are charge and multiplicity internally consistent with the molecular electron count?",
+  "when":
+    {
+      "all":
+        [
+          { "fact": "inputs.complete", "operator": "equals", "value": true },
+          { "fact": "applicability.confirmed", "operator": "equals", "value": true },
+        ],
+    },
+  "recommendation":
+    {
+      "action": "check electron parity and preserve the declared state as an immutable scientific field",
+      "strength": "conditional",
+    },
+  "rationale": "A parity inconsistency is a blocking input error; a plausible parity is not evidence that the state is correct.",
+  "risk_class": 2,
+  "approval": "required_if_material_field_changes",
+  "immutable_fields": ["objective", "charge", "multiplicity", "method", "basis", "physical_model"],
+  "evidence": { "level": "draft", "references": [] },
+  "limitations": "Electron-count consistency does not prove that a chosen state is physically correct. Escalate ambiguous oxidation, broken-symmetry, or competing-spin-state questions.",
+}

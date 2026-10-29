@@ -1,0 +1,25 @@
+{
+  "schema": "eigengrid.decision-rule/v1",
+  "id": "representations.molecular-structures.core",
+  "version": "1.0.0",
+  "question": "Is the molecular structure artifact complete enough to identify the intended system?",
+  "when":
+    {
+      "all":
+        [
+          { "fact": "inputs.complete", "operator": "equals", "value": true },
+          { "fact": "applicability.confirmed", "operator": "equals", "value": true },
+        ],
+    },
+  "recommendation":
+    {
+      "action": "validate identity, format, atom count, finite coordinates, and digest before planning",
+      "strength": "conditional",
+    },
+  "rationale": "A calculation cannot be attributed if the molecular system is not immutable and unambiguous.",
+  "risk_class": 2,
+  "approval": "required_if_material_field_changes",
+  "immutable_fields": ["objective", "charge", "multiplicity", "method", "basis", "physical_model"],
+  "evidence": { "level": "draft", "references": [] },
+  "limitations": "This skill does not choose charge, multiplicity, protonation, conformer, or electronic-structure method. Escalate inconsistent atom counts, malformed coordinates, or ambiguous molecular identity.",
+}

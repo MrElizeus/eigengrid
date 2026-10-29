@@ -1,0 +1,1 @@
+{"id": "foundations.resource-estimation.composition", "requested": ["foundations.resource-estimation"], "include_optional": false, "expected_nodes": ["foundations.resource-estimation", "representations.molecular-structures"], "expected_absent": [], "engine": {"id": "orca", "version": "6.0.0"}, "domains": ["molecular-electronic-structure"]}

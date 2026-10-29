@@ -1,0 +1,48 @@
+{
+  "schema": "eigengrid.scientific-skill/v1",
+  "id": "representations.molecular-structures",
+  "version": "1.0.0",
+  "title": "Molecular structure representations",
+  "status": "active",
+  "summary": "Validate atom identities, coordinates, connectivity metadata, and immutable structure identity before molecular calculations.",
+  "knowledge_level": "draft",
+  "capability_levels":
+    {
+      "reference": true,
+      "advisory": true,
+      "plannable": true,
+      "renderable": {},
+      "executable": {},
+      "validated": {},
+    },
+  "domains": ["molecular-electronic-structure"],
+  "domain_maturity": { "molecular-electronic-structure": "plannable" },
+  "engine_compatibility": { "orca": ">=5.0.0 <7.0.0" },
+  "requires": [],
+  "recommends": [],
+  "conflicts": [],
+  "required_inputs":
+    [
+      "structure evidence reference",
+      "declared structure format",
+      "atom identities and coordinates",
+    ],
+  "missing_input_behavior": "Block planning when atom identities, coordinate count, format, or evidence digest is absent; request an immutable replacement artifact rather than guessing.",
+  "assets":
+    {
+      "concepts": "concepts/",
+      "rules": "decision-rules/",
+      "protocols": "protocols/",
+      "references": "references/",
+      "evals": "evals/",
+    },
+  "helpers": [],
+  "review":
+    {
+      "status": "unreviewed",
+      "owner_role": "computational-chemist",
+      "evidence_ids": [],
+      "notes": "Unreviewed draft. No expert review, benchmark support, engine validation, or production certification is claimed.",
+    },
+  "provenance": { "created_by": "model" },
+}

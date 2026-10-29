@@ -1,0 +1,25 @@
+{
+  "schema": "eigengrid.decision-rule/v1",
+  "id": "workflows.frequencies-and-thermochemistry.core",
+  "version": "1.0.0",
+  "question": "Can the frequency result validate the claimed stationary-point type?",
+  "when":
+    {
+      "all":
+        [
+          { "fact": "inputs.complete", "operator": "equals", "value": true },
+          { "fact": "applicability.confirmed", "operator": "equals", "value": true },
+        ],
+    },
+  "recommendation":
+    {
+      "action": "classify relevant imaginary modes and keep thermochemistry assumptions explicit",
+      "strength": "conditional",
+    },
+  "rationale": "Frequency signs and mode character distinguish a candidate minimum from a saddle point but require chemical interpretation.",
+  "risk_class": 2,
+  "approval": "required_if_material_field_changes",
+  "immutable_fields": ["objective", "charge", "multiplicity", "method", "basis", "physical_model"],
+  "evidence": { "level": "draft", "references": [] },
+  "limitations": "The harmonic approximation can be poor for floppy modes and finite-temperature sampling. Escalate multiple relevant imaginary modes, low-frequency sensitivity, or requested high accuracy.",
+}

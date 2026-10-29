@@ -1,0 +1,69 @@
+{
+  "schema": "eigengrid.scientific-skill/v1",
+  "id": "diagnostics.geometry-nonconvergence",
+  "version": "1.0.0",
+  "title": "Geometry nonconvergence diagnosis",
+  "status": "active",
+  "summary": "Diagnose stalled or failed molecular optimizations without confusing operational, numerical, structural, and model-level causes.",
+  "knowledge_level": "draft",
+  "capability_levels":
+    {
+      "reference": true,
+      "advisory": true,
+      "plannable": true,
+      "renderable": {},
+      "executable": {},
+      "validated": {},
+    },
+  "domains": ["molecular-electronic-structure"],
+  "domain_maturity": { "molecular-electronic-structure": "plannable" },
+  "engine_compatibility": { "orca": ">=5.0.0 <7.0.0" },
+  "requires":
+    [
+      {
+        "id": "workflows.geometry-optimization",
+        "range": ">=1.0.0 <2.0.0",
+        "reason": "Geometry nonconvergence diagnosis requires the declared workflows.geometry-optimization capability.",
+      },
+    ],
+  "recommends":
+    [
+      {
+        "id": "diagnostics.scf-nonconvergence",
+        "range": ">=1.0.0 <2.0.0",
+        "reason": "Consult diagnostics.scf-nonconvergence when its applicability conditions are present.",
+      },
+      {
+        "id": "foundations.resource-estimation",
+        "range": ">=1.0.0 <2.0.0",
+        "reason": "Consult foundations.resource-estimation when its applicability conditions are present.",
+      },
+    ],
+  "conflicts": [],
+  "required_inputs":
+    [
+      "optimization trace",
+      "initial and last valid structures",
+      "approved model fields",
+      "convergence thresholds and attempt history",
+    ],
+  "missing_input_behavior": "Reconcile and collect complete artifacts before diagnosis. Do not launch a replacement optimization from an unverified partial geometry.",
+  "assets":
+    {
+      "concepts": "concepts/",
+      "rules": "decision-rules/",
+      "protocols": "protocols/",
+      "references": "references/",
+      "evals": "evals/",
+      "diagnostics": "diagnostics/",
+    },
+  "helpers": [],
+  "review":
+    {
+      "status": "unreviewed",
+      "owner_role": "computational-chemist",
+      "evidence_ids": [],
+      "notes": "Unreviewed draft. No expert review, benchmark support, engine validation, or production certification is claimed.",
+    },
+  "provenance": { "created_by": "model" },
+}

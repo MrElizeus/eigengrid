@@ -1,0 +1,25 @@
+{
+  "schema": "eigengrid.decision-rule/v1",
+  "id": "methods.molecular-dft.core",
+  "version": "1.0.0",
+  "question": "Is molecular DFT within the declared applicability domain for this objective?",
+  "when":
+    {
+      "all":
+        [
+          { "fact": "inputs.complete", "operator": "equals", "value": true },
+          { "fact": "applicability.confirmed", "operator": "equals", "value": true },
+        ],
+    },
+  "recommendation":
+    {
+      "action": "construct an engine-neutral DFT protocol only after all material method fields are explicit",
+      "strength": "conditional",
+    },
+  "rationale": "A plausible DFT input is not evidence that the approximation is scientifically adequate.",
+  "risk_class": 2,
+  "approval": "required_if_material_field_changes",
+  "immutable_fields": ["objective", "charge", "multiplicity", "method", "basis", "physical_model"],
+  "evidence": { "level": "draft", "references": [] },
+  "limitations": "This unreviewed draft is not benchmark-backed and does not certify DFT accuracy for a chemical domain. Escalate suspected multireference character and material changes.",
+}

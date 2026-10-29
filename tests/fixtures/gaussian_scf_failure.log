@@ -1,0 +1,55 @@
+ Entering Gaussian System, Link 1=g16c
+ Gaussian 16:  ES64L-G16RevC.01  Sun Jun 21 2026
+ %chk=water.chk
+ #p UB3LYP/6-311++G(d,p) Opt
+
+ ---------------------------------------------------------
+ Water cation -- SCF failure test case
+ ---------------------------------------------------------
+
+ Symbolic Z-matrix:
+ Charge =  1   Multiplicity = 2
+ O
+ H   1   r1
+ H   1   r2  2   a1
+
+ Variables:
+ r1=0.970
+ r2=0.970
+ a1=107.0
+
+                         ----------------------------
+                         Standard orientation:
+                         ----------------------------
+ Center     Atomic     Atomic              Coordinates (Angstroms)
+ Number     Number      Type              X           Y           Z
+ ------------------------------------------------------------
+    1          8           0        0.000000    0.000000    0.120000
+    2          1           0        0.000000    0.757000   -0.480000
+    3          1           0        0.000000   -0.757000   -0.480000
+ ------------------------------------------------------------
+
+ SCF Done:  E(UB3LYP) =  -75.9089537232     A.U. after    1 cycles
+ SCF Done:  E(UB3LYP) =  -75.8189123456     A.U. after    2 cycles
+ SCF Done:  E(UB3LYP) =  -75.7245678901     A.U. after    3 cycles
+ SCF Done:  E(UB3LYP) =  -75.6345678901     A.U. after    4 cycles
+ SCF Done:  E(UB3LYP) =  -75.5987654321     A.U. after    5 cycles
+ SCF Done:  E(UB3LYP) =  -75.5876543210     A.U. after    6 cycles
+ SCF Done:  E(UB3LYP) =  -75.5834567890     A.U. after    7 cycles
+ SCF Done:  E(UB3LYP) =  -75.5823456789     A.U. after    8 cycles
+ SCF Done:  E(UB3LYP) =  -75.5819876543     A.U. after    9 cycles
+ SCF Done:  E(UB3LYP) =  -75.5818765432     A.U. after   10 cycles
+ SCF Done:  E(UB3LYP) =  -75.5818456789     A.U. after   11 cycles
+ SCF Done:  E(UB3LYP) =  -75.5818345678     A.U. after   12 cycles
+ SCF Done:  E(UB3LYP) =  -75.5818312345     A.U. after   13 cycles
+ SCF Done:  E(UB3LYP) =  -75.5818309876     A.U. after   14 cycles
+ SCF Done:  E(UB3LYP) =  -75.5818306543     A.U. after   15 cycles
+ SCF Done:  E(UB3LYP) =  -75.5818305432     A.U. after   16 cycles
+ SCF Done:  E(UB3LYP) =  -75.5818304987     A.U. after   17 cycles
+ SCF Done:  E(UB3LYP) =  -75.5818304876     A.U. after   18 cycles
+ SCF Done:  E(UB3LYP) =  -75.5818304843     A.U. after   19 cycles
+ SCF Done:  E(UB3LYP) =  -75.5818304832     A.U. after   20 cycles
+
+ >>>>>> SCF convergence failure! <<<<<<
+ The SCF has not converged after 20 cycles.
+ Error termination via Lnk1e.

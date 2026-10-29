@@ -1,0 +1,57 @@
+{
+  "schema": "eigengrid.scientific-skill/v1",
+  "id": "validation.minimum-validation",
+  "version": "1.0.1",
+  "title": "Molecular minimum validation",
+  "status": "active",
+  "summary": "Require attributable optimization and harmonic evidence before assessing a molecular structure as a local minimum.",
+  "knowledge_level": "draft",
+  "capability_levels":
+    {
+      "reference": true,
+      "advisory": true,
+      "plannable": true,
+      "renderable": {},
+      "executable": {},
+      "validated": {},
+    },
+  "domains": ["molecular-electronic-structure"],
+  "domain_maturity": { "molecular-electronic-structure": "plannable" },
+  "engine_compatibility": { "orca": ">=5.0.0 <7.0.0" },
+  "requires":
+    [
+      {
+        "id": "workflows.frequencies-and-thermochemistry",
+        "range": ">=1.0.0 <2.0.0",
+        "reason": "Molecular minimum validation requires the declared workflows.frequencies-and-thermochemistry capability.",
+      },
+    ],
+  "recommends": [],
+  "conflicts": [],
+  "required_inputs":
+    [
+      "optimized structure digest",
+      "optimization convergence evidence",
+      "complete frequencies and mode vectors",
+      "exact method-state identity",
+    ],
+  "missing_input_behavior": "Return an indeterminate validation result with missing evidence; do not promote normal termination or a partial parser record to a minimum claim.",
+  "assets":
+    {
+      "concepts": "concepts/",
+      "rules": "decision-rules/",
+      "protocols": "protocols/",
+      "references": "references/",
+      "evals": "evals/",
+      "validation": "validation/",
+    },
+  "helpers": [],
+  "review":
+    {
+      "status": "unreviewed",
+      "owner_role": "computational-chemist",
+      "evidence_ids": [],
+      "notes": "Unreviewed draft. No expert review, benchmark support, engine validation, or production certification is claimed.",
+    },
+  "provenance": { "created_by": "model" },
+}

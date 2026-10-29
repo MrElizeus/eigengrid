@@ -1,0 +1,38 @@
+                      ----------------------------
+                      |  xTB 6.7.1  (Linux)    |
+                      ----------------------------
+
+  Program: xTB 6.7.1
+  Method:  GFN2-xTB
+  File:    water_opt.xyz
+
+  ==========================================
+  |          VIBRATIONAL ANALYSIS          |
+  ==========================================
+
+  Frequency calculation at the optimised geometry
+
+  ==========================================
+  |              RESULTS                  |
+  ==========================================
+
+  TOTAL ENERGY        =     -7.26890123 Eh
+  GRADIENT NORM       =      0.000123
+
+  VIBRATIONAL FREQUENCIES
+
+  mode   freq(cm^-1)   int.(km/mol)
+    1     1642.35      65.43
+    2     3821.57       2.35
+    3     3942.12       0.99
+
+  IR SPECTRUM (arbitrary units)
+    1642.35    0.4321
+    3821.57    0.0156
+    3942.12    0.0065
+
+  ==========================================
+
+  TOTAL ENERGY        =     -7.26890123 Eh
+
+  normal termination of xtb

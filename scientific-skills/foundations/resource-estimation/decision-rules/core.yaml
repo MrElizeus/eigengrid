@@ -1,0 +1,25 @@
+{
+  "schema": "eigengrid.decision-rule/v1",
+  "id": "foundations.resource-estimation.core",
+  "version": "1.0.0",
+  "question": "Can this work unit be bounded by the available local environment profile?",
+  "when":
+    {
+      "all":
+        [
+          { "fact": "inputs.complete", "operator": "equals", "value": true },
+          { "fact": "applicability.confirmed", "operator": "equals", "value": true },
+        ],
+    },
+  "recommendation":
+    {
+      "action": "produce conservative typed resource bounds with assumptions and uncertainty",
+      "strength": "conditional",
+    },
+  "rationale": "Bounded resource estimates support safe scheduling without granting scheduler or process authority.",
+  "risk_class": 2,
+  "approval": "required_if_material_field_changes",
+  "immutable_fields": ["objective", "charge", "multiplicity", "method", "basis", "physical_model"],
+  "evidence": { "level": "draft", "references": [] },
+  "limitations": "Estimates are coarse planning aids, not benchmarks or execution guarantees. Escalate out-of-profile systems and retain the approved scientific protocol unchanged.",
+}

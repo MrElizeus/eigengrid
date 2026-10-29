@@ -1,0 +1,40 @@
+{
+  "schema": "eigengrid.protocol-fragment/v1",
+  "id": "validation.uncertainty-assessment.assess-scientific-uncertainty",
+  "version": "1.0.0",
+  "capability": "validation.uncertainty-assessment",
+  "required_inputs":
+    [
+      "validated observations",
+      "model and basis identity",
+      "assumptions and applicability limits",
+      "requested confidence",
+    ],
+  "missing_input_behavior": "block",
+  "steps":
+    [
+      {
+        "id": "verify-inputs",
+        "kind": "validation",
+        "reason": "Fail closed before planning from incomplete or mismatched evidence.",
+      },
+      {
+        "id": "assess-scientific-uncertainty",
+        "kind": "assessment",
+        "reason": "Reported digits and converged jobs do not establish scientific accuracy.",
+      },
+      {
+        "id": "record-evidence",
+        "kind": "provenance",
+        "reason": "Persist exact skill, fragment, input, output, and decision references.",
+      },
+    ],
+  "acceptance":
+    [
+      "uncertainty sources are enumerated",
+      "unsupported quantitative bounds are absent",
+      "claim scope matches evidence",
+    ],
+  "retry_policy": { "maximum_attempts": 1, "material_change": "new_decision_and_exact_approval" },
+  "effect_authority": "none",
+}

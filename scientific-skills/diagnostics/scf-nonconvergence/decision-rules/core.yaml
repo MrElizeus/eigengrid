@@ -1,0 +1,25 @@
+{
+  "schema": "eigengrid.decision-rule/v1",
+  "id": "diagnostics.scf-nonconvergence.core",
+  "version": "1.0.0",
+  "question": "Which remediation class is justified by the observed SCF failure?",
+  "when":
+    {
+      "all":
+        [
+          { "fact": "inputs.complete", "operator": "equals", "value": true },
+          { "fact": "applicability.confirmed", "operator": "equals", "value": true },
+        ],
+    },
+  "recommendation":
+    {
+      "action": "prefer no-change operational reconciliation, then finite policy-bounded numerical controls; require a new decision and approval for material changes",
+      "strength": "conditional",
+    },
+  "rationale": "A retry must not silently change charge, multiplicity, method, basis, physical model, or objective.",
+  "risk_class": 2,
+  "approval": "required_if_material_field_changes",
+  "immutable_fields": ["objective", "charge", "multiplicity", "method", "basis", "physical_model"],
+  "evidence": { "level": "draft", "references": [] },
+  "limitations": "SCF convergence is not proof of the correct electronic state. Escalate state instability, severe spin contamination, suspected multireference character, or material model changes.",
+}

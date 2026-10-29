@@ -1,0 +1,28 @@
+#include <tunables/global>
+
+# Ubuntu 24.04 AppArmor 4.0. Root owns candidate binaries and this profile.
+# No shell, engine, SSH, sudo, user-home or generic network authority.
+profile eigengrid-head flags=(attach_disconnected) {
+  #include <abstractions/base>
+
+  /opt/eigengrid/candidates/*/eigengrid{,-head} mrix,
+  /opt/eigengrid/candidates/*/bin/eigengrid{,-head} mrix,
+  /opt/eigengrid/current/ r,
+  /opt/eigengrid/current/bin/ r,
+  /etc/eigengrid/head.env r,
+  owner /var/lib/eigengrid/head/ rw,
+  owner /var/lib/eigengrid/head/** rwk,
+  # Filesystem Unix sockets are mediated by file rules, not abstract addr rules.
+  /run/postgresql/.s.PGSQL.5432 rw,
+
+  # Bun/libc host metadata; no scientific input or private home reads.
+  /etc/{host.conf,hosts,nsswitch.conf,resolv.conf,passwd,group} r,
+  owner @{PROC}/@{pid}/{stat,statm,comm,cgroup,limits} r,
+  owner @{PROC}/@{pid}/task/@{tid}/{stat,status,comm} r,
+  /proc/sys/vm/mmap_min_addr r,
+  /sys/kernel/mm/transparent_hugepage/enabled r,
+  /sys/fs/cgroup/{,system.slice/,system.slice/eigengrid-head.service/}{cpu.max,memory.max,memory.high} r,
+
+  deny network inet,
+  deny network inet6,
+}

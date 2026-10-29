@@ -1,0 +1,25 @@
+{
+  "schema": "eigengrid.decision-rule/v1",
+  "id": "validation.minimum-validation.core",
+  "version": "1.0.0",
+  "question": "Is the optimized structure supported as a local minimum by complete attributable evidence?",
+  "when":
+    {
+      "all":
+        [
+          { "fact": "inputs.complete", "operator": "equals", "value": true },
+          { "fact": "applicability.confirmed", "operator": "equals", "value": true },
+        ],
+    },
+  "recommendation":
+    {
+      "action": "pass only with convergence, complete mode evidence, no unresolved relevant imaginary mode, and plausible structure",
+      "strength": "conditional",
+    },
+  "rationale": "A scientific assessment must distinguish operational success from the evidence needed for a local-minimum claim.",
+  "risk_class": 2,
+  "approval": "required_if_material_field_changes",
+  "immutable_fields": ["objective", "charge", "multiplicity", "method", "basis", "physical_model"],
+  "evidence": { "level": "draft", "references": [] },
+  "limitations": "This validates only a local harmonic minimum for the declared model, not global stability, synthesis, kinetics, or experimental truth.",
+}

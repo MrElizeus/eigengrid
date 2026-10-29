@@ -1,0 +1,14 @@
+{
+  "schema": "eigengrid.canonical-digest-vector.v1",
+  "algorithm": "sha256",
+  "unicodeNormalization": "NFC",
+  "omittedTopLevelField": "contextDigest",
+  "input": {
+    "schema": "eigengrid.context-pack.v1",
+    "contextDigest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "zeta": [3, 0, { "beta": true, "alpha": null }],
+    "name": "Café"
+  },
+  "canonicalUnsignedJson": "{\"name\":\"Café\",\"schema\":\"eigengrid.context-pack.v1\",\"zeta\":[3,0,{\"alpha\":null,\"beta\":true}]}",
+  "digest": "sha256:e4e3e37233a66eb81c252fd809a18a980081f67e185d98e7d49624622569d098"
+}

@@ -1,0 +1,137 @@
+{
+  "$ref": "#/definitions/eigengrid.colony-compatibility-manifest.v1",
+  "definitions": {
+    "eigengrid.colony-compatibility-manifest.v1": {
+      "type": "object",
+      "properties": {
+        "schema": { "type": "string", "const": "eigengrid.colony-compatibility-manifest.v1" },
+        "package": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 214,
+              "pattern": "^(?:@[a-z0-9][a-z0-9._-]*\\/)?[a-z0-9][a-z0-9._-]*$"
+            },
+            "version": {
+              "type": "string",
+              "maxLength": 128,
+              "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-(?:0|[1-9]\\d*|\\d*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"
+            }
+          },
+          "required": ["name", "version"],
+          "additionalProperties": false
+        },
+        "protocol": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string", "const": "eigengrid.colony" },
+            "version": {
+              "$ref": "#/definitions/eigengrid.colony-compatibility-manifest.v1/properties/package/properties/version"
+            }
+          },
+          "required": ["id", "version"],
+          "additionalProperties": false
+        },
+        "provides": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "protocol",
+                  "contract",
+                  "species_schema",
+                  "skill_schema",
+                  "artifact_evidence_schema",
+                  "database_schema",
+                  "eigengrid",
+                  "codex_substrate",
+                  "myrmex_profile"
+                ]
+              },
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+-]*$"
+              },
+              "version": {
+                "$ref": "#/definitions/eigengrid.colony-compatibility-manifest.v1/properties/package/properties/version"
+              },
+              "digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+            },
+            "required": ["kind", "id", "version"],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        },
+        "requires": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "$ref": "#/definitions/eigengrid.colony-compatibility-manifest.v1/properties/provides/items/properties/kind"
+              },
+              "id": {
+                "$ref": "#/definitions/eigengrid.colony-compatibility-manifest.v1/properties/provides/items/properties/id"
+              },
+              "range": {
+                "type": "object",
+                "properties": {
+                  "minimumInclusive": {
+                    "$ref": "#/definitions/eigengrid.colony-compatibility-manifest.v1/properties/package/properties/version"
+                  },
+                  "maximumExclusive": {
+                    "$ref": "#/definitions/eigengrid.colony-compatibility-manifest.v1/properties/package/properties/version"
+                  }
+                },
+                "required": ["minimumInclusive", "maximumExclusive"],
+                "additionalProperties": false
+              },
+              "requiredFeatureFlags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 3,
+                  "maxLength": 160,
+                  "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+                }
+              }
+            },
+            "required": ["kind", "id", "range", "requiredFeatureFlags"],
+            "additionalProperties": false
+          }
+        },
+        "featureFlags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/eigengrid.colony-compatibility-manifest.v1/properties/requires/items/properties/requiredFeatureFlags/items"
+          }
+        },
+        "unknownFieldPolicy": { "type": "string", "const": "reject" },
+        "manifestDigest": {
+          "$ref": "#/definitions/eigengrid.colony-compatibility-manifest.v1/properties/provides/items/properties/digest"
+        }
+      },
+      "required": [
+        "schema",
+        "package",
+        "protocol",
+        "provides",
+        "requires",
+        "featureFlags",
+        "unknownFieldPolicy",
+        "manifestDigest"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://eigengrid.dev/schemas/colony/eigengrid.colony-compatibility-manifest.v1.schema.json",
+  "title": "eigengrid.colony-compatibility-manifest.v1 runtime contract"
+}

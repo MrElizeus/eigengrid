@@ -1,0 +1,25 @@
+{
+  "schema": "eigengrid.decision-rule/v1",
+  "id": "methods.continuum-solvation.core",
+  "version": "1.0.0",
+  "question": "Is a continuum model adequate for the stated solution-phase objective?",
+  "when":
+    {
+      "all":
+        [
+          { "fact": "inputs.complete", "operator": "equals", "value": true },
+          { "fact": "applicability.confirmed", "operator": "equals", "value": true },
+        ],
+    },
+  "recommendation":
+    {
+      "action": "record the solvent and physical model as immutable protocol fields and surface known omissions",
+      "strength": "conditional",
+    },
+  "rationale": "Solvation choice changes the Hamiltonian or free-energy model and is scientifically material.",
+  "risk_class": 2,
+  "approval": "required_if_material_field_changes",
+  "immutable_fields": ["objective", "charge", "multiplicity", "method", "basis", "physical_model"],
+  "evidence": { "level": "draft", "references": [] },
+  "limitations": "Continuum solvation omits explicit microscopic solvent structure. Escalate strong specific interactions, mixed solvents, electrolytes, and accuracy claims beyond the declared applicability.",
+}

@@ -1,0 +1,605 @@
+{
+  "provenance": {
+    "kind": "anonymized-format-regression",
+    "note": "Derived from Slurm 23.11.4 replies. Site names and binding identity are anonymized; this fixture does not certify a deployment. Source interpretation: Initial OOM allocation-only probe did not trigger OOM (job 31); it is retained as an observation, not an OOM PASS."
+  },
+  "text": "26|COMPLETED|0:0|00:00:00||128M|1|2|0:0|2101|2026-09-20T00:25:25Z|fixture-cluster|worker-01|None\n26.batch|COMPLETED|0:0|00:00:00|48K||1|2|||2026-09-20T00:25:25Z|fixture-cluster|worker-01|\n27|FAILED|42:0|00:00:00||128M|1|2|0:0|2101|2026-09-20T00:25:25Z|fixture-cluster|worker-01|None\n27.batch|FAILED|42:0|00:00:00|40K||1|2|||2026-09-20T00:25:25Z|fixture-cluster|worker-01|\n28|FAILED|9:0|00:00:00||128M|1|2|0:0|2101|2026-09-20T00:25:25Z|fixture-cluster|worker-01|None\n28.batch|FAILED|9:0|00:00:00|44K||1|2|||2026-09-20T00:25:25Z|fixture-cluster|worker-01|\n29|CANCELLED by 2101|0:0|00:00:58||128M|1|2|0:0|2101|2026-09-20T00:25:25Z|fixture-cluster|worker-01|None\n29.batch|FAILED|15:0|00:00:58|9736K||1|2|||2026-09-20T00:25:25Z|fixture-cluster|worker-01|\n30|TIMEOUT|0:0|00:01:00||128M|1|2|0:0|2101|2026-09-20T00:25:25Z|fixture-cluster|worker-01|None\n30.batch|FAILED|15:0|00:01:01|9732K||1|2|||2026-09-20T00:25:25Z|fixture-cluster|worker-01|\n31|COMPLETED|0:0|00:00:00||128M|1|2|0:0|2101|2026-09-20T00:25:25Z|fixture-cluster|worker-01|None\n31.batch|COMPLETED|0:0|00:00:00|60K||1|2|||2026-09-20T00:25:25Z|fixture-cluster|worker-01|\n32|FAILED|43:0|00:00:00||128M|1|2|43:0|2101|2026-09-20T00:25:25Z|fixture-cluster|worker-01|None\n32.batch|FAILED|43:0|00:00:00|264K||1|2|||2026-09-20T00:25:25Z|fixture-cluster|worker-01|\n32.0|FAILED|43:0|00:00:00|8K||1|1|||2026-09-20T00:25:25Z|fixture-cluster|worker-01|\n33|COMPLETED|0:0|00:00:01||128M|1|2|0:0|2101|2026-09-20T00:25:25Z|fixture-cluster|worker-01|None\n33.batch|COMPLETED|0:0|00:00:01|28K||1|2|||2026-09-20T00:25:25Z|fixture-cluster|worker-01|\n",
+  "native": {
+    "meta": {
+      "plugin": {
+        "type": "",
+        "name": "",
+        "data_parser": "data_parser/v0.0.40",
+        "accounting_storage": "accounting_storage/slurmdbd"
+      },
+      "slurm": {
+        "version": {
+          "major": "23",
+          "micro": "4",
+          "minor": "11"
+        },
+        "release": "23.11.4",
+        "cluster": "fixture-cluster"
+      }
+    },
+    "errors": [],
+    "warnings": [],
+    "jobs": [
+      {
+        "job_id": 26,
+        "cluster": "fixture-cluster",
+        "user": "eliseo",
+        "time": {
+          "submission": 1789863925
+        },
+        "state": {
+          "current": ["COMPLETED"],
+          "reason": "None"
+        },
+        "exit_code": {
+          "status": ["SUCCESS"],
+          "return_code": {
+            "set": true,
+            "infinite": false,
+            "number": 0
+          },
+          "signal": {
+            "id": {
+              "set": false,
+              "infinite": false,
+              "number": 0
+            },
+            "name": ""
+          }
+        },
+        "derived_exit_code": {
+          "status": ["SUCCESS"],
+          "return_code": {
+            "set": true,
+            "infinite": false,
+            "number": 0
+          },
+          "signal": {
+            "id": {
+              "set": false,
+              "infinite": false,
+              "number": 0
+            },
+            "name": ""
+          }
+        },
+        "steps": [
+          {
+            "step": {
+              "id": "26.batch",
+              "name": "batch"
+            },
+            "state": ["COMPLETED"],
+            "exit_code": {
+              "status": ["SUCCESS"],
+              "return_code": {
+                "set": true,
+                "infinite": false,
+                "number": 0
+              },
+              "signal": {
+                "id": {
+                  "set": false,
+                  "infinite": false,
+                  "number": 0
+                },
+                "name": ""
+              }
+            }
+          }
+        ]
+      },
+      {
+        "job_id": 27,
+        "cluster": "fixture-cluster",
+        "user": "eliseo",
+        "time": {
+          "submission": 1789863925
+        },
+        "state": {
+          "current": ["FAILED"],
+          "reason": "None"
+        },
+        "exit_code": {
+          "status": ["ERROR"],
+          "return_code": {
+            "set": true,
+            "infinite": false,
+            "number": 42
+          },
+          "signal": {
+            "id": {
+              "set": false,
+              "infinite": false,
+              "number": 0
+            },
+            "name": ""
+          }
+        },
+        "derived_exit_code": {
+          "status": ["SUCCESS"],
+          "return_code": {
+            "set": true,
+            "infinite": false,
+            "number": 0
+          },
+          "signal": {
+            "id": {
+              "set": false,
+              "infinite": false,
+              "number": 0
+            },
+            "name": ""
+          }
+        },
+        "steps": [
+          {
+            "step": {
+              "id": "27.batch",
+              "name": "batch"
+            },
+            "state": ["FAILED"],
+            "exit_code": {
+              "status": ["ERROR"],
+              "return_code": {
+                "set": true,
+                "infinite": false,
+                "number": 42
+              },
+              "signal": {
+                "id": {
+                  "set": false,
+                  "infinite": false,
+                  "number": 0
+                },
+                "name": ""
+              }
+            }
+          }
+        ]
+      },
+      {
+        "job_id": 28,
+        "cluster": "fixture-cluster",
+        "user": "eliseo",
+        "time": {
+          "submission": 1789863925
+        },
+        "state": {
+          "current": ["FAILED"],
+          "reason": "None"
+        },
+        "exit_code": {
+          "status": ["ERROR"],
+          "return_code": {
+            "set": true,
+            "infinite": false,
+            "number": 137
+          },
+          "signal": {
+            "id": {
+              "set": false,
+              "infinite": false,
+              "number": 0
+            },
+            "name": ""
+          }
+        },
+        "derived_exit_code": {
+          "status": ["SUCCESS"],
+          "return_code": {
+            "set": true,
+            "infinite": false,
+            "number": 0
+          },
+          "signal": {
+            "id": {
+              "set": false,
+              "infinite": false,
+              "number": 0
+            },
+            "name": ""
+          }
+        },
+        "steps": [
+          {
+            "step": {
+              "id": "28.batch",
+              "name": "batch"
+            },
+            "state": ["FAILED"],
+            "exit_code": {
+              "status": ["ERROR"],
+              "return_code": {
+                "set": true,
+                "infinite": false,
+                "number": 137
+              },
+              "signal": {
+                "id": {
+                  "set": false,
+                  "infinite": false,
+                  "number": 0
+                },
+                "name": ""
+              }
+            }
+          }
+        ]
+      },
+      {
+        "job_id": 29,
+        "cluster": "fixture-cluster",
+        "user": "eliseo",
+        "time": {
+          "submission": 1789863925
+        },
+        "state": {
+          "current": ["CANCELLED"],
+          "reason": "None"
+        },
+        "exit_code": {
+          "status": ["SUCCESS"],
+          "return_code": {
+            "set": true,
+            "infinite": false,
+            "number": 0
+          },
+          "signal": {
+            "id": {
+              "set": false,
+              "infinite": false,
+              "number": 0
+            },
+            "name": ""
+          }
+        },
+        "derived_exit_code": {
+          "status": ["SUCCESS"],
+          "return_code": {
+            "set": true,
+            "infinite": false,
+            "number": 0
+          },
+          "signal": {
+            "id": {
+              "set": false,
+              "infinite": false,
+              "number": 0
+            },
+            "name": ""
+          }
+        },
+        "steps": [
+          {
+            "step": {
+              "id": "29.batch",
+              "name": "batch"
+            },
+            "state": ["FAILED"],
+            "exit_code": {
+              "status": ["ERROR"],
+              "return_code": {
+                "set": true,
+                "infinite": false,
+                "number": 143
+              },
+              "signal": {
+                "id": {
+                  "set": false,
+                  "infinite": false,
+                  "number": 0
+                },
+                "name": ""
+              }
+            }
+          }
+        ]
+      },
+      {
+        "job_id": 30,
+        "cluster": "fixture-cluster",
+        "user": "eliseo",
+        "time": {
+          "submission": 1789863925
+        },
+        "state": {
+          "current": ["TIMEOUT"],
+          "reason": "None"
+        },
+        "exit_code": {
+          "status": ["SUCCESS"],
+          "return_code": {
+            "set": true,
+            "infinite": false,
+            "number": 0
+          },
+          "signal": {
+            "id": {
+              "set": false,
+              "infinite": false,
+              "number": 0
+            },
+            "name": ""
+          }
+        },
+        "derived_exit_code": {
+          "status": ["SUCCESS"],
+          "return_code": {
+            "set": true,
+            "infinite": false,
+            "number": 0
+          },
+          "signal": {
+            "id": {
+              "set": false,
+              "infinite": false,
+              "number": 0
+            },
+            "name": ""
+          }
+        },
+        "steps": [
+          {
+            "step": {
+              "id": "30.batch",
+              "name": "batch"
+            },
+            "state": ["FAILED"],
+            "exit_code": {
+              "status": ["ERROR"],
+              "return_code": {
+                "set": true,
+                "infinite": false,
+                "number": 143
+              },
+              "signal": {
+                "id": {
+                  "set": false,
+                  "infinite": false,
+                  "number": 0
+                },
+                "name": ""
+              }
+            }
+          }
+        ]
+      },
+      {
+        "job_id": 31,
+        "cluster": "fixture-cluster",
+        "user": "eliseo",
+        "time": {
+          "submission": 1789863925
+        },
+        "state": {
+          "current": ["COMPLETED"],
+          "reason": "None"
+        },
+        "exit_code": {
+          "status": ["SUCCESS"],
+          "return_code": {
+            "set": true,
+            "infinite": false,
+            "number": 0
+          },
+          "signal": {
+            "id": {
+              "set": false,
+              "infinite": false,
+              "number": 0
+            },
+            "name": ""
+          }
+        },
+        "derived_exit_code": {
+          "status": ["SUCCESS"],
+          "return_code": {
+            "set": true,
+            "infinite": false,
+            "number": 0
+          },
+          "signal": {
+            "id": {
+              "set": false,
+              "infinite": false,
+              "number": 0
+            },
+            "name": ""
+          }
+        },
+        "steps": [
+          {
+            "step": {
+              "id": "31.batch",
+              "name": "batch"
+            },
+            "state": ["COMPLETED"],
+            "exit_code": {
+              "status": ["SUCCESS"],
+              "return_code": {
+                "set": true,
+                "infinite": false,
+                "number": 0
+              },
+              "signal": {
+                "id": {
+                  "set": false,
+                  "infinite": false,
+                  "number": 0
+                },
+                "name": ""
+              }
+            }
+          }
+        ]
+      },
+      {
+        "job_id": 32,
+        "cluster": "fixture-cluster",
+        "user": "eliseo",
+        "time": {
+          "submission": 1789863925
+        },
+        "state": {
+          "current": ["FAILED"],
+          "reason": "None"
+        },
+        "exit_code": {
+          "status": ["ERROR"],
+          "return_code": {
+            "set": true,
+            "infinite": false,
+            "number": 43
+          },
+          "signal": {
+            "id": {
+              "set": false,
+              "infinite": false,
+              "number": 0
+            },
+            "name": ""
+          }
+        },
+        "derived_exit_code": {
+          "status": ["ERROR"],
+          "return_code": {
+            "set": true,
+            "infinite": false,
+            "number": 43
+          },
+          "signal": {
+            "id": {
+              "set": false,
+              "infinite": false,
+              "number": 0
+            },
+            "name": ""
+          }
+        },
+        "steps": [
+          {
+            "step": {
+              "id": "32.batch",
+              "name": "batch"
+            },
+            "state": ["FAILED"],
+            "exit_code": {
+              "status": ["ERROR"],
+              "return_code": {
+                "set": true,
+                "infinite": false,
+                "number": 43
+              },
+              "signal": {
+                "id": {
+                  "set": false,
+                  "infinite": false,
+                  "number": 0
+                },
+                "name": ""
+              }
+            }
+          },
+          {
+            "step": {
+              "id": "32.0",
+              "name": "python3"
+            },
+            "state": ["FAILED"],
+            "exit_code": {
+              "status": ["ERROR"],
+              "return_code": {
+                "set": true,
+                "infinite": false,
+                "number": 43
+              },
+              "signal": {
+                "id": {
+                  "set": false,
+                  "infinite": false,
+                  "number": 0
+                },
+                "name": ""
+              }
+            }
+          }
+        ]
+      },
+      {
+        "job_id": 33,
+        "cluster": "fixture-cluster",
+        "user": "eliseo",
+        "time": {
+          "submission": 1789863925
+        },
+        "state": {
+          "current": ["COMPLETED"],
+          "reason": "None"
+        },
+        "exit_code": {
+          "status": ["SUCCESS"],
+          "return_code": {
+            "set": true,
+            "infinite": false,
+            "number": 0
+          },
+          "signal": {
+            "id": {
+              "set": false,
+              "infinite": false,
+              "number": 0
+            },
+            "name": ""
+          }
+        },
+        "derived_exit_code": {
+          "status": ["SUCCESS"],
+          "return_code": {
+            "set": true,
+            "infinite": false,
+            "number": 0
+          },
+          "signal": {
+            "id": {
+              "set": false,
+              "infinite": false,
+              "number": 0
+            },
+            "name": ""
+          }
+        },
+        "steps": [
+          {
+            "step": {
+              "id": "33.batch",
+              "name": "batch"
+            },
+            "state": ["COMPLETED"],
+            "exit_code": {
+              "status": ["SUCCESS"],
+              "return_code": {
+                "set": true,
+                "infinite": false,
+                "number": 0
+              },
+              "signal": {
+                "id": {
+                  "set": false,
+                  "infinite": false,
+                  "number": 0
+                },
+                "name": ""
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,15 @@
+id: cp2k-singlepoint
+software: cp2k
+description: CP2K single point energy
+input_extensions:
+  - .inp
+commands:
+  local:
+    run: "cp2k {{input}} > {{output}}"
+outputs:
+  main_log: "{{basename}}.out"
+parser:
+  name: cp2k
+resources:
+  default_cores: 16
+  default_memory_gb: 32

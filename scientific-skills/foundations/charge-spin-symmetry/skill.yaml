@@ -1,0 +1,51 @@
+{
+  "schema": "eigengrid.scientific-skill/v1",
+  "id": "foundations.charge-spin-symmetry",
+  "version": "1.0.0",
+  "title": "Charge, multiplicity, and electronic state",
+  "status": "active",
+  "summary": "Require explicit molecular charge and spin multiplicity and test their internal consistency without silently selecting an electronic state.",
+  "knowledge_level": "draft",
+  "capability_levels":
+    {
+      "reference": true,
+      "advisory": true,
+      "plannable": true,
+      "renderable": {},
+      "executable": {},
+      "validated": {},
+    },
+  "domains": ["molecular-electronic-structure"],
+  "domain_maturity": { "molecular-electronic-structure": "plannable" },
+  "engine_compatibility": { "orca": ">=5.0.0 <7.0.0" },
+  "requires":
+    [
+      {
+        "id": "representations.molecular-structures",
+        "range": ">=1.0.0 <2.0.0",
+        "reason": "Charge, multiplicity, and electronic state requires the declared representations.molecular-structures capability.",
+      },
+    ],
+  "recommends": [],
+  "conflicts": [],
+  "required_inputs":
+    ["net molecular charge", "spin multiplicity", "element identities or electron count"],
+  "missing_input_behavior": "Block the plan and ask for charge and multiplicity separately. Do not infer either field from a filename, prior job, or model suggestion.",
+  "assets":
+    {
+      "concepts": "concepts/",
+      "rules": "decision-rules/",
+      "protocols": "protocols/",
+      "references": "references/",
+      "evals": "evals/",
+    },
+  "helpers": [],
+  "review":
+    {
+      "status": "unreviewed",
+      "owner_role": "computational-chemist",
+      "evidence_ids": [],
+      "notes": "Unreviewed draft. No expert review, benchmark support, engine validation, or production certification is claimed.",
+    },
+  "provenance": { "created_by": "model" },
+}

@@ -1,0 +1,2 @@
+{"id": "foundations.resource-estimation.positive", "kind": "positive", "query": "estimate cores memory scratch wall time resources molecule", "expected_included": ["foundations.resource-estimation"], "expected_excluded": [], "expected_top": "foundations.resource-estimation"}
+{"id": "foundations.resource-estimation.negative", "kind": "negative", "query": "assign molecular charge and spin multiplicity", "expected_included": [], "expected_excluded": ["foundations.resource-estimation"]}

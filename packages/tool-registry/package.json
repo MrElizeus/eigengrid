@@ -1,0 +1,23 @@
+{
+  "name": "@eigengrid/tool-registry",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*"
+  },
+  "dependencies": {
+    "zod": "^3.24.0",
+    "zod-to-json-schema": "^3.25.2",
+    "@eigengrid/core": "workspace:*",
+    "@eigengrid/protocol": "workspace:*",
+    "@eigengrid/events": "workspace:*",
+    "@eigengrid/python-bridge": "workspace:*",
+    "@eigengrid/runners": "workspace:*",
+    "@eigengrid/config": "workspace:*",
+    "@eigengrid/scientific-schema": "workspace:*"
+  }
+}
