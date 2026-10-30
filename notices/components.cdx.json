@@ -6,12 +6,12 @@
     "component": {
       "type": "application",
       "name": "eigengrid",
-      "version": "1.0.0-rc.1"
+      "version": "1.0.0-rc.2"
     },
     "properties": [
       {
         "name": "eigengrid:bun-lock-sha256",
-        "value": "f674f7ee780a552853f5e7899db8a5dabc339c77382bbda931e9f2022a001030"
+        "value": "ff0e110ef672e48a8e667534156239946735ea228ce95c91060f6a7f221fea0b"
       }
     ]
   },
