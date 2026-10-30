@@ -12,6 +12,21 @@ export function terminalText(value: unknown, multiline = false): string {
   return multiline ? clean.replace(/\t/g, "  ") : clean.replace(/[\n\t]/g, " ");
 }
 
+/** Keep the full destination clickable when Ink wraps the visible URL across rows. */
+export function terminalHyperlink(url: string): string {
+  const text = terminalText(url);
+  // OSC payloads must not contain control bytes or whitespace. Invalid links stay plain text.
+  if (text !== url || /\s/u.test(url)) return text;
+  try {
+    const target = new URL(url);
+    if (!["https:", "http:"].includes(target.protocol) || target.username || target.password)
+      return text;
+  } catch {
+    return text;
+  }
+  return `\u001b]8;;${url}\u0007${text}\u001b]8;;\u0007`;
+}
+
 export function useTerminalSize() {
   const { stdout } = useStdout();
   const measure = () => ({ columns: stdout.columns || 100, rows: stdout.rows || 30 });

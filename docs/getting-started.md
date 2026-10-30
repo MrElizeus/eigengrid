@@ -27,6 +27,8 @@ signs out the current ChatGPT account; `/connect usage` opens ChatGPT's usage co
 Selecting a verified account activates ChatGPT access before loading models. A failed
 model-list request keeps that account selected, so `/models` can retry without falling
 back to the API key connection.
+The displayed sign-in URL stays clickable in terminals supporting OSC 8 hyperlinks,
+including when it wraps across rows; each row opens the complete URL.
 This uses the official [open-source sign-in flow](https://developers.openai.com/siwc/token-sharing-open-source/sign-in)
 with eligibility and limits determined by OpenAI and the selected account/workspace.
 
@@ -53,6 +55,10 @@ requests `/models` from the configured provider with that API credential; it nev
 borrows a saved ChatGPT session. Missing credentials open a connection choice rather
 than showing a public directory. Providers without a live listing endpoint report that
 limitation instead of presenting cached entries as available.
+
+OpenCode Go uses its shared `https://opencode.ai/inference/go/v1/models` listing,
+even when the saved inference endpoint uses `/openai/v1`, `/anthropic/v1` or the
+older `/zen/go/v1` route. Explicit proxy endpoints keep their own `/models` route.
 
 Live catalogs supply availability. Directory metadata can supply names and capabilities.
 Shutdown dates and lifecycle flags exclude retired or deprecated entries; image,

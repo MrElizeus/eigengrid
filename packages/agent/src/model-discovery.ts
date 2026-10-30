@@ -1,5 +1,6 @@
 import {
   isSupportedProviderAdapter,
+  isOfficialOpenCodeGoEndpoint,
   resolveProviderApiKey,
   parseReasoningLevels,
   isReasoningEffort,
@@ -137,6 +138,10 @@ export async function discoverConfiguredModels(
     endpoint.hash
   )
     throw new Error("The configured provider endpoint is invalid");
+  // Go lists all API families at one shared endpoint, not under /openai or /anthropic.
+  // Preserve explicit proxies and custom endpoints, just as inference routing does.
+  const officialGo = providerId === "opencode-go" && isOfficialOpenCodeGoEndpoint(config.baseUrl);
+  if (officialGo) endpoint = new URL("https://opencode.ai/inference/go/v1/models");
   if (!key && !["localhost", "127.0.0.1", "[::1]"].includes(endpoint.hostname))
     throw new ModelConnectionRequiredError(
       providerId,
@@ -144,7 +149,7 @@ export async function discoverConfiguredModels(
     );
   const headers: Record<string, string> = !key
     ? {}
-    : adapter === "@ai-sdk/anthropic"
+    : adapter === "@ai-sdk/anthropic" && !officialGo
       ? { "x-api-key": key, "anthropic-version": "2023-06-01" }
       : { Authorization: `Bearer ${key}` };
   const models: ChatGptModel[] = [];
