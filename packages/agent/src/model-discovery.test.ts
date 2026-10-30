@@ -188,6 +188,95 @@ describe("live credential-scoped model discovery", () => {
     ).rejects.toThrow("authentication method");
   });
 
+  test.each([
+    "https://opencode.ai/inference/go/openai/v1",
+    "https://opencode.ai/inference/go/anthropic/v1/",
+    "https://opencode.ai/inference/go/v1",
+    "https://opencode.ai/zen/go/v1",
+  ])("OpenCode Go lists all API families through its shared catalog from %s", async (baseUrl) => {
+    const result = await discoverConfiguredModels(
+      { ...config, providerName: "opencode-go", baseUrl },
+      {
+        catalog: async () => ({
+          "opencode-go": {
+            id: "opencode-go",
+            name: "OpenCode Go",
+            api: "https://opencode.ai/inference/go/openai/v1",
+            npm: "@ai-sdk/openai-compatible",
+            models: {
+              "chat-model": { id: "chat-model", npm: "@ai-sdk/openai-compatible" },
+              "messages-model": { id: "messages-model", npm: "@ai-sdk/anthropic" },
+              "responses-model": { id: "responses-model", npm: "@ai-sdk/openai" },
+            },
+          },
+        }),
+        fetch: fakeFetch(async (input, init) => {
+          expect(String(input)).toBe("https://opencode.ai/inference/go/v1/models");
+          expect(new Headers(init?.headers).get("authorization")).toBe(
+            "Bearer fixture-api-credential",
+          );
+          return Response.json({
+            data: [{ id: "chat-model" }, { id: "messages-model" }, { id: "responses-model" }],
+          });
+        }),
+      },
+    );
+    expect(result.source).toBe("https://opencode.ai/inference/go/v1/models");
+    expect(result.models.map((model) => [model.id, model.reasoningProtocol])).toEqual([
+      ["chat-model", "openai-compatible"],
+      ["messages-model", "anthropic"],
+      ["responses-model", "openai"],
+    ]);
+  });
+
+  test.each([
+    "https://private-proxy.example/go/v1",
+    "https://opencode.ai.example/inference/go/openai/v1",
+    "https://opencode.ai:8443/inference/go/openai/v1",
+    "http://opencode.ai/inference/go/openai/v1",
+    "https://opencode.ai/inference/v1",
+  ])("OpenCode Go preserves custom discovery endpoints at %s", async (baseUrl) => {
+    await discoverConfiguredModels(
+      { ...config, providerName: "opencode-go", baseUrl },
+      {
+        catalog: async () => ({}),
+        fetch: fakeFetch(async (input) => {
+          expect(String(input)).toBe(`${baseUrl}/models`);
+          return Response.json({ data: [{ id: "proxy-chat" }] });
+        }),
+      },
+    );
+  });
+
+  test("OpenCode Go shared discovery uses bearer auth with native Anthropic metadata", async () => {
+    await discoverConfiguredModels(
+      {
+        ...config,
+        providerName: "opencode-go",
+        baseUrl: "https://opencode.ai/inference/go/anthropic/v1",
+      },
+      {
+        catalog: async () => ({
+          "opencode-go": {
+            id: "opencode-go",
+            name: "OpenCode Go",
+            api: "https://opencode.ai/inference/go/anthropic/v1",
+            npm: "@ai-sdk/anthropic",
+            models: {},
+          },
+        }),
+        fetch: fakeFetch(async (input, init) => {
+          expect(String(input)).toBe("https://opencode.ai/inference/go/v1/models");
+          expect(new Headers(init?.headers).get("authorization")).toBe(
+            "Bearer fixture-api-credential",
+          );
+          expect(new Headers(init?.headers).has("x-api-key")).toBe(false);
+          return Response.json({ data: [{ id: "messages-model" }] });
+        }),
+      },
+    );
+  });
+
   test("loopback model servers can be listed without an API key", async () => {
     const result = await discoverConfiguredModels(
       { ...config, providerName: "local", baseUrl: "http://127.0.0.1:11434/v1", apiKey: undefined },

@@ -10,7 +10,7 @@ import {
 } from "@eigengrid/agent";
 import { openSystemBrowser } from "@eigengrid/agent/chatgpt-auth";
 import { consoleTheme as palette } from "../../presentation/console-theme";
-import { terminalText, useTerminalSize } from "../terminal";
+import { terminalHyperlink, terminalText, useTerminalSize } from "../terminal";
 import { VariantPicker } from "./VariantPicker";
 
 export type ProviderConnection =
@@ -242,7 +242,7 @@ export function ProviderAuthPicker({
           {browserUnavailable && (
             <Text color={palette.warn}>Browser could not open. Open this link manually:</Text>
           )}
-          <Text wrap="wrap">{terminalText(link)}</Text>
+          <Text wrap="wrap">{terminalHyperlink(link)}</Text>
         </>
       ) : (
         <>

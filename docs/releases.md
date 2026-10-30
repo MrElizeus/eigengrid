@@ -3,16 +3,24 @@
 Source and release artifacts follow [the publication policy](publication.md).
 Run `bun run verify:publication` before building and publishing any release.
 
-Version **1.0.0-rc.1** includes the core runtime, CLI, generic engine adapters and a
-reviewed publication selection of 15 basic knowledge entries. Catalog content
-remains scientifically unreviewed; advanced catalogs are not bundled.
+Version **1.0.0-rc.2** fixes two provider connection issues:
+
+- OpenCode Go model selection queries the shared live catalog even when the saved
+  inference endpoint uses the OpenAI, Anthropic or legacy Go route. Custom proxy
+  endpoints retain their own catalog route.
+- The ChatGPT sign-in URL uses OSC 8 hyperlinks so every wrapped row opens the
+  complete authorization URL in supported terminals, preserving the visible layout.
+
+The package includes the core runtime, CLI, generic engine adapters and a reviewed
+publication selection of 15 basic knowledge entries. Catalog content remains
+scientifically unreviewed; advanced catalogs are not bundled.
 
 Commit the source and build the Linux x64 distribution before packaging it:
 
 ```bash
 bun run build:native
 node scripts/release/package.mjs
-node scripts/release/verify-package.mjs dist/packages/eigengrid-1.0.0-rc.1-linux-x64.tar.gz --source dist/native
+node scripts/release/verify-package.mjs dist/packages/eigengrid-1.0.0-rc.2-linux-x64.tar.gz --source dist/native
 ```
 
 Packaging requires a clean checkout and a distribution built from its exact commit and

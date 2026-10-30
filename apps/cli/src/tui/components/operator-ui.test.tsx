@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "bun:test";
 import { EventEmitter } from "node:events";
 import { stripVTControlCharacters } from "node:util";
-import { render } from "ink";
+import { Box, Text, render } from "ink";
 import type { ReactNode } from "react";
 import { MessageList } from "./MessageList";
 import { PromptInput } from "./PromptInput";
@@ -10,7 +10,7 @@ import { OperatorWelcome } from "./OperatorWelcome";
 import type { TuiMessage } from "../state/tui-types";
 import { tuiReducer, initialTuiState } from "../state/tui-reducer";
 import { redactCommand } from "../secret-input";
-import { terminalText } from "../terminal";
+import { terminalHyperlink, terminalText } from "../terminal";
 
 class Input extends EventEmitter {
   isTTY = true;
@@ -34,14 +34,17 @@ class Output extends EventEmitter {
   columns = 80;
   rows = 24;
   frames: string[] = [];
+  rawFrames: string[] = [];
   write(chunk: string) {
+    this.rawFrames.push(chunk);
     this.frames.push(stripVTControlCharacters(chunk));
     return true;
   }
 }
 const sessions: ReturnType<typeof render>[] = [];
-function mount(node: ReactNode) {
+function mount(node: ReactNode, columns = 80) {
   const stdout = new Output();
+  stdout.columns = columns;
   const session = render(node, {
     stdin: new Input() as unknown as NodeJS.ReadStream,
     stdout: stdout as unknown as NodeJS.WriteStream,
@@ -229,5 +232,57 @@ describe("operator terminal experience", () => {
     expect(terminalText("\u001b[31mfailed\u001b[0m\nspoof")).toBe("failed spoof");
     expect(terminalText("one\nsecond\r\x07", true)).toBe("one\nsecond");
     expect(terminalText("\u001b]0;fake title\u0007name")).toBe("name");
+  });
+
+  for (const columns of [48, 80]) {
+    it(`keeps the complete sign-in target on every wrapped URL row at ${columns} columns`, async () => {
+      const url = new URL("https://auth.openai.com/api/accounts/authorize");
+      url.search = new URLSearchParams({
+        client_id: "dynamic_agent_client",
+        redirect_uri: "http://127.0.0.1:45379/auth/callback",
+        scope: "openid profile email offline_access resource.invoke chatgpt.tokens.use.direct",
+        state: "fixture-state".repeat(4),
+        nonce: "fixture-nonce".repeat(4),
+        code_challenge_method: "S256",
+        code_challenge: "fixture-challenge".repeat(3),
+      }).toString();
+      const destination = url.toString();
+      const panel = (text: string) => (
+        <Box borderStyle="round" paddingX={1} flexDirection="column">
+          <Text>Continue with ChatGPT in your browser. Waiting for authorization…</Text>
+          <Text wrap="wrap">{text}</Text>
+        </Box>
+      );
+      const plain = mount(panel(terminalText(destination)), columns);
+      const linked = mount(panel(terminalHyperlink(destination)), columns);
+      expect(await frame(linked.stdout)).toBe(await frame(plain.stdout));
+      const raw = linked.stdout.rawFrames.at(-1) ?? "";
+      const rows = raw.split("\n").filter((row) => row.includes("\u001b]8;;"));
+      expect(rows.length).toBeGreaterThan(1);
+      for (const row of rows) {
+        const targets = row
+          .split("\u001b]8;;")
+          .slice(1)
+          .map((part) => part.split("\u0007", 1)[0])
+          .filter(Boolean);
+        expect(targets).toEqual([destination]);
+        expect(row).toContain("\u001b]8;;\u0007");
+      }
+    });
+  }
+
+  it("does not turn control bytes or non-web destinations into terminal commands", () => {
+    for (const url of [
+      "https://example.test/\u0007unsafe",
+      "https://example.test/\u001b]0;fake title\u0007",
+      "https://example.test/\nunsafe",
+      "javascript:alert(1)",
+      "https://user:password@example.test/",
+      "not a URL",
+      "",
+    ]) {
+      expect(terminalHyperlink(url)).toBe(terminalText(url));
+      expect(terminalHyperlink(url)).not.toContain("\u001b");
+    }
   });
 });

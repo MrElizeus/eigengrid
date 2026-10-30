@@ -28,7 +28,7 @@
     },
     "apps/cli": {
       "name": "@eigengrid/cli",
-      "version": "1.0.0-rc.3",
+      "version": "1.0.0-rc.2",
       "bin": {
         "eigengrid": "./bin/eigengrid.ts",
         "eigengrid-head": "./bin/eigengrid-head.ts",

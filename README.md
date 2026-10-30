@@ -4,7 +4,7 @@ EigenGrid is a computational chemistry control plane: versioned scientific proto
 durable missions, typed engine adapters and an optional native tool-calling agent.
 Scientists can create, review, approve and start missions without a language model.
 
-This is the **1.0.0-rc.1 release candidate**. Linux x64 software contracts are covered by
+This is the **1.0.0-rc.2 release candidate**. Linux x64 software contracts are covered by
 local and PostgreSQL integration tests. Installation-specific Slurm/AMBER qualification,
 large-system performance and scientific acceptance remain separate requirements.
 See [supported capabilities](docs/scientific-capabilities.md) before planning a campaign.

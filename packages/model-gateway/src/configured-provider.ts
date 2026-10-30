@@ -255,7 +255,7 @@ export function createResponseBoundedFetch(
   };
 }
 
-function isOfficialOpenCodeGoEndpoint(baseURL: string): boolean {
+export function isOfficialOpenCodeGoEndpoint(baseURL: string): boolean {
   try {
     const url = new URL(baseURL);
     return (
