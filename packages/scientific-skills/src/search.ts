@@ -116,7 +116,7 @@ export interface SkillSearchOptions {
   candidateIds?: readonly string[];
 }
 
-/** Authoritative lexical search. A derived semantic index may only provide candidateIds. */
+/** Canonical lexical search with an optional union of derived semantic candidates. */
 export function searchScientificSkills(
   registry: ScientificSkillRegistry,
   query: string,
@@ -126,7 +126,6 @@ export function searchScientificSkills(
   const candidateIds = options.candidateIds ? new Set(options.candidateIds) : undefined;
   const hits = registry
     .all()
-    .filter((skill) => !candidateIds || candidateIds.has(skill.manifest.id))
     .filter((skill) => options.includeDeprecated || skill.manifest.status === "active")
     .filter(
       (skill) =>
@@ -134,7 +133,7 @@ export function searchScientificSkills(
         options.domains.some((domain) => skill.manifest.domains.includes(domain)),
     )
     .map((skill) => scoreSkill(skill, terms, query))
-    .filter((hit) => terms.length === 0 || hit.score > 0)
+    .filter((hit) => terms.length === 0 || hit.score > 0 || candidateIds?.has(hit.skill.skillId))
     .sort(
       (left, right) =>
         right.score - left.score ||

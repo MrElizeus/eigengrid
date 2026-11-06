@@ -1,12 +1,15 @@
 import {
   installedScientificSkillRoot,
-  loadScientificSkillCorpus,
-  loadScientificSkillFragments,
-  ScientificSkillRegistry,
+  type ScientificSkillRegistry,
   resolveScientificSkillGraph,
-  searchScientificSkills,
   type LoadedScientificSkill,
 } from "@eigengrid/scientific-skills";
+import {
+  installedScientificRetrieval,
+  skillKey,
+  type CatalogSnapshot as AuthorizedSnapshot,
+  type ScientificRetrievalService,
+} from "@eigengrid/scientific-retrieval";
 import type { Tool } from "@eigengrid/tool-registry";
 import {
   MdWorkflowProtocolSchema,
@@ -19,6 +22,8 @@ interface CatalogSnapshot {
   registry: ScientificSkillRegistry;
   protocolSkills: LoadedScientificSkill[];
   protocolAssetCount: number;
+  authorized: AuthorizedSnapshot;
+  retrieval: ScientificRetrievalService;
 }
 
 let cachedCatalog: CatalogSnapshot | undefined;
@@ -33,12 +38,21 @@ function protocolAssets(skill: LoadedScientificSkill): string[] {
 
 function catalog(): CatalogSnapshot {
   const root = catalogRoot();
-  if (cachedCatalog?.root === root) return cachedCatalog;
-  const registry = new ScientificSkillRegistry(loadScientificSkillCorpus(root));
+  const retrieval = installedScientificRetrieval(root);
+  const authorized = retrieval.snapshot();
+  if (
+    cachedCatalog?.root === root &&
+    cachedCatalog.authorized.revision === authorized.revision &&
+    cachedCatalog.retrieval === retrieval
+  )
+    return cachedCatalog;
+  const registry = authorized.registry;
   const protocolSkills = registry.all().filter((skill) => protocolAssets(skill).length > 0);
   cachedCatalog = {
     root,
     registry,
+    authorized,
+    retrieval,
     protocolSkills,
     protocolAssetCount: protocolSkills.reduce(
       (count, skill) => count + protocolAssets(skill).length,
@@ -134,15 +148,22 @@ export const listProtocolsTool: Tool<
       const snapshot = catalog();
       const ranking = input.query?.trim()
         ? new Map(
-            searchScientificSkills(snapshot.registry, input.query, { limit: 500 }).hits.map(
-              (hit, index) => [hit.skill.skillId, index],
-            ),
+            (
+              await snapshot.retrieval.search({
+                query: input.query,
+                limit: 1000,
+                candidateLimit: 1000,
+              })
+            ).hits.map((hit, index) => [skillKey(hit.skill.skillId, hit.skill.version), index]),
           )
         : undefined;
+      if (snapshot.retrieval.snapshot().revision !== snapshot.authorized.revision)
+        throw new Error("Scientific catalog changed during discovery; retry the search.");
       const domain = input.domain?.toLowerCase();
       const engine = input.engine?.toLowerCase();
       const matching = snapshot.protocolSkills.filter((skill) => {
-        if (ranking && !ranking.has(skill.manifest.id)) return false;
+        if (ranking && !ranking.has(skillKey(skill.manifest.id, skill.manifest.version)))
+          return false;
         if (domain && !skill.manifest.domains.some((item) => item.toLowerCase() === domain)) {
           return false;
         }
@@ -158,7 +179,9 @@ export const listProtocolsTool: Tool<
       });
       if (ranking)
         matching.sort(
-          (left, right) => ranking.get(left.manifest.id)! - ranking.get(right.manifest.id)!,
+          (left, right) =>
+            ranking.get(skillKey(left.manifest.id, left.manifest.version))! -
+            ranking.get(skillKey(right.manifest.id, right.manifest.version))!,
         );
       const protocols = matching.slice(0, input.limit ?? 20).map(protocolSummary);
       return {
@@ -296,14 +319,14 @@ export const inspectProtocolTool: Tool<
           a.manifest.id.localeCompare(b.manifest.id),
       );
       const allFragments = skills.flatMap((entry) =>
-        loadScientificSkillFragments(entry, {
-          assetKinds: input.assetKinds ?? [
-            "protocols",
-            "decision_rules",
-            "validation",
-            "diagnostics",
-          ],
-        }),
+        snapshot.authorized.fragments.filter(
+          (fragment) =>
+            fragment.reference.skillId === entry.manifest.id &&
+            fragment.reference.version === entry.manifest.version &&
+            (input.assetKinds ?? ["protocols", "decision_rules", "validation", "diagnostics"]).some(
+              (kind) => kind === fragment.assetKind,
+            ),
+        ),
       );
       let index = input.cursor?.fragment ?? 0;
       let character = input.cursor?.character ?? 0;

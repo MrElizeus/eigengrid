@@ -139,6 +139,22 @@ versus 0.75 s; the 20 lookups took 5.74 s versus 0.0035 s. These are synthetic
 in-memory measurements, not installation service-level targets. Frame counts are
 the reproducible scaling result; timings depend on load and hardware.
 
+## Scientific retrieval
+
+Scientific discovery is implemented by `@eigengrid/scientific-retrieval`. An authorized
+catalog snapshot feeds fragment BM25 and an optional local exact vector index. Candidate
+lists are collapsed by exact skill version before reciprocal rank fusion. Declared
+scientific constraints refine the ordering; the existing dependency resolver supplies
+mandatory knowledge independently of similarity. Context retains exact canonical fragment
+identities and reports ambiguity, unavailable closure or insufficient budget explicitly.
+
+This service does not change mission compilation, persisted graph hashes, execution
+authority, protocol maturity or the scientific corpus. `list-protocols` and
+`inspect-protocol` retain their public schemas; CLI/TUI memory uses the same retrieval
+implementation. Runtime operations and experiential lessons remain separate stores.
+See [scientific retrieval](scientific-retrieval.md) for the API, local deployment,
+evaluation gates and boundaries of the 1.0 implementation.
+
 ## Release compatibility
 
 Active services and tests use responsibility-based names. The published HTTP SQL migration
