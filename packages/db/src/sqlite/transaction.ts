@@ -7,6 +7,8 @@ export interface SqliteStatement {
 
 export interface SqliteConnection {
   query(sql: string): SqliteStatement;
+  readonly inTransaction?: boolean;
+  close?(): void;
 }
 
 export class SqliteTransaction implements DbTransactionInterface {
@@ -14,22 +16,29 @@ export class SqliteTransaction implements DbTransactionInterface {
 
   constructor(
     private db: SqliteConnection,
-    private onEnd: () => void,
+    private onEnd: (unusable?: boolean) => void,
   ) {
     db.query("BEGIN IMMEDIATE").run();
   }
 
   async commit(): Promise<void> {
     if (this.finalized) return;
-    this.finalized = true;
     this.db.query("COMMIT").run();
+    this.finalized = true;
     this.onEnd();
   }
 
   async rollback(): Promise<void> {
     if (this.finalized) return;
+    try {
+      // SQLite can roll back automatically after an I/O/resource error.
+      if (this.db.inTransaction !== false) this.db.query("ROLLBACK").run();
+    } catch (error) {
+      this.finalized = true;
+      this.onEnd(true);
+      throw error;
+    }
     this.finalized = true;
-    this.db.query("ROLLBACK").run();
     this.onEnd();
   }
 

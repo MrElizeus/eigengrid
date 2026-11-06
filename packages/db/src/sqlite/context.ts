@@ -47,7 +47,6 @@ export class SqliteContext {
   // ── Transaction support ──────────────────────────────────
 
   async beginTransaction(): Promise<DbTransactionInterface> {
-    const db = this.ensureDb();
     const previous = this.transactionTail;
     let release!: () => void;
     this.transactionTail = new Promise<void>((resolve) => {
@@ -56,7 +55,18 @@ export class SqliteContext {
     await previous;
     this.transactionCount++;
     try {
-      return new SqliteTransaction(db, () => {
+      // Resolve the connection after waiting: the previous transaction may
+      // have discarded it because rollback failed.
+      const db = this.ensureDb();
+      return new SqliteTransaction(db, (unusable) => {
+        if (unusable) {
+          this.db = null;
+          try {
+            db.close?.();
+          } catch {
+            // Preserve the rollback error; this connection is never reused.
+          }
+        }
         this.transactionCount--;
         release();
       });
