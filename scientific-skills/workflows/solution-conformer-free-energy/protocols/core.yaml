@@ -1,0 +1,70 @@
+schema: eigengrid.protocol-fragment/v1
+id: workflows.solution-conformer-free-energy.core
+version: 1.0.0
+capability: workflows.solution-conformer-free-energy
+required_inputs:
+- Species identities, stereochemistry, stoichiometry, charge and standard states
+- Solvent and temperature, equilibrated populations or stated equilibrium assumption
+- Conformer candidates, search provenance, degeneracy convention and energy/frequency levels
+- Thermochemical cycle specifying solvent, concentration and pressure conventions for each term
+missing_input_behavior: block
+steps:
+- id: sample-distinct-minima
+  kind: planning
+  reason: Search accessible rotamers and conformations with multiple starts using a method suitable
+    for the system and solvent. Preserve stereochemistry, atom mapping and search settings. Reoptimize
+    at the chosen geometry level, deduplicate after relaxation, and record merged duplicates; raw
+    discovery counts are not degeneracies.
+- id: classify-vibrations
+  kind: validation
+  reason: Inspect Hessians for genuine minima and visualize suspicious imaginary or soft modes. Retry
+    geometry/grid convergence or analyze a hindered rotor where justified. Choose RRHO, quasi-RRHO
+    or another defined treatment with recorded parameters, and compare the resulting free energies
+    for flexible species. Check the engine default before applying a second correction.
+- id: assemble-cycle
+  kind: planning
+  reason: For a gas-to-solution cycle, combine consistent electronic energy, thermal correction, transfer
+    free energy and any required standard-state correction exactly once. If the electronic term already
+    contains continuum solvation, use a documented direct solution cycle and omit duplicate transfer
+    terms. Record which geometry, method, solvent descriptors and cavity settings generated each term.
+- id: convert-standard-state
+  kind: validation
+  reason: When converting an ideal-gas species from pressure p° to concentration C° at T, add RT ln(C°RT/p°)
+    per species using consistent units. For a reaction multiply by Delta nu = products minus reactants
+    in stoichiometric coefficients. At 298.15 K, 1 atm to 1 mol/L adds about 1.89 kcal/mol per species;
+    for A+B -> AB it contributes about -1.89 kcal/mol. Omit any conversion already included in a supplied
+    transfer convention.
+- id: combine-ensembles
+  kind: planning
+  reason: For conformers of the same species and convention, set Gref to the lowest Gi and wi=gi exp[-(Gi-Gref)/(RT)].
+    Normalize pi=wi/sum(wi) and compute Gensemble=Gref-RT ln(sum(wi)); a weighted arithmetic mean
+    of Gi misses mixing entropy. Count a symmetry-equivalent state once via enumeration or multiplicity
+    gi, consistently with rotational symmetry. Different proton counts require a balanced proton chemical-potential
+    cycle.
+- id: test-coverage
+  kind: validation
+  reason: Widen the search and rerank retained minima at a comparable solution level. Report changes
+    in populations and ensemble free energy under search expansion, low-mode treatment and solvation
+    assumptions. For explicit first-shell solvents compare cluster stoichiometries only in a balanced
+    cycle that accounts for solvent exchange.
+- id: retain-ledger
+  kind: provenance
+  reason: For each species preserve coordinates, IDs of search seeds and optimization/Hessian jobs,
+    energies and units, degeneracies, thermal and solvent terms, T, conventions and normalized populations.
+    Apply reaction coefficients only after constructing each species ensemble.
+acceptance:
+- Each energy term has an explicit level, phase and standard state; the ledger counts each contribution
+  once.
+- Weights sum to one per species and nonindependent duplicate structures do not multiply the statistical
+  weight.
+- Report unresolved ordering or ranges when missing conformers, protonation ambiguity, strong specific
+  solvation or low-mode sensitivity can change the observable.
+references:
+- https://doi.org/10.1039/C9CP06869D
+- https://doi.org/10.1021/jp810292n
+- https://doi.org/10.1002/chem.201200497
+- https://orca-manual.mpi-muelheim.mpg.de/contents/structurereactivity/thermochemistry.html
+retry_policy:
+  maximum_attempts: 1
+  material_change: new_decision_and_exact_approval
+effect_authority: none

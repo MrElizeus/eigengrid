@@ -395,3 +395,32 @@ describe("application host-owned sessions, policy and replay", () => {
     expect(f.inferencesCalled()).toBe(1);
   });
 });
+
+test("session discovery is paginated, durable and isolated by actor, project and policy", async () => {
+  const f = fixture();
+  const first = await f.service.open({ ...input, prompt: "Analyze first structure" });
+  const second = await f.service.open({ ...input, prompt: "Analyze second structure" });
+  f.setActor("other-scientist");
+  const foreign = await f.service.open({ ...input, prompt: "Private other task" });
+  f.setActor("scientist-a");
+  f.setProject("other-project");
+  await f.service.open({ ...input, projectId: "other-project", prompt: "Other project task" });
+  f.setProject(input.projectId);
+  const restarted = f.construct();
+  const page = await restarted.list({ ...input, limit: 1 });
+  expect(page.items).toHaveLength(1);
+  expect(page.nextCursor).toBe(page.items[0]!.sessionId);
+  const next = await restarted.list({ ...input, limit: 1, after: page.nextCursor! });
+  expect(next.items).toHaveLength(1);
+  expect(next.nextCursor).toBeNull();
+  expect([...page.items, ...next.items].map((item) => item.sessionId).sort()).toEqual(
+    [first.sessionId, second.sessionId].sort(),
+  );
+  expect(JSON.stringify(page)).not.toContain(foreign.sessionId);
+  expect(f.inferencesCalled()).toBe(0);
+  expect(f.effectsCalled()).toBe(0);
+  f.setPolicy("2".repeat(64));
+  expect((await restarted.list(input)).items).toEqual([]);
+  f.revoke();
+  await expect(restarted.list(input)).rejects.toThrow();
+});

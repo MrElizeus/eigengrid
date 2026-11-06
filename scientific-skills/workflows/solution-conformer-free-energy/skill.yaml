@@ -1,0 +1,48 @@
+schema: eigengrid.scientific-skill/v1
+id: workflows.solution-conformer-free-energy
+version: 1.0.0
+title: Solution conformer populations and standard-state free energy
+status: active
+summary: Combine conformer search, consistent solvation, vibrational corrections and a balanced standard-state
+  cycle to estimate ensemble solution free energies at a stated temperature.
+domains:
+- molecular-electronic-structure
+domain_maturity:
+  molecular-electronic-structure: plannable
+engine_compatibility:
+  orca: '>=6.0.0 <7.0.0'
+knowledge_level: draft
+capability_levels:
+  reference: true
+  advisory: true
+  plannable: true
+  renderable: {}
+  executable: {}
+  validated: {}
+requires:
+- id: methods.continuum-solvation
+  range: '>=1.0.0 <2.0.0'
+  reason: Identify model, solvent, cavity and reference convention for the solvation term.
+- id: workflows.frequencies-and-thermochemistry
+  range: '>=1.0.0 <2.0.0'
+  reason: Use thermal corrections for identified and classified stationary points.
+required_inputs:
+- Species identities, stereochemistry, stoichiometry, charge and standard states
+- Solvent and temperature, equilibrated populations or stated equilibrium assumption
+- Conformer candidates, search provenance, degeneracy convention and energy/frequency levels
+- Thermochemical cycle specifying solvent, concentration and pressure conventions for each term
+missing_input_behavior: Hold populations and solution reaction free energies until temperature, constituent
+  states, stationary-point status and standard-state conventions are known.
+assets:
+  protocols: protocols/
+  rules: decision-rules/
+  references: references/
+  evals: evals/
+review:
+  status: unreviewed
+  owner_role: computational-chemist
+  evidence_ids: []
+  notes: Primary references support individual decisions. Independent review and numerical qualification
+    of this workflow are pending.
+provenance:
+  created_by: model

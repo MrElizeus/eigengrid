@@ -1,0 +1,34 @@
+schema: eigengrid.protocol-fragment/v1
+id: workflows.dft-cluster-preflight.qualify-allocation
+version: 1.0.0
+capability: workflows.dft-cluster-preflight
+effect_authority: none
+missing_input_behavior: block
+steps:
+  - id: identify-allocation
+    kind: planning
+    reason: Inventory shows candidates. Request evidence from a permitted batch allocation of the same class as the proposed calculation.
+    record: [scheduler and adapter versions, job and step ID, node class, partition, requested and allocated CPUs/memory/GRES, runtime environment identity]
+  - id: verify-engine-and-staging
+    kind: validation
+    reason: Establish the engine path/build and its MPI or accelerator libraries in the batch environment after site-approved environment initialization. Verify input and library digests, writable working directory, usable scratch quota and a durable stage-out destination accessible from that node.
+    branch: If GPU acceleration is proposed, establish separately that the device is allocated and visible, the build supports that backend, and the pilot actually used it. Missing device evidence in a CPU allocation leaves GPU readiness unknown.
+  - id: size-pilot
+    kind: planning
+    reason: Choose ranks per node and threads per rank within the assigned CPU set. Check total per-node memory including rank-local allocations, runtime overhead and scratch I/O. Time a representative case before scaling.
+    engine_examples:
+      orca: The ORCA 6.1 driver starts parallel modules. Use its full path and a site-supported MPI environment. Allocate memory for all local processes and headroom beyond per-process MaxCore. Avoid launching a separate driver for each rank.
+      cp2k: Identify the actual CP2K build, data file paths and MPI/OpenMP layout. Confirm the linked MPI runtime and library availability. Preserve XC, basis/potential and numerical settings in the pilot.
+  - id: compare-and-archive
+    kind: validation
+    reason: Inspect scheduler exit, engine termination, SCF convergence, units and target deviation independently. Persist input, output, restart and environment digests with timing, allocation and provenance before scratch expires.
+  - id: reconcile-before-restart
+    kind: provenance
+    reason: When submission acknowledgement is lost, reconcile the existing operation and scheduler identity through the supported runtime. Missing accounting, an absent queue row or an incomplete stage-out leaves the outcome unresolved. Preserve logs and last complete checkpoint.
+    branch: Resume only from compatible complete files with verified lineage. A changed electronic state, Hamiltonian or target starts a new scientific decision. Record job and attempt IDs separately.
+acceptance:
+  - Evidence identifies the allocation class, engine build, layout, input bytes and staged outputs.
+  - A site-approved pilot returns the reference observable in the declared units within its prespecified tolerance.
+  - An unsupported scheduler adapter, missing artifact or unknown submission outcome keeps dispatch blocked.
+retry_policy: {maximum_attempts: 1, material_change: new_decision_and_exact_approval}
+sources: [slurm-gres, slurm-sbatch, slurm-sacct, orca-parallel, orca-memory, cp2k-runtime]

@@ -75,7 +75,9 @@
       "@eigengrid/myrmex-profile/*": ["./packages/myrmex-profile/src/*"],
       "@eigengrid/md-analysis/*": ["./packages/md-analysis/src/*"],
       "@eigengrid/protocol-core": ["./packages/protocol-core/src"],
-      "@eigengrid/protocol-core/*": ["./packages/protocol-core/src/*"]
+      "@eigengrid/protocol-core/*": ["./packages/protocol-core/src/*"],
+      "@eigengrid/experience-memory": ["./packages/experience-memory/src"],
+      "@eigengrid/scientific-retrieval": ["./packages/scientific-retrieval/src"]
     }
   },
   "include": [

@@ -3,7 +3,11 @@ import type { Tool, ToolRegistry } from "@eigengrid/tool-registry";
 import { z } from "zod";
 import { SlashCommands } from "../tui/slash-commands";
 import { loadOperatorPermissions } from "../services/operator-permission-store";
-import { permissionPreset } from "@eigengrid/agent/execution-permissions";
+import {
+  operatorToolKind,
+  permissionDecision,
+  permissionPreset,
+} from "@eigengrid/agent/execution-permissions";
 
 const operatorInfoInput = z.object({}).describe("No input required");
 const operatorInfoOutput = z.object({
@@ -47,6 +51,16 @@ export function createOperatorInfoTool(
       const config = getLlmConfig();
       const materialized = registry.materialize();
       const permissions = permissionPreset(loadOperatorPermissions().preset);
+      // Registry gates always require host verification; that does not imply
+      // human approval in Full Access. Describe the active preset to the model.
+      const available = [...materialized.definitions, ...materialized.approvalRequiredDefinitions];
+      const toolNames = (decision: "allow" | "ask") =>
+        available
+          .filter(
+            (tool) => permissionDecision(permissions, operatorToolKind(tool.name)) === decision,
+          )
+          .map((tool) => tool.name)
+          .sort();
       return {
         ok: true,
         data: {
@@ -71,10 +85,8 @@ export function createOperatorInfoTool(
             ),
           },
           tools: {
-            executable: materialized.definitions.map((tool) => tool.name).sort(),
-            approvalRequired: materialized.approvalRequiredDefinitions
-              .map((tool) => tool.name)
-              .sort(),
+            executable: toolNames("allow"),
+            approvalRequired: toolNames("ask"),
           },
           permissions: {
             preset: permissions.id,

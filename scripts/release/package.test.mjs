@@ -93,6 +93,15 @@ beforeAll(() => {
   for (const name of binaries) put(`bin/${name}`, elf, 0o755);
   put("LICENSE", "MIT contract fixture\n");
   put("share/eigengrid/scientific-skills/contract/skill.yaml", "scope: contract-only\n");
+  for (const name of [
+    "README.md",
+    "config.json",
+    "multilingual-e5-small.json",
+    "requirements-linux-x64-py313.lock",
+    "evaluation-cases.jsonl",
+  ]) {
+    put(`share/eigengrid/retrieval/${name}`, "Synthetic packaging contract fixture\n");
+  }
   put(
     "python/eigengrid_chem-1.0.0rc2-py3-none-any.whl",
     Buffer.from("PK\x03\x04contract-only wheel bytes"),
@@ -130,6 +139,19 @@ afterAll(() => {
 });
 
 describe("native package contract", () => {
+  test("allows the retrieval documentation set while excluding model weights and local indexes", () => {
+    for (const name of ["model.onnx", "index.sqlite", "private-catalog.json"]) {
+      const unexpected = join(input, "share/eigengrid/retrieval", name);
+      writeFileSync(unexpected, "Synthetic forbidden payload fixture\n");
+      try {
+        const result = command("package.mjs", input, join(root, `dist/forbidden-${name}`));
+        expect(result.status).not.toBe(0);
+        expect(result.stderr).toContain(name);
+      } finally {
+        rmSync(unexpected);
+      }
+    }
+  });
   test("archive bytes remain identical across different filesystem timestamp seconds", async () => {
     await new Promise((resolve) => setTimeout(resolve, 1100));
     const second = join(root, "dist/second");

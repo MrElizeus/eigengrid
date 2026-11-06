@@ -28,7 +28,7 @@
     },
     "apps/cli": {
       "name": "@eigengrid/cli",
-      "version": "1.0.0-rc.3",
+      "version": "1.0.0",
       "bin": {
         "eigengrid": "./bin/eigengrid.ts",
         "eigengrid-head": "./bin/eigengrid-head.ts",
@@ -42,6 +42,7 @@
         "@eigengrid/core": "workspace:*",
         "@eigengrid/db": "workspace:*",
         "@eigengrid/events": "workspace:*",
+        "@eigengrid/experience-memory": "workspace:*",
         "@eigengrid/mission-runtime": "workspace:*",
         "@eigengrid/protocol": "workspace:*",
         "@eigengrid/python-bridge": "workspace:*",
@@ -49,6 +50,7 @@
         "@eigengrid/runners": "workspace:*",
         "@eigengrid/scheduler": "workspace:*",
         "@eigengrid/scientific-agent": "workspace:*",
+        "@eigengrid/scientific-retrieval": "workspace:*",
         "@eigengrid/scientific-schema": "workspace:*",
         "@eigengrid/scientific-skills": "workspace:*",
         "@eigengrid/slurm": "workspace:*",
@@ -76,8 +78,10 @@
         "@eigengrid/agent-runtime": "workspace:*",
         "@eigengrid/core": "workspace:*",
         "@eigengrid/events": "workspace:*",
+        "@eigengrid/experience-memory": "workspace:*",
         "@eigengrid/model-gateway": "workspace:*",
         "@eigengrid/protocol": "workspace:*",
+        "@eigengrid/scientific-retrieval": "workspace:*",
         "@eigengrid/scientific-skills": "workspace:*",
         "@eigengrid/tool-registry": "workspace:*",
         "ai": "^6.0.208",
@@ -179,6 +183,13 @@
       "name": "@eigengrid/events",
       "version": "0.1.0",
     },
+    "packages/experience-memory": {
+      "name": "@eigengrid/experience-memory",
+      "version": "0.1.0",
+      "dependencies": {
+        "zod": "^3.24.0",
+      },
+    },
     "packages/md-analysis": {
       "name": "@eigengrid/md-analysis",
       "version": "0.1.0",
@@ -275,6 +286,15 @@
         "@eigengrid/mission-runtime": "workspace:*",
         "@eigengrid/model-gateway": "workspace:*",
         "@eigengrid/protocol-core": "workspace:*",
+        "@eigengrid/scientific-schema": "workspace:*",
+        "@eigengrid/scientific-skills": "workspace:*",
+        "zod": "^3.24.0",
+      },
+    },
+    "packages/scientific-retrieval": {
+      "name": "@eigengrid/scientific-retrieval",
+      "version": "0.1.0",
+      "dependencies": {
         "@eigengrid/scientific-schema": "workspace:*",
         "@eigengrid/scientific-skills": "workspace:*",
         "zod": "^3.24.0",
@@ -395,6 +415,8 @@
 
     "@eigengrid/events": ["@eigengrid/events@workspace:packages/events"],
 
+    "@eigengrid/experience-memory": ["@eigengrid/experience-memory@workspace:packages/experience-memory"],
+
     "@eigengrid/md-analysis": ["@eigengrid/md-analysis@workspace:packages/md-analysis"],
 
     "@eigengrid/mission-runtime": ["@eigengrid/mission-runtime@workspace:packages/mission-runtime"],
@@ -416,6 +438,8 @@
     "@eigengrid/scheduler": ["@eigengrid/scheduler@workspace:packages/scheduler"],
 
     "@eigengrid/scientific-agent": ["@eigengrid/scientific-agent@workspace:packages/scientific-agent"],
+
+    "@eigengrid/scientific-retrieval": ["@eigengrid/scientific-retrieval@workspace:packages/scientific-retrieval"],
 
     "@eigengrid/scientific-schema": ["@eigengrid/scientific-schema@workspace:packages/scientific-schema"],
 

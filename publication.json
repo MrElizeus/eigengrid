@@ -16,7 +16,23 @@
     "diagnostics.imaginary-frequencies",
     "validation.minimum-validation",
     "validation.uncertainty-assessment",
-    "foundations.resource-estimation"
+    "foundations.resource-estimation",
+    "diagnostics.dft-electronic-state-audit",
+    "methods.cp2k-gpw-convergence",
+    "methods.dft-functional-selection",
+    "methods.periodic-boundaries",
+    "validation.dft-reference-panel",
+    "workflows.brillouin-zone-sampling",
+    "workflows.counterpoise-interaction",
+    "workflows.dft-cluster-preflight",
+    "workflows.molecular-basis-convergence",
+    "workflows.solution-conformer-free-energy",
+    "workflows.solution-redox",
+    "workflows.tddft-absorption",
+    "workflows.transition-state-irc",
+    "workflows.gimic-ring-currents",
+    "workflows.nics-tensor-scans",
+    "workflows.nmr-chemical-shifts"
   ],
   "scope": ["source", "git-history", "release-artifacts"]
 }

@@ -1,0 +1,42 @@
+schema: eigengrid.protocol-fragment/v1
+id: workflows.brillouin-zone-sampling.plan
+version: 1.0.0
+capability: workflows.brillouin-zone-sampling
+required_inputs:
+  - lattice vectors, periodic axes and identified comparison cells
+  - observable with units and numerical tolerance
+  - electronic regime or a plan to inspect occupations and magnetic solutions
+  - mesh scheme and shift, occupation model and energy convention
+missing_input_behavior: block
+steps:
+  - id: build-integration-series
+    kind: planning
+    reason: Record reciprocal vectors, periodic axes, mesh offsets, weights and symmetry reduction. Refine each periodic axis starting with a coarse pilot and preserve a comparable spacing across supercells. Test Gamma-only explicitly against a denser mesh if used for a periodic material.
+  - id: converge-occupations
+    kind: planning
+    reason: For metallic or small-gap states, inspect band occupations and use a compatible solver in the installed build. For finite smearing include enough empty bands that the highest computed states have negligible occupation at the chosen tolerance. For a finite physical electronic temperature, hold that temperature and the thermodynamic potential fixed and refine the integration mesh and empty-band count. For a zero-temperature target using numerical smearing, study narrower widths on denser meshes.
+  - id: compare-coupled-refinements
+    kind: validation
+    reason: For each mesh/width pair record SCF convergence, weights, spin moments, selected energy definition and target outputs. Compare energy differences per specified unit, forces, stress or the band edge as required. Where magnetic order competes, track each state separately. A smooth DOS from a broad kernel can conceal inadequate integration.
+  - id: separate-band-path
+    kind: planning
+    reason: Obtain the self-consistent density from the weighted integration mesh. If the engine supports a band-path evaluation, sample high-symmetry segments afterwards for display. Search a sufficiently dense zone for off-path extrema when claiming a gap. DOS broadening is a postprocessing choice and cannot refine the SCF density.
+  - id: retain-provenance
+    kind: provenance
+    reason: Save cell, full mesh definition, symmetry and shift, smearing formula and width with units, magnetic state, number of bands, code version and all failed rows. If parallel groups are used, verify that the group layout and memory fit the actual k-point workload in a pilot.
+acceptance:
+  - At prescribed finite electronic temperature the target observable converges with mesh and empty-band count using one thermodynamic potential. For a zero-temperature target the reported limit also meets its tolerance under reduced numerical smearing.
+  - All compared energies use a consistent electronic energy definition, and no materially occupied tail is truncated.
+  - The SCF integration mesh, DOS broadening, and any plotting path are reported separately.
+stop_conditions:
+  - A high-symmetry path is the only purported evidence for Brillouin-zone integration.
+  - Material occupations reach the highest available band, SCF fails on refinement, or the observable misses its tolerance at the target physical temperature or in the requested zero-width limit.
+references:
+  - references/README.md#special-points
+  - references/README.md#thermal-dft
+  - references/README.md#kpoints
+  - references/README.md#smear
+retry_policy:
+  maximum_attempts: 1
+  material_change: new_decision_and_exact_approval
+effect_authority: none

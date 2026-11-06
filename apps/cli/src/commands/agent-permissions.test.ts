@@ -14,13 +14,37 @@ import { join } from "node:path";
 import type { PermissionPresetId } from "@eigengrid/agent/execution-permissions";
 
 const cli = join(import.meta.dir, "../../bin/eigengrid.ts");
-async function run(preset: PermissionPresetId, shell = false) {
+const waterInput =
+  "%nprocshared=1\n%mem=1GB\n# B3LYP/6-31G(d) opt freq\n\nWater\n\n0 1\nO 0 0 0\nH 0 0 0.96\nH 0.93 0 -0.24\n\n";
+const waterScript =
+  "#!/bin/bash\n#SBATCH --partition=chem\n#SBATCH --cpus-per-task=1\n#SBATCH --mem=2G\ng16 < calculations/water/water.gjf > calculations/water/water.log\n";
+async function run(
+  preset: PermissionPresetId,
+  { shell = false, path = "calculation.in", slurm = false, largeOutput = false } = {},
+) {
   const directory = mkdtempSync(join(tmpdir(), "eigengrid-agent-permission-e2e-"));
   const policyRoot = join(directory, "policy");
   mkdirSync(policyRoot, { mode: 0o700 });
   const workspace = join(directory, "workspace");
   mkdirSync(workspace);
   mkdirSync(join(workspace, ".eigengrid"), { mode: 0o700 });
+  const bin = join(directory, "bin");
+  mkdirSync(bin);
+  if (slurm)
+    writeFileSync(
+      join(bin, "sbatch"),
+      `#!/usr/bin/env bun
+import { appendFileSync, readFileSync } from "node:fs";
+import { strict as assert } from "node:assert";
+assert.deepEqual(process.argv.slice(2), ["--parsable", "calculations/water/submit.sbatch"]);
+assert.equal(readFileSync(process.argv[3], "utf8"), ${JSON.stringify(waterScript)});
+assert.equal(readFileSync("calculations/water/water.gjf", "utf8"), ${JSON.stringify(waterInput)});
+assert.equal(Bun.spawnSync(["bash", "-n", process.argv[3]]).exitCode, 0);
+appendFileSync("submissions.jsonl", JSON.stringify(process.argv.slice(2)) + "\\n");
+console.log("12345;fixture-cluster");
+`,
+      { mode: 0o700 },
+    );
   const policyPath = join(
     policyRoot,
     `${createHash("sha256").update(realpathSync(workspace)).digest("hex")}.json`,
@@ -50,32 +74,78 @@ async function run(preset: PermissionPresetId, shell = false) {
               message: {
                 role: "assistant",
                 content: null,
-                tool_calls: [
-                  {
-                    id: "permission-probe",
-                    type: "function",
-                    function: {
-                      name: shell ? "run-command" : "write-file",
-                      arguments: JSON.stringify(
-                        shell
-                          ? { command: "/usr/bin/id", args: ["-u"] }
-                          : { path: "calculation.in", content: "scientific-input-fixture" },
-                      ),
-                    },
-                  },
-                ],
+                tool_calls: slurm
+                  ? [
+                      {
+                        id: "permissions-info",
+                        type: "function",
+                        function: { name: "operator-info", arguments: "{}" },
+                      },
+                      {
+                        id: "water-input",
+                        type: "function",
+                        function: {
+                          name: "write-file",
+                          arguments: JSON.stringify({
+                            path: "calculations/water/water.gjf",
+                            content: waterInput,
+                          }),
+                        },
+                      },
+                      {
+                        id: "water-script",
+                        type: "function",
+                        function: {
+                          name: "write-file",
+                          arguments: JSON.stringify({
+                            path: "calculations/water/submit.sbatch",
+                            content: waterScript,
+                          }),
+                        },
+                      },
+                      {
+                        id: "water-submit",
+                        type: "function",
+                        function: {
+                          name: "run-command",
+                          arguments: JSON.stringify({
+                            command: "sbatch",
+                            args: ["--parsable", "calculations/water/submit.sbatch"],
+                          }),
+                        },
+                      },
+                    ]
+                  : [
+                      {
+                        id: "permission-probe",
+                        type: "function",
+                        function: {
+                          name: shell ? "run-command" : "write-file",
+                          arguments: JSON.stringify(
+                            shell
+                              ? { command: "/usr/bin/id", args: ["-u"] }
+                              : { path, content: "scientific-input-fixture" },
+                          ),
+                        },
+                      },
+                    ],
               },
               finish_reason: "tool_calls",
             },
           ],
           usage: { prompt_tokens: 10, completion_tokens: 10 },
         });
-      const observation = body.messages.find((message) => message.role === "tool");
+      const observation = body.messages.filter((message) => message.role === "tool").at(-1);
       return Response.json({
         choices: [
           {
             index: 0,
-            message: { role: "assistant", content: observation?.content ?? "No observation" },
+            message: {
+              role: "assistant",
+              content: largeOutput
+                ? "K".repeat(131072)
+                : (observation?.content ?? "No observation"),
+            },
             finish_reason: "stop",
           },
         ],
@@ -119,6 +189,7 @@ async function run(preset: PermissionPresetId, shell = false) {
           EIGENGRID_DB_PROVIDER: "sqlite",
           EIGENGRID_DB_PATH: join(directory, "db.sqlite"),
           EIGENGRID_PERMISSIONS_DIR: policyRoot,
+          PATH: `${bin}:${process.env.PATH}`,
         },
         stdin: "ignore",
         stdout: "pipe",
@@ -138,10 +209,13 @@ async function run(preset: PermissionPresetId, shell = false) {
         exit,
         output: JSON.parse(out),
         calls,
-        written: existsSync(join(workspace, "calculation.in"))
-          ? readFileSync(join(workspace, "calculation.in"), "utf8")
+        written: existsSync(join(workspace, path))
+          ? readFileSync(join(workspace, path), "utf8")
           : undefined,
         audited: existsSync(`${policyPath}.audit.jsonl`),
+        submissions: existsSync(join(workspace, "submissions.jsonl"))
+          ? readFileSync(join(workspace, "submissions.jsonl"), "utf8").trim().split("\n")
+          : [],
       };
     } finally {
       clearTimeout(timeout);
@@ -154,6 +228,12 @@ async function run(preset: PermissionPresetId, shell = false) {
   }
 }
 
+test("flushes large JSON responses completely through a pipe before exiting", async () => {
+  const result = await run("full-access", { largeOutput: true });
+  expect(result.exit).toBe(0);
+  expect(result.output.response).toBe("K".repeat(131072));
+});
+
 for (const preset of ["read-only", "ask", "auto-review", "full-access"] as const) {
   test(`native agent tool dispatch enforces ${preset} with a local fixture provider`, async () => {
     const result = await run(preset);
@@ -164,14 +244,53 @@ for (const preset of ["read-only", "ask", "auto-review", "full-access"] as const
     expect(result.audited).toBe(allowed);
   }, 10000);
 }
+test("Full Access creates a Slurm script in a new calculation directory", async () => {
+  const result = await run("full-access", { path: "calculations/water/submit.sbatch" });
+  expect(result.exit).toBe(0);
+  expect(result.calls).toBe(2);
+  expect(result.written).toBe("scientific-input-fixture");
+  expect(result.audited).toBe(true);
+}, 10000);
+test("Full Access prepares Gaussian water input and submits its script through an sbatch fixture", async () => {
+  const result = await run("full-access", {
+    slurm: true,
+    path: "calculations/water/submit.sbatch",
+  });
+  expect(result.exit).toBe(0);
+  expect(result.output.toolCalls.map((call: { tool: string }) => call.tool)).toEqual([
+    "operator-info",
+    "write-file",
+    "write-file",
+    "run-command",
+  ]);
+  expect(result.output.toolCalls[0].result.data.tools.approvalRequired).toEqual([]);
+  expect(result.output.toolCalls[0].result.data.tools.executable).toContain("write-file");
+  expect(result.output.toolCalls[0].result.data.tools.executable).toContain("run-command");
+  expect(result.output.toolCalls[3].result.data).toMatchObject({
+    exitCode: 0,
+    stdout: "12345;fixture-cluster\n",
+  });
+  expect(result.written).toBe(waterScript);
+  expect(result.submissions).toHaveLength(1);
+  expect(result.audited).toBe(true);
+}, 10000);
+test("a denied write reports its tool and cause instead of a generic policy failure", async () => {
+  const result = await run("full-access", { path: ".eigengrid/inputs/water.gjf" });
+  expect(result.exit).toBe(1);
+  expect(result.output.response).toContain("write-file:");
+  expect(result.output.response).toContain("cannot modify credentials");
+  expect(result.output.response).not.toContain("Tool policy denied effect");
+  expect(result.written).toBeUndefined();
+  expect(result.audited).toBe(false);
+}, 10000);
 test("Full Access program execution inherits the real OS UID", async () => {
-  const result = await run("full-access", true);
+  const result = await run("full-access", { shell: true });
   expect(result.exit).toBe(0);
   expect(result.output.toolCalls[0].result.data.stdout.trim()).toBe(String(process.getuid!()));
   expect(result.audited).toBe(true);
 }, 10000);
 test("Auto Review never approves arbitrary program execution without a human", async () => {
-  const result = await run("auto-review", true);
+  const result = await run("auto-review", { shell: true });
   expect(result.exit).toBe(1);
   expect(result.calls).toBe(1);
   expect(result.audited).toBe(false);

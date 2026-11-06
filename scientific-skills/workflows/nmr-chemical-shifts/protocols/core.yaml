@@ -1,0 +1,44 @@
+schema: eigengrid.protocol-fragment/v1
+id: workflows.nmr-chemical-shifts.core
+version: 1.0.0
+capability: workflows.nmr-chemical-shifts
+effect_authority: none
+missing_input_behavior: block
+steps:
+  - id: define-spectrum-and-site-identity
+    kind: planning
+    reason: Set the target to isotropic 1H or 13C shifts of a diamagnetic species in solution. Record candidate structures, immutable atom IDs, isotope, stereochemistry, charge, solvent, temperature and experiment/reference scale. Document protonation, tautomerism, material exchangeable sites and any counterion or concentration sensitivity.
+  - id: define-state-ledger
+    kind: planning
+    reason: Within each candidate, enumerate distinct populated conformers and establish geometries with the intended state and stereochemistry. Retain atom maps through any reordering. For equilibrium, compute normalized weights from consistent solution free energies and justified degeneracies at the experimental temperature. Count each degeneracy once. Use measured weights with their conditions when available. Separate different stoichiometries or proton counts until their chemical equilibria are specified.
+  - id: compute-property-and-reference
+    kind: planning
+    reason: Use a stated gauge-including orbital treatment, property basis and solvent model. Check numerical quadrature, SCF, property-response convergence and sensitivity of selected shifts to basis enlargement. Include specific solvent interactions if continuum changes cannot resolve a significant hydrogen-bonding effect. For a reference calculation match isotope, electronic/geometry protocols, solvent convention and gauge treatment. Check scope for relativistic/heavy-atom effects on nearby nuclei.
+  - id: recover-isotropic-shieldings
+    kind: validation
+    reason: Read the total nuclear shielding tensor in a documented frame and unit. In ppm, sigma_iso = (sigma_xx + sigma_yy + sigma_zz)/3. The tensor trace is invariant under a rigid coordinate rotation. Check a reported isotropic scalar against the trace when both are available. Preserve separate quantities for shielding, chemical shift and any anisotropy. Each selected site must map uniquely to the same nucleus in every participating conformer.
+  - id: apply-exchange-model
+    kind: planning
+    reason: Compare the interconversion timescale with the frequency difference on the measurement timescale. Under fast exchange, average the site-resolved isotropic shieldings with the conformer populations. For slow exchange, predict separate site values and state populations. Intermediate exchange requires a kinetic line-shape model before assigning a single peak. Distinguish symmetry-equivalent nuclei from diastereotopic hydrogens and accidental overlap. Do not average diastereomers in a candidate comparison.
+  - id: choose-reference-or-calibration
+    kind: planning
+    reason: For a zero-shift reference, delta_ppm = (sigma_ref_ppm - sigma_site_ppm)/(1 - sigma_ref_ppm * 1e-6). At first order for 1H or 13C and a reference assigned delta_ref, delta_site_ppm ≈ delta_ref_ppm + sigma_ref_ppm - sigma_site_ppm. A less-shielded site moves downfield. For fitted referencing record which variable was fitted. If sigma_calc = a + b * delta_exp, predict (sigma_calc - a)/b with nonzero b. If delta_exp = a + b * sigma_calc, use that expression directly. Match isotope, chemistry, geometry/shielding levels and solvent of the training data. Record the equation and apply it once.
+  - id: join-cluster-artifacts
+    kind: provenance
+    reason: Stage independent reference and candidate/conformer jobs with immutable keys (candidate ID, conformer ID, geometry digest, model digest). Join energies and atom-indexed shielding rows on these keys and persistent atom IDs. Preserve engine build, allocation ID, units, input/output digests, parser/index convention, actual convergence and completeness. Enforce unique full key coverage before combining. A missing member keeps the ensemble provisional unless its maximum contribution is independently bounded. Filesystem order or a scheduler completion message cannot establish the correspondence.
+  - id: compare-held-out-assignments
+    kind: validation
+    reason: Fix the allowed peak-to-atom mappings and equivalents using independent experimental constraints such as HSQC/HMBC, integrals and multiplicity where available. Keep overlaps, unassigned sites and exclusions visible across all candidates. Report per-nucleus predicted and measured ppm, signed residual (predicted minus measured), isotope-specific MAE, bias, maximum absolute error and coverage. Evaluate calibration on held-out molecules rather than atoms of the same molecule. Recheck the rank under plausible mappings, conformer weights and solvent models. Report indistinguishable candidates if the separation is within predictive or assignment uncertainty.
+arithmetic_control:
+  scope: Synthetic ppm example for checking reduction and signs, with zero-shift references and the first-order approximation.
+  populations: {A: 0.75, B: 0.25}
+  cases:
+    - {site: H7, isotope: 1H, sigma_A_ppm: 28, sigma_B_ppm: 26, sigma_ref_ppm: 31, fast_exchange_delta_ppm: 3.5, slow_exchange_delta_ppm: [3, 5]}
+    - {site: C2, isotope: 13C, sigma_A_ppm: 150, sigma_B_ppm: 154, sigma_ref_ppm: 190, fast_exchange_delta_ppm: 39, slow_exchange_delta_ppm: [40, 36]}
+  metamorphic_check: Permute job output order without changing the conformer/atom keys. The shifts must be identical. Drop conformer B and the locked ensemble reduction must block.
+acceptance:
+  - All roles are complete and traceable. Raw shieldings and referenced shifts have separate labeled columns and an explicit ppm convention.
+  - Population and isotope-specific reference or calibration choices can be reconstructed. Report uncertainties in weights and their influence on assignments.
+  - An assignment claim identifies independent benchmark errors, excluded alternatives and unresolved sites. A probability from DP4 or DP4+ requires the corresponding calibrated error model, compatible protocols and a declared candidate set.
+references: [ORCA-NMR, HOYE, HOYE-ADDENDUM, PIERENS, DP4]
+retry_policy: {maximum_attempts: 1, material_change: new_decision_and_exact_approval}

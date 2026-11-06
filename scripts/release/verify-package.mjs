@@ -21,6 +21,13 @@ export const BINARY_NAMES = [
   "eigengrid-submit-backend",
 ];
 const CORPUS = "share/eigengrid/scientific-skills";
+const RETRIEVAL_ASSETS = new Set([
+  "share/eigengrid/retrieval/README.md",
+  "share/eigengrid/retrieval/config.json",
+  "share/eigengrid/retrieval/multilingual-e5-small.json",
+  "share/eigengrid/retrieval/requirements-linux-x64-py313.lock",
+  "share/eigengrid/retrieval/evaluation-cases.jsonl",
+]);
 const fail = (message) => {
   throw new Error(message);
 };
@@ -51,6 +58,7 @@ function allowedPath(path) {
     path === "distribution.json" ||
     BINARY_NAMES.some((name) => path === `bin/${name}`) ||
     path.startsWith(`${CORPUS}/`) ||
+    RETRIEVAL_ASSETS.has(path) ||
     path.startsWith("notices/") ||
     /^python\/eigengrid_chem-[A-Za-z0-9_.]+-py3-none-any\.whl$/u.test(path)
   );
@@ -126,7 +134,8 @@ export function validatePayload(distribution, files) {
     distribution.name !== "eigengrid" ||
     distribution.platform !== "linux-x64" ||
     distribution.qualification !== "software-candidate" ||
-    !/^\d+\.\d+\.\d+-rc\.\d+$/u.test(distribution.version) ||
+    !/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-rc\.[1-9]\d*)?$/u.test(distribution.version) ||
+    distribution.version !== distribution.version.trim() ||
     !/^[a-f0-9]{40}$/u.test(distribution.sourceCommit) ||
     !Number.isSafeInteger(distribution.sourceDateEpoch) ||
     distribution.sourceDateEpoch <= 0 ||

@@ -237,6 +237,15 @@ export class NativeAgentEngine {
     this.options.journal.append(state.sessionId, state.cursor, event);
     return this.state(state.sessionId);
   }
+  private async denialDetail(call: AgentToolCall, sessionId: string): Promise<string> {
+    let reason = "Tool policy denied effect";
+    try {
+      reason = (await this.options.authority.explainDenial?.(call, sessionId)) || reason;
+    } catch {
+      // Diagnostic failures cannot change the denial or authorize execution.
+    }
+    return `${call.name}: ${reason}`;
+  }
   start(input: { sessionId?: string; prompt: string; limits?: AgentLimits }): AgentSession {
     const id = input.sessionId ?? randomUUID();
     const state = this.state(id);
@@ -333,7 +342,7 @@ export class NativeAgentEngine {
           return this.append(s, {
             type: "terminated",
             reason: "failed",
-            detail: "Tool was revoked",
+            detail: await this.denialDetail(call, sessionId),
           });
         if (
           policy !== "ask" ||
@@ -371,7 +380,7 @@ export class NativeAgentEngine {
           return this.append(s, {
             type: "terminated",
             reason: "failed",
-            detail: "Tool policy denied effect",
+            detail: await this.denialDetail(pending, sessionId),
           });
         if (decision === "ask") {
           // Host verification is not based on model text or a boolean in tool arguments.

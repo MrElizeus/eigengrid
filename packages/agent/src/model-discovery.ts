@@ -2,7 +2,6 @@ import {
   isSupportedProviderAdapter,
   isOfficialOpenCodeGoEndpoint,
   resolveProviderApiKey,
-  parseReasoningLevels,
   isReasoningEffort,
   type ReasoningEffort,
 } from "@eigengrid/model-gateway";
@@ -12,6 +11,7 @@ import { getLlmConfig, type LlmConfig } from "./llm-client";
 import { configureLlm } from "./llm-client";
 import { saveLlmConfig, loadLlmConfig } from "./llm-config-store";
 import { assertModelVariant, modelVariants } from "./model-variants";
+import { catalogModel } from "./catalog-model";
 
 export interface DiscoveredModels {
   authMode: "api-key" | "chatgpt";
@@ -20,6 +20,8 @@ export interface DiscoveredModels {
   account?: string;
   models: ChatGptModel[];
   excluded: number;
+  /** Live transport, capabilities and pricing used by the same provider boundary. */
+  providerMetadata?: CatalogProvider;
 }
 
 export class ModelConnectionRequiredError extends Error {
@@ -108,9 +110,13 @@ export async function discoverConfiguredModels(
     };
   }
 
-  const catalog = await (options.catalog ?? fetchCatalog)().catch(
-    () => ({}) as Record<string, CatalogProvider>,
-  );
+  const officialGo =
+    config.providerName === "opencode-go" && isOfficialOpenCodeGoEndpoint(config.baseUrl);
+  // Go's live list already supplies routing, prices and capabilities. A separate
+  // models.dev outage must not block a provider that is responding successfully.
+  const catalog: Record<string, CatalogProvider> = await (
+    options.catalog ?? (officialGo ? async () => ({}) : fetchCatalog)
+  )().catch(() => ({}) as Record<string, CatalogProvider>);
   const provider = config.providerName ? catalog[config.providerName] : undefined;
   const providerId = config.providerName === "eigengrid-llm" ? "openai" : config.providerName;
   const adapter =
@@ -140,7 +146,6 @@ export async function discoverConfiguredModels(
     throw new Error("The configured provider endpoint is invalid");
   // Go lists all API families at one shared endpoint, not under /openai or /anthropic.
   // Preserve explicit proxies and custom endpoints, just as inference routing does.
-  const officialGo = providerId === "opencode-go" && isOfficialOpenCodeGoEndpoint(config.baseUrl);
   if (officialGo) endpoint = new URL("https://opencode.ai/inference/go/v1/models");
   if (!key && !["localhost", "127.0.0.1", "[::1]"].includes(endpoint.hostname))
     throw new ModelConnectionRequiredError(
@@ -153,6 +158,14 @@ export async function discoverConfiguredModels(
       ? { "x-api-key": key, "anthropic-version": "2023-06-01" }
       : { Authorization: `Bearer ${key}` };
   const models: ChatGptModel[] = [];
+  const providerMetadata: CatalogProvider = {
+    id: providerId ?? "eigengrid-llm",
+    name: provider?.name ?? (officialGo ? "OpenCode Go" : (providerId ?? "Configured provider")),
+    api: config.baseUrl,
+    env: provider?.env ?? (officialGo ? ["OPENCODE_API_KEY"] : undefined),
+    npm: adapter,
+    models: Object.create(null),
+  };
   const seen = new Set<string>();
   const cursors = new Set<string>();
   let excluded = 0;
@@ -180,24 +193,27 @@ export async function discoverConfiguredModels(
       seen.add(remote.id);
       if (seen.size > 10_000)
         throw new Error("Provider model catalog exceeded the permitted model count");
-      const metadata = provider?.models[remote.id];
-      const status =
-        typeof remote.lifecycle === "string"
-          ? remote.lifecycle
-          : typeof remote.status === "string"
-            ? remote.status
-            : metadata?.status;
-      const shutdown =
-        typeof remote.shutdown_date === "string" ? Date.parse(remote.shutdown_date) : NaN;
+      const metadata = catalogModel(
+        remote.id,
+        remote,
+        provider
+          ? {
+              npm: provider.npm,
+              api: provider.api,
+              ...provider.models[remote.id],
+            }
+          : undefined,
+      );
       if (
-        (Number.isFinite(shutdown) && shutdown <= Date.now()) ||
-        (typeof remote.lifecycle === "string" && remote.lifecycle !== "active") ||
-        !isConversationalModel({ ...metadata, id: remote.id, status }) ||
-        (metadata?.npm && !isSupportedProviderAdapter(metadata.npm))
+        !isConversationalModel(metadata) ||
+        (metadata.npm && !isSupportedProviderAdapter(metadata.npm)) ||
+        (officialGo &&
+          (!metadata.npm || !metadata.api || !isOfficialOpenCodeGoEndpoint(metadata.api)))
       ) {
         excluded++;
         continue;
       }
+      providerMetadata.models[remote.id] = metadata;
       models.push({
         id: remote.id,
         name:
@@ -206,8 +222,7 @@ export async function discoverConfiguredModels(
             : typeof remote.name === "string"
               ? remote.name
               : (metadata?.name ?? remote.id),
-        reasoningLevels:
-          parseReasoningLevels(remote.supported_reasoning_levels) ?? metadata?.reasoningLevels,
+        reasoningLevels: metadata.reasoningLevels,
         reasoningProtocol:
           (metadata?.npm ?? adapter) === "@ai-sdk/openai"
             ? "openai"
@@ -219,10 +234,11 @@ export async function discoverConfiguredModels(
     if (!data.has_more)
       return {
         authMode: "api-key",
-        provider: provider?.name ?? providerId ?? "Configured provider",
+        provider: providerMetadata.name,
         source: endpoint.origin + endpoint.pathname,
         models,
         excluded,
+        providerMetadata,
       };
     if (typeof data.last_id !== "string" || !data.last_id || cursors.has(data.last_id))
       throw new Error("The provider returned an invalid model pagination cursor");

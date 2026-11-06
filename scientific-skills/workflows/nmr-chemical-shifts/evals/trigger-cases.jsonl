@@ -1,0 +1,3 @@
+{"id":"nmr-chemical-shifts.proton-carbon","kind":"positive","query":"Predict proton and carbon chemical shifts of two candidate diastereomers in solution","expected_included":["workflows.nmr-chemical-shifts"],"expected_top":"workflows.nmr-chemical-shifts"}
+{"id":"nmr-chemical-shifts.missing-reference","kind":"planning","query":"I have carbon shielding tensors and several conformers but no TMS calculation. Can I assign the experimental peaks?","expected_included":["workflows.nmr-chemical-shifts"],"expected_top":"workflows.nmr-chemical-shifts"}
+{"id":"nmr-chemical-shifts.unrelated","kind":"negative","query":"Brillouin zone sampling for metallic occupations and k-points","expected_excluded":["workflows.nmr-chemical-shifts"]}

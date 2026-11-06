@@ -46,6 +46,9 @@ only the digest in protected configuration. `eigengrid serve --help` describes e
 schema setup. Session revocation, CSRF, project access and idempotency are enforced in
 the application; a reverse proxy is not an authorization substitute.
 
+Version 1.0.0 serves the `/api/v1` backend API only. The web interface is deferred;
+there are no embedded browser assets or `eigengrid web` command in this release.
+
 ## Failure handling
 
 Preserve journals, database records, CAS objects and returned engine bytes. Inspect the

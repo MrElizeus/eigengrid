@@ -1,0 +1,3 @@
+{"id": "workflows.tddft-absorption.positive", "kind": "positive", "query": "Predict the visible absorption band of my dye and check for charge transfer", "expected_included": ["workflows.tddft-absorption"], "expected_excluded": [], "expected_top": "workflows.tddft-absorption"}
+{"id": "workflows.tddft-absorption.negative", "kind": "negative", "query": "which chemical intermediates does an IRC connect", "expected_included": [], "expected_excluded": ["workflows.tddft-absorption"]}
+{"id": "workflows.tddft-absorption.planning", "kind": "planning", "query": "Plan a TDDFT UV-visible spectrum with oscillator strengths and NTO analysis", "expected_included": ["workflows.tddft-absorption"], "expected_excluded": [], "expected_top": "workflows.tddft-absorption"}

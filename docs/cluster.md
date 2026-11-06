@@ -51,3 +51,6 @@ coordinator. It preserves personal inspection and preparation without treating
 an inventory entry as permission to execute. Persistent Head admission,
 scientific approvals and site credentials remain independently configured.
 See [operation and recovery](operations.md) before updating that service.
+
+For a molecular or periodic DFT campaign, consult the
+[allocation preflight and worked operator prompts](dft-protocols.md#on-a-cluster).

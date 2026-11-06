@@ -1,0 +1,59 @@
+{
+  "schema": "eigengrid.scientific-skill/v1",
+  "id": "workflows.transition-state-irc",
+  "version": "1.0.0",
+  "title": "DFT transition state and IRC connectivity",
+  "status": "active",
+  "summary": "Identify a first-order transition state and test which two minima it connects by following the intrinsic reaction coordinate (IRC) on a single molecular potential-energy surface.",
+  "knowledge_level": "draft",
+  "capability_levels": {
+    "reference": true,
+    "advisory": true,
+    "plannable": true,
+    "renderable": {},
+    "executable": {},
+    "validated": {}
+  },
+  "domains": [
+    "molecular-electronic-structure"
+  ],
+  "domain_maturity": {
+    "molecular-electronic-structure": "plannable"
+  },
+  "engine_compatibility": {
+    "orca": ">=6.1.0 <6.2.0"
+  },
+  "requires": [
+    {
+      "id": "methods.molecular-dft",
+      "range": ">=1.0.0 <2.0.0",
+      "reason": "Fix the surface and numerical thresholds shared by the saddle and both IRC branches. Curvature acceptance is specific to each geometry's role."
+    }
+  ],
+  "recommends": [],
+  "conflicts": [],
+  "required_inputs": [
+    "Atom-mapped reactant and product structures and proposed bond or proton transfers",
+    "Charge, multiplicity, electronic surface, method, basis, dispersion, solvent and constraints",
+    "Saddle search starting geometry or a justified path between mapped endpoints",
+    "Gradient, Hessian and path-convergence criteria and the claimed barrier reference"
+  ],
+  "missing_input_behavior": "Request unresolved endpoints, surface identity or tolerances before planning a barrier. Preserve a lone negative mode as candidate evidence until both branches are assigned.",
+  "assets": {
+    "protocols": "protocols/",
+    "rules": "decision-rules/",
+    "references": "references/",
+    "evals": "evals/",
+    "mappings": "engine-mappings/"
+  },
+  "helpers": [],
+  "review": {
+    "status": "unreviewed",
+    "owner_role": "computational-chemist",
+    "evidence_ids": [],
+    "notes": "Literature-informed planning draft awaiting independent review and system-specific qualification."
+  },
+  "provenance": {
+    "created_by": "model"
+  }
+}

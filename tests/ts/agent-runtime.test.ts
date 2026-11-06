@@ -27,6 +27,8 @@ const EXECUTABLE_TOOLS = [
   "list-protocols",
   "inspect-protocol",
   "operator-info",
+  "search-experiences",
+  "inspect-experience",
 ];
 
 const APPROVAL_REQUIRED_TOOLS = [
@@ -35,6 +37,8 @@ const APPROVAL_REQUIRED_TOOLS = [
   "cancel-job",
   "write-file",
   "run-command",
+  "propose-lesson",
+  "contest-lesson",
 ];
 
 describe("createAgentRuntime", () => {
@@ -94,9 +98,32 @@ describe("createAgentRuntime", () => {
       "list-events": ["jobId", "type", "limit"],
       "list-recipes": ["software"],
       "list-protocols": ["query", "domain", "engine", "limit"],
-      "inspect-protocol": ["id", "version", "assetKinds"],
+      "inspect-protocol": [
+        "id",
+        "version",
+        "includeDependencies",
+        "corpusDigest",
+        "cursor",
+        "maxCharacters",
+        "assetKinds",
+      ],
       "validate-md-protocol": ["protocol"],
       "operator-info": [],
+      "search-experiences": ["query", "includeCandidates", "limit"],
+      "inspect-experience": ["kind", "id", "offset", "limit"],
+      "propose-lesson": [
+        "domain",
+        "title",
+        "claim",
+        "rationale",
+        "conditions",
+        "evidence",
+        "outcome",
+        "confidence",
+        "validFrom",
+        "expiresAt",
+      ],
+      "contest-lesson": ["sourceId", "sourceExpected", "targetId", "targetExpected", "reason"],
       "submit-job": ["software", "inputPath", "name", "runner", "nodeId"],
       "parse-job-output": ["jobId", "attemptId"],
       "cancel-job": ["jobId", "reason"],
@@ -140,5 +167,22 @@ describe("createAgentRuntime", () => {
     expect(typeof runtime.close).toBe("function");
     // Should not throw
     expect(() => runtime.close()).not.toThrow();
+  });
+
+  it("omits local memory and every memory tool in multi-user hosts", async () => {
+    const webRuntime = await createAgentRuntime({ memory: false });
+    try {
+      expect(webRuntime.memory).toBeUndefined();
+      const materialized = webRuntime.registry.materialize();
+      const names = [...materialized.definitions, ...materialized.approvalRequiredDefinitions].map(
+        (tool) => tool.name,
+      );
+      expect(names).not.toContain("search-experiences");
+      expect(names).not.toContain("inspect-experience");
+      expect(names).not.toContain("propose-lesson");
+      expect(names).not.toContain("contest-lesson");
+    } finally {
+      await webRuntime.close();
+    }
   });
 });

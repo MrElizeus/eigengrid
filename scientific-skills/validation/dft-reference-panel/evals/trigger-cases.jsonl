@@ -1,0 +1,2 @@
+{"id":"dft-reference-panel.holdout","kind":"planning","query":"benchmark a held-out reference panel and report signed residuals","expected_top":"validation.dft-reference-panel","expected_included":["validation.dft-reference-panel"]}
+{"id":"dft-reference-panel.unrelated","kind":"negative","query":"Slurm GRES node allocation MPI scratch staging","expected_excluded":["validation.dft-reference-panel"]}

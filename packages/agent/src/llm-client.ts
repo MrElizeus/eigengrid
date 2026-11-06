@@ -1,6 +1,7 @@
 import type { LanguageModel, ModelMessage } from "ai";
 import {
   createConfiguredModelResolution,
+  isOfficialOpenCodeGoEndpoint,
   type ConfiguredModelResolution,
   type ModelCatalogLoader,
   type ModelConversationBudget,
@@ -175,17 +176,28 @@ export async function resolveConfiguredModel(): Promise<{
       }),
     );
   }
-  if (activeConfig.reasoningEffort !== undefined) {
+  const officialGo =
+    activeConfig.providerName === "opencode-go" &&
+    isOfficialOpenCodeGoEndpoint(activeConfig.baseUrl);
+  let metadataLoader = catalogLoader();
+  if (activeConfig.reasoningEffort !== undefined || (officialGo && !cachedResolution)) {
     const { discoverConfiguredModels } = await import("./model-discovery");
     const catalog = await discoverConfiguredModels(activeConfig);
     const selected = catalog.models.find((model) => model.id === activeConfig.model);
     if (!selected)
       throw new Error(
-        "Choose an available model through /models before using a reasoning variant.",
+        "The selected model is unavailable for this connection. Choose an available model through /models.",
       );
     assertModelVariant(selected, activeConfig);
+    if (officialGo) {
+      const provider = catalog.providerMetadata;
+      const metadata = provider?.models[activeConfig.model];
+      if (!provider || !metadata?.npm || !metadata.api)
+        throw new Error("OpenCode Go did not advertise this model's API route. Retry /models.");
+      metadataLoader = async () => ({ "opencode-go": provider });
+    }
   }
-  cachedResolution ??= await createConfiguredModelResolution(configuredOptions(), catalogLoader());
+  cachedResolution ??= await createConfiguredModelResolution(configuredOptions(), metadataLoader);
   return { ...cachedResolution };
 }
 

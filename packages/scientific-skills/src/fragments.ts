@@ -7,6 +7,7 @@ import {
   type SkillFragmentReference,
 } from "@eigengrid/scientific-schema";
 import { withResolvedScientificSkillGraphDigest } from "./graph-digest";
+import { scientificQueryTerms } from "./search";
 import type {
   LoadedScientificSkill,
   ResolvedScientificSkillGraph,
@@ -116,17 +117,6 @@ export function loadScientificSkillFragments(
   return fragments.sort((a, b) => a.reference.fragmentId.localeCompare(b.reference.fragmentId));
 }
 
-function tokens(value: string): string[] {
-  return [
-    ...new Set(
-      value
-        .toLowerCase()
-        .split(/[^a-z0-9]+/u)
-        .filter((token) => token.length > 2),
-    ),
-  ].sort();
-}
-
 function fragmentScore(fragment: ScientificSkillFragment, queryTokens: readonly string[]): number {
   const haystack =
     `${fragment.reference.relativePath} ${fragment.reference.selector} ${fragment.content}`.toLowerCase();
@@ -154,7 +144,7 @@ export function selectProgressiveSkillContext(
   request: ProgressiveContextRequest,
 ): SelectedSkillContext {
   const requiredIds = new Set(request.requiredFragmentIds ?? []);
-  const queryTokens = tokens(request.query);
+  const queryTokens = scientificQueryTerms(request.query);
   const candidates = resolved.skills.flatMap((skill) =>
     loadScientificSkillFragments(skill, { assetKinds: request.assetKinds }),
   );

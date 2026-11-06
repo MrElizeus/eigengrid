@@ -3,8 +3,11 @@
 EigenGrid is a computational chemistry control plane: versioned scientific protocols,
 durable missions, typed engine adapters and an optional native tool-calling agent.
 Scientists can create, review, approve and start missions without a language model.
+Version 1.0.0 includes the CLI, terminal interface and authenticated HTTP API.
+The React web interface is deferred to a separate development branch and is not
+included in this release.
 
-This is the **1.0.0-rc.3 release candidate**. Linux x64 software contracts are covered by
+This branch prepares **1.0.0, the stable software release**. Linux x64 software contracts are covered by
 local and PostgreSQL integration tests. Installation-specific Slurm/AMBER qualification,
 large-system performance and scientific acceptance remain separate requirements.
 See [supported capabilities](docs/scientific-capabilities.md) before planning a campaign.
@@ -29,6 +32,13 @@ These commands inspect interfaces without a model or scientific engine. For a lo
 project, run `bun run eigengrid init --role head --no-gen-key`. Mission execution requires
 [protected site configuration](docs/operations.md), reviewed inputs and explicit authority.
 
+## HTTP API
+
+Run `eigengrid serve` for the authenticated `/api/v1` API. Provision the protected
+HTTP configuration, PostgreSQL schema and HTTPS reverse proxy described in
+[operations](docs/operations.md). The server checks actor identity, project
+membership and scientific roles. Version 1.0.0 does not serve a browser interface.
+
 ## Native distribution
 
 ```bash
@@ -49,6 +59,8 @@ ORCA and other engines require separate installations and appropriate licenses.
 - [Architecture and contracts](docs/architecture.md)
 - [Scientific workflows and campaign limits](docs/scientific-capabilities.md)
 - [Agent, tools and model configuration](docs/agent.md)
+- [Experiential memory and lesson review](docs/experiential-memory.md)
+- [Hybrid scientific retrieval and reproducible evaluation](docs/scientific-retrieval.md)
 - [Operation, identity and recovery](docs/operations.md)
 - [Development and verification](CONTRIBUTING.md)
 - [Security reporting](SECURITY.md)
@@ -59,10 +71,10 @@ ORCA and other engines require separate installations and appropriate licenses.
 EigenGrid is MIT licensed. Each build and release manifest identifies its exact
 source commit.
 
-The bundled catalog contains 15 basic, versioned scientific knowledge entries.
-They are drafts with explicit inputs, limitations and evaluation cases; they do
-not claim expert review or scientific qualification. Advanced catalogs and
-study-specific implementations are not part of this distribution.
+The bundled catalog contains 15 foundational entries and 16 versioned DFT planning
+protocols for molecules, periodic systems and cluster qualification. The operator
+can retrieve their procedures, dependencies and literature sources by exact revision.
+[DFT catalog and cluster examples](docs/dft-protocols.md).
 
 See [publication scope](docs/publication.md) and [external catalogs](docs/catalogs.md).
 

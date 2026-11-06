@@ -134,11 +134,10 @@ describe("repository scientific skill corpus", () => {
     ).toBe("rendering");
   });
 
-  test("contains exactly the allowlisted basic catalog", () => {
+  test("contains exactly the allowlisted scientific catalog", () => {
     const skills = corpus();
     const policy = JSON.parse(readFileSync(new URL("../../../publication.json", import.meta.url), "utf8"));
     expect(skills.map(skill => skill.manifest.id).sort()).toEqual([...policy.catalogSkillIds].sort());
-    expect(skills).toHaveLength(15);
     for (const skill of skills) {
       expect(skill.manifest.knowledge_level).toBe("draft");
       expect(skill.manifest.review.status).toBe("unreviewed");
@@ -147,7 +146,7 @@ describe("repository scientific skill corpus", () => {
   });
 
   // These aggregate cases deliberately run two independent passes over the
-  // complete basic corpus. Keep all determinism/integrity assertions and a
+  // complete corpus. Keep all determinism/integrity assertions and a
   // bounded deadline matching the platform suite, rather than the 5s unit default.
   test("runs every disclosure evaluation kind deterministically", () => {
     const registry = new ScientificSkillRegistry(corpus());
@@ -172,7 +171,7 @@ describe("repository scientific skill corpus", () => {
     const left = validateScientificSkillCorpus(repositoryScientificSkillsRoot());
     const right = validateScientificSkillCorpus(repositoryScientificSkillsRoot());
     expect(left.valid).toBe(true);
-    expect(left.skillCount).toBe(15);
+    expect(left.skillCount).toBe(corpus().length);
     expect(left.corpusDigest).toMatch(/^[a-f0-9]{64}$/u);
     expect(left).toEqual(right);
     expect(left.issues).toEqual([]);
@@ -348,6 +347,34 @@ describe("progressive disclosure, search, and exact attribution", () => {
       );
       expect(fragment.reference.relativePath.startsWith("evals/")).toBe(false);
     }
+  });
+
+  test("retrieves periodic DFT guidance and its sources without granting execution", () => {
+    const registry = new ScientificSkillRegistry(corpus());
+    const request = {
+      requested: ["methods.cp2k-gpw-convergence", "workflows.dft-cluster-preflight"],
+      engine: { id: "cp2k", version: "2026.2.0" },
+      domains: ["periodic-electronic-structure"],
+    };
+    const resolved = resolveScientificSkillGraph(registry, {
+      ...request,
+      requiredCapability: "plannable",
+    });
+    const context = selectProgressiveSkillContext(resolved, {
+      query: "GPW Quickstep CUTOFF REL_CUTOFF MGRID",
+      reason: "compare the grid study with its source",
+      assetKinds: ["protocols", "references"],
+      maxFragments: 4,
+      maxCharacters: 7000,
+    });
+    expect(context.fragments.some(
+      (f) => f.assetKind === "protocols" && f.content.includes("REL_CUTOFF"),
+    )).toBe(true);
+    expect(context.fragments.some(
+      (f) => f.assetKind === "references" && f.content.includes("manual.cp2k.org"),
+    )).toBe(true);
+    expect(() => resolveScientificSkillGraph(registry, { ...request, requiredCapability: "executable" }))
+      .toThrowError(expect.objectContaining({ code: "CAPABILITY_INCOMPATIBLE" }));
   });
 
   test("honors exact required fragment ids even under a zero optional budget", () => {

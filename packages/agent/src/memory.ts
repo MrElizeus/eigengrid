@@ -1,13 +1,21 @@
-import { existsSync, mkdirSync, readdirSync, readFileSync } from "fs";
-import { dirname, join } from "path";
+import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync } from "fs";
+import { basename, dirname, join, resolve } from "path";
 import {
   installedScientificSkillRoot,
-  loadScientificSkillCorpus,
-  ScientificSkillRegistry,
-  searchScientificSkills,
   type LoadedScientificSkill,
 } from "@eigengrid/scientific-skills";
+import {
+  createInstalledScientificRetrieval,
+  installedRetrievalConfigurationDigest,
+  type ScientificRetrievalService,
+} from "@eigengrid/scientific-retrieval";
 import { AgentAuthorityLevel, type AgentContextBlock } from "./authority";
+import {
+  ExperienceMemory,
+  memoryDigest,
+  type MemoryBoundary,
+  type RetrievalContext,
+} from "@eigengrid/experience-memory";
 
 // Use dynamic import for bun:sqlite to avoid type issues
 interface SqliteStatement {
@@ -60,6 +68,11 @@ export interface AgentMemoryOptions {
   allowLegacySkills?: boolean;
   /** Optional legacy context directory; read only when allowLegacySkills is true. */
   legacySkillRoot?: string;
+  /** Trusted host identity only; never populated from a model tool argument. */
+  experienceBoundary?: MemoryBoundary;
+  experienceContext?: RetrievalContext;
+  /** Host-bound retrieval view; required for multi-user or project-restricted catalogs. */
+  scientificRetrieval?: ScientificRetrievalService;
 }
 
 const MAX_MEMORY_TITLE_BYTES = 512;
@@ -100,11 +113,33 @@ export class AgentMemory {
   private readonly skillRoot: string;
   private readonly allowLegacySkills: boolean;
   private readonly legacySkillRoot: string;
-  private canonicalSkills?: ScientificSkillRegistry;
+  private retrieval?: ScientificRetrievalService;
+  private retrievalConfigurationDigest?: string;
+  private readonly suppliedRetrieval?: ScientificRetrievalService;
+  experience?: ExperienceMemory;
+  readonly experienceContext: RetrievalContext;
+  private readonly experienceBoundary: MemoryBoundary;
 
   constructor(opts?: AgentMemoryOptions) {
     this.dbPath = opts?.dbPath ?? findMemoryDbPath();
+    let projectDirectory = resolve(dirname(this.dbPath));
+    const missing: string[] = [];
+    while (!existsSync(projectDirectory)) {
+      missing.unshift(basename(projectDirectory));
+      projectDirectory = dirname(projectDirectory);
+    }
+    const projectIdentity = join(realpathSync(projectDirectory), ...missing);
+    this.experienceBoundary = opts?.experienceBoundary ?? {
+      projectId: "project:" + memoryDigest(projectIdentity),
+      ownerId: "os-user:" + (process.getuid?.() ?? process.env.USER ?? "local"),
+    };
+    this.experienceContext = structuredClone(
+      opts?.experienceContext ?? {
+        facts: { platform: process.platform, architecture: process.arch },
+      },
+    );
     this.skillRoot = opts?.skillRoot ?? installedScientificSkillRoot();
+    this.suppliedRetrieval = opts?.scientificRetrieval;
     this.allowLegacySkills = opts?.allowLegacySkills ?? false;
     this.legacySkillRoot =
       opts?.legacySkillRoot ?? join(process.env.HOME ?? "/root", ".config", "opencode", "skills");
@@ -154,6 +189,10 @@ export class AgentMemory {
           if (!String(error).toLowerCase().includes("duplicate column")) throw error;
         }
       }
+      this.experience = new ExperienceMemory(
+        join(dir, "experience", "memory.sqlite"),
+        this.experienceBoundary,
+      );
       this.db = database;
     } catch (error) {
       database?.close();
@@ -163,6 +202,10 @@ export class AgentMemory {
   }
 
   async disconnect(): Promise<void> {
+    this.retrieval?.close();
+    this.retrieval = undefined;
+    this.experience?.close();
+    this.experience = undefined;
     this.db?.close();
     this.db = null;
   }
@@ -258,9 +301,20 @@ export class AgentMemory {
   // ── L2: Procedural (Skill Registry) ──────────────────
 
   async findSkill(trigger: string): Promise<Skill | null> {
-    const registry = this.canonicalRegistry();
-    const hit = searchScientificSkills(registry, trigger, { limit: 1 }).hits[0];
-    if (hit && hit.score > 0) {
+    const retrieval = this.scientificRetrieval();
+    const result = trigger.trim()
+      ? await retrieval.search({ query: trigger.slice(0, 2000), limit: 5 })
+      : undefined;
+    const snapshot = retrieval.snapshot();
+    if (
+      result &&
+      (result.corpusDigest !== snapshot.registry.corpusDigest ||
+        result.scopeDigest !== snapshot.scopeDigest)
+    )
+      throw new Error("Scientific retrieval view changed");
+    const registry = snapshot.registry;
+    const hit = result?.hits.find((candidate) => candidate.applicability !== "incompatible");
+    if (hit && !result?.ambiguous) {
       const skill = registry.exact(hit.skill.skillId, hit.skill.version);
       if (skill) return canonicalMemorySkill(skill);
     }
@@ -275,8 +329,9 @@ export class AgentMemory {
   }
 
   async listSkills(scope?: string): Promise<Skill[]> {
-    const canonical = this.canonicalRegistry()
-      .all()
+    const canonical = this.scientificRetrieval()
+      .snapshot()
+      .registry.all()
       .filter(
         (skill) => !scope || skill.manifest.id === scope || skill.manifest.domains.includes(scope),
       )
@@ -285,10 +340,15 @@ export class AgentMemory {
     return [...canonical, ...this.legacySkills(scope)];
   }
 
-  private canonicalRegistry(): ScientificSkillRegistry {
-    return (this.canonicalSkills ??= new ScientificSkillRegistry(
-      loadScientificSkillCorpus(this.skillRoot),
-    ));
+  private scientificRetrieval(): ScientificRetrievalService {
+    if (this.suppliedRetrieval) return this.suppliedRetrieval;
+    const key = installedRetrievalConfigurationDigest(this.skillRoot);
+    if (!this.retrieval || this.retrievalConfigurationDigest !== key) {
+      this.retrieval?.close();
+      this.retrieval = createInstalledScientificRetrieval(this.skillRoot);
+      this.retrievalConfigurationDigest = key;
+    }
+    return this.retrieval;
   }
 
   private legacySkills(scope?: string): Skill[] {
@@ -299,7 +359,32 @@ export class AgentMemory {
   async retrieveContext(prompt: string): Promise<AgentContextBlock[]> {
     if (!this.isConnected()) return [];
     const blocks: AgentContextBlock[] = [];
-    const skill = await this.findSkill(prompt);
+    const retrieval = this.scientificRetrieval();
+    const request = { query: prompt.slice(0, 2000), limit: 5 };
+    const result = prompt.trim() ? await retrieval.search(request) : undefined;
+    const snapshot = retrieval.snapshot();
+    if (
+      result &&
+      (result.corpusDigest !== snapshot.registry.corpusDigest ||
+        result.scopeDigest !== snapshot.scopeDigest)
+    )
+      throw new Error("Scientific retrieval view changed");
+    const hit =
+      result && !result.ambiguous
+        ? result.hits.find((candidate) => candidate.applicability !== "incompatible")
+        : undefined;
+    const canonical = hit
+      ? snapshot.registry.exact(hit.skill.skillId, hit.skill.version)
+      : undefined;
+    const skill = canonical
+      ? canonicalMemorySkill(canonical)
+      : this.allowLegacySkills
+        ? this.legacySkills().find(
+            (entry) =>
+              prompt.toLowerCase().includes(entry.trigger.toLowerCase()) ||
+              prompt.toLowerCase().includes(entry.name.toLowerCase()),
+          )
+        : undefined;
     if (skill) {
       blocks.push({
         authority:
@@ -310,6 +395,26 @@ export class AgentMemory {
         name: skill.name,
         content: sanitizeMemoryText(skill.content, 2_000),
       });
+      if (skill.source === "canonical" && result) {
+        const context = retrieval.context(result, request, {
+          maxFragments: 10,
+          maxCharacters: 12000,
+        });
+        blocks.push({
+          authority: AgentAuthorityLevel.CANONICAL_SKILL,
+          source: "canonical-skill",
+          name: `${skill.name}:procedures`,
+          content: `Corpus: ${context.corpusDigest}\nRetrieval: ${result.retrievalDigest}\nSelection: ${context.selectionDigest}\nContext status: ${context.status}\nResolved knowledge: ${JSON.stringify(context.resolved)}\nMissing required fragments: ${JSON.stringify(context.missingRequiredFragmentIds)}\nRetrieval does not establish scientific applicability, live installation state or execution permission. This is a bounded selection. Use inspect-protocol with includeDependencies=true and follow nextCursor with the returned corpusDigest before finalizing a specialized plan. Optional recommendations require explicit system context.\n\n${context.fragments.map((fragment) => `${fragment.reference.fragmentId}\nSHA256: ${fragment.reference.fragmentDigest}\n${fragment.content}`).join("\n\n")}`,
+        });
+      }
+    }
+    if (!canonical && result?.hits.length) {
+      blocks.push({
+        authority: AgentAuthorityLevel.CANONICAL_SKILL,
+        source: "canonical-skill",
+        name: "scientific-protocol-candidates",
+        content: `Candidate guidance only; inspect exact versions and required dependencies before selecting a procedure. Ranking scores are not scientific confidence or execution authority.\n${JSON.stringify({ corpusDigest: result.corpusDigest, retrievalDigest: result.retrievalDigest, ambiguous: result.ambiguous, candidates: result.hits.slice(0, 3).map((candidate) => ({ reference: candidate.skill, title: candidate.title, applicability: candidate.applicability, reasons: candidate.reasons })) })}`,
+      });
     }
     const recent = await this.search(prompt, { limit: 3 });
     for (const observation of recent) {
@@ -317,7 +422,33 @@ export class AgentMemory {
         authority: AgentAuthorityLevel.RETRIEVED_MEMORY,
         source: "retrieved-memory",
         name: observation.title,
-        content: sanitizeMemoryText(observation.content, 512),
+        content:
+          "Legacy unverified observation; it may be stale or contradicted. Verify current evidence.\n" +
+          sanitizeMemoryText(observation.content, 512),
+      });
+    }
+    for (const hit of this.experience?.search(prompt, this.experienceContext, { limit: 3 }) ?? []) {
+      const { candidate, current } = hit.lesson;
+      blocks.push({
+        authority: AgentAuthorityLevel.RETRIEVED_MEMORY,
+        source: "retrieved-memory",
+        name: "experience:" + candidate.id,
+        content: JSON.stringify({
+          kind: "reviewed_experience_not_execution_authority",
+          id: candidate.id,
+          digest: candidate.digest,
+          revisionDigest: current.digest,
+          state: current.state,
+          claim: candidate.claim.slice(0, 1500),
+          claimComplete: candidate.claim.length <= 1500,
+          applicability:
+            "All stored conditions matched host facts; inspect the full lesson before applying it",
+          confidence: current.confidence.level,
+          confidenceMeaning: "reviewer_assessment_not_calibrated_probability",
+          expiresAt: candidate.expiresAt,
+          evidence: candidate.evidence.slice(0, 4),
+          evidenceCount: candidate.evidence.length,
+        }),
       });
     }
     return blocks;
@@ -329,7 +460,7 @@ function canonicalMemorySkill(skill: LoadedScientificSkill): Skill {
     name: skill.manifest.id,
     trigger: skill.manifest.id,
     path: join(skill.directory, "SKILL.md"),
-    content: `Scientific skill ${skill.manifest.id}@${skill.manifest.version}\nKnowledge level: ${skill.manifest.knowledge_level}; review: ${skill.manifest.review.status}\n\n${skill.markdownBody}`,
+    content: `Scientific skill ${skill.manifest.id}@${skill.manifest.version}\nContent digest: ${skill.contentDigest}\nKnowledge level: ${skill.manifest.knowledge_level}; review: ${skill.manifest.review.status}\n\n${skill.markdownBody}`,
     source: "canonical",
   };
 }

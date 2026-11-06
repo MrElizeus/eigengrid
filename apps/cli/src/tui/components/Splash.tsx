@@ -531,6 +531,7 @@ async function* runAgentTurn(
         }
 
         case "done": {
+          if (event.memoryWarning) yield { type: "error", text: event.memoryWarning };
           // Keep user steering and observed results in their original order.
           onHistoryUpdate(event.messages);
           break;

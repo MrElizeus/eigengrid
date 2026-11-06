@@ -1,0 +1,31 @@
+schema: eigengrid.protocol-fragment/v1
+id: validation.dft-reference-panel.compare-observable
+version: 1.0.0
+capability: validation.dft-reference-panel
+effect_authority: none
+steps:
+  - id: define-reference
+    kind: planning
+    reason: Match property, sign convention, units, stoichiometry, geometry, phase, state and environment. Distinguish electronic energies, thermal enthalpies, standard free energies and spectral band positions.
+    examples:
+      - Select a relevant GMTKN55 subset for main-group relative energies. Pin the data revision and reaction coefficients.
+      - Select a state-resolved QUEST transition for vertical excitation. Match the reference geometry, spin and state character.
+      - Select an elemental PBE equation-of-state curve for inter-code precision. Match volume per atom, crystal phase and magnetic order. Align arbitrary energy zeros before comparing curves.
+  - id: split-and-freeze
+    kind: planning
+    reason: Use representative low-cost cases to fix numerical settings. Freeze method, convergence controls, tolerances, scope and failure policy before inspecting the held-out panel. Group closely related structures when splitting.
+  - id: control-numerics
+    kind: validation
+    reason: Vary basis/grid or periodic cutoff and k mesh at fixed physics. Measure the change in the same observable and units as the target error budget. Record site, engine build and input/output identities.
+  - id: evaluate-residuals
+    kind: validation
+    reason: For each independent case report computed minus reference, units, reference uncertainty and status. Aggregate comparable successes using mean signed error, mean absolute error and maximum absolute error. Show attempted, failed and excluded counts with reasons.
+    branch: If the target is ranking, compare order and margins against the uncertainty and prespecified decision threshold. Poorly separated states may remain indeterminate.
+  - id: qualify-scope
+    kind: provenance
+    reason: Preserve failures and unexpected sign changes. Report the accepted chemical domain, tolerances, versioned dataset entries, selected fragments and outstanding independent review.
+acceptance:
+  - A reproducible row exists for every planned case, including missing or unconverged results.
+  - Precision and reference agreement have separate budgets. The relevant holdout met the declared criteria in its stated scope, or its failure is reported.
+  - A provider ranking, corpus retrieval score or reference citation alone cannot satisfy the benchmark.
+sources: [gmtkn55, quest, solid-eos]

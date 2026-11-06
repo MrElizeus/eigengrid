@@ -1,0 +1,19 @@
+schema: eigengrid.decision-rule/v1
+id: workflows.nmr-chemical-shifts.assignment
+version: 1.0.0
+question: Which observable and assignment can be reported from the supplied evidence?
+cases:
+  - if: converged isotropic shieldings available but no matching isotope reference or calibrated model
+    then: Report absolute shieldings with their units and request the reference before assigning shifts.
+  - if: conformer energies and response records have duplicated, unmatched or missing role keys
+    then: Quarantine the mismatched records, recover or recompute the missing members and rebuild the keyed join.
+  - if: the measured species exchanges rapidly and the mapped ensemble has complete equilibrium weights
+    then: Form a population-weighted value for each exchange-related site. Retain both the distribution and the weighted mean.
+  - if: the regime is slow or intermediate, or protonation or solvent assumptions change the candidate rank
+    then: Report state-specific values and conditional assignments. Seek kinetic, solvent or speciation evidence as appropriate.
+  - if: calibration used the unknown itself, known assignments were reassigned post hoc to lower error, or proposed candidates are enantiomers in an achiral medium
+    then: Withhold a discriminatory assignment and seek independent evidence. Record the remaining ambiguity.
+  - if: plausible assignments remain separated by less than representative held-out errors
+    then: Report unresolved rank and identify independent NMR observables or other evidence needed to distinguish candidates.
+approval: required_if_material_field_changes
+evidence: {level: draft, references: [ORCA-NMR, HOYE, HOYE-ADDENDUM, PIERENS, DP4]}

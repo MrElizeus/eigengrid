@@ -1,0 +1,30 @@
+schema: eigengrid.decision-rule/v1
+id: diagnostics.dft-electronic-state-audit.hold
+version: 1.0.0
+question: Did a converged run collapse to another occupation or local-spin solution?
+when:
+  all:
+  - fact: state.collapsed_to_different_root
+    operator: equals
+    value: true
+recommendation:
+  action: Keep the result as evidence for the observed state, replan targeted guesses, and withhold
+    the requested spin gap until both states are identified.
+  strength: conditional
+rationale: With unstable roots, unresolved state collapse, strong near-degeneracy or method/grid-dependent
+  order, withhold a unique ground-state assignment and seek a state-specific reference.
+risk_class: 2
+approval: required_if_material_field_changes
+immutable_fields:
+- objective
+- charge
+- multiplicity
+- method
+- basis
+- physical_model
+evidence:
+  level: draft
+  references:
+  - https://www.faccts.de/docs/orca/6.1/manual/contents/essentialelements/stabilityanalysis.html
+  - https://doi.org/10.1039/C9CP00105K
+  - https://doi.org/10.1021/ct900639j

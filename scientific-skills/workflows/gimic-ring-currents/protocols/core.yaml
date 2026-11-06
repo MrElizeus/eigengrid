@@ -1,0 +1,37 @@
+schema: eigengrid.protocol-fragment/v1
+id: workflows.gimic-ring-currents.plan
+version: 1.0.0
+capability: workflows.gimic-ring-currents
+required_inputs:
+  - State, fixed geometry and coordinate frame, AO basis definitions and numerical response evidence
+  - Producer and converter identities, matched MOL and XDENS digests and GIMIC build
+  - Physically specified pathway, signed field, oriented surface, mesh, area and target tolerance in nA/T
+missing_input_behavior: block
+steps:
+  - id: qualify-producer
+    kind: validation
+    reason: Verify charge, multiplicity, wavefunction and response convergence. Require one unperturbed and three field-derivative AO density matrices. Match AO order, representation, contraction, normalization and spin conventions to the same geometry and basis. A shielding tensor or a ground-state density grid cannot reconstruct the response.
+  - id: verify-interface
+    kind: validation
+    reason: Bind MOL and XDENS to the same producer run and converter revision. Check atom and basis dimensions, finite blocks, field axes, output basis count and closed/open-shell mode. For mixed converters test against an independently generated matched case. TURBOMOLE mpshift and Gaussian have distinct documented routes. An ORCA shielding result or .gbw alone leaves an ORCA-to-GIMIC interface unverified.
+  - id: define-cut
+    kind: planning
+    reason: Inspect the current field and geometry. Record the field vector, plane origin and normal, integration limits, coordinate units, quadrature order and atom indices. Confirm grid.xyz and the printed grid orientation. For planar benzene choose an oriented radial cut crossing one C–C bond. An entire diameter can cancel forward and return flux.
+  - id: stage-and-measure
+    kind: planning
+    reason: Qualify the exact binaries and working directory inside a batch allocation. A completed producer stage hands off immutable response files. Run each plane, mesh and field variant in a distinct work directory, read only the bound inputs, and label and hash the outputs before stage-out. Keep the accepted producer job and artifact IDs for restart.
+  - id: verify-signed-flux
+    kind: validation
+    reason: Require the expected backend banner, spin mode, realized field, grid and finite signed result with units. Check net against positive plus negative contributions allowing print rounding. At unchanged geometry and fixed plane, reversing only the field must reverse the result and exchange the magnitudes of the signed partial fluxes within tolerance. An exit code can be zero after a missing-density error.
+  - id: test-domain-and-mesh
+    kind: validation
+    reason: Refine quadrature at fixed bounds, then extend the outer and vertical boundaries and reconverge the mesh. Record nA/T changes against a prespecified tolerance and preserve the branch-separating inner boundary. Examine equivalent bonds and comparable cuts, or incoming/outgoing branch balance. Distinguish numerical truncation and finite basis effects from physical branching.
+  - id: interpret-circuit
+    kind: provenance
+    reason: Relate streamlines and oriented plane fluxes to the specific loop and field. Report net, signed partial fluxes, cut sensitivity and method/basis dependence. For a fused system use multiple cuts. A central-bond zero in naphthalene can coexist with a peripheral current. Hold the local/global assignment if different topologies fit the measured cuts.
+acceptance:
+  - Matched AO response artifacts support the specified electronic state, field axes and converter. Source calculations and backend products are attributable.
+  - A qualified reference replay, finite numerical output, sign reversal, and independent mesh and domain checks meet their own tolerances.
+  - Each interpretation names the circuit, coordinate frame, cut, units and sensitivity. Ambiguous routes or unsupported spin interfaces remain explicitly unresolved.
+retry_policy: {maximum_attempts: 1, material_change: new_decision_and_exact_approval}
+effect_authority: none

@@ -26,9 +26,31 @@ const SCIENTIFIC_QUERY_ALIASES: Readonly<Record<string, string>> = Object.freeze
   minimizacion: "minimization", cuantica: "quantum", cuantico: "quantum",
   ligando: "ligand", ligandos: "ligand", proteina: "protein", proteinas: "protein",
   membrana: "membrane", membranas: "membrane",
+  preparar: "preparation", preparacion: "preparation", armar: "assembly", ensamblar: "assembly",
+  sistema: "system", sistemas: "system", calentamiento: "heating", calentar: "heating",
+  minimizar: "minimization", reinicio: "restart", reiniciar: "restart",
+  parametros: "parameters", parametrizacion: "parameterization", cargas: "charges",
+  validar: "validation", validacion: "validation", corregir: "repair", correccion: "repair",
+  diagnostico: "diagnostics", fallo: "failure", fallos: "failure", errores: "failure",
+  especializado: "specialized", especializados: "specialized", planificar: "planning",
+  topologia: "topology", trayectoria: "trajectory", trayectorias: "trajectory",
+  replicas: "replica", incertidumbre: "uncertainty",
+  absorcion: "absorption", espectro: "spectrum", transicion: "transition",
+  frecuencia: "frequency", imaginaria: "imaginary", imaginarias: "imaginary", barrera: "barrier",
+  reduccion: "reduction", electrodo: "electrode", ferroceno: "ferrocene",
+  dimero: "dimer", fantasma: "ghost", superposicion: "superposition", interaccion: "interaction",
+  funcional: "functional", funcionales: "functional", convergencia: "convergence",
+  poblaciones: "populations", conformeros: "conformer", espin: "spin",
+  contaminado: "contamination", contaminacion: "contamination", multiplicidad: "multiplicity",
+  periodico: "periodic", periodica: "periodic", celda: "cell", malla: "mesh",
+  rmn: "nmr", blindaje: "shielding", blindajes: "shielding",
+  desplazamientos: "shifts", protones: "proton", carbonos: "carbon",
+  aromaticidad: "aromaticity", anillo: "ring", anillos: "ring",
+  corriente: "current", corrientes: "currents", anular: "ring", anulares: "ring",
+  sonda: "probe", sondas: "probe", barrido: "scan", periferico: "peripheral",
 });
 
-function queryTerms(query: string): string[] {
+export function scientificQueryTerms(query: string): string[] {
   const normalized = query.toLowerCase().normalize("NFKD").replace(/\p{M}/gu, "");
   return [...new Set(normalized.split(/[^a-z0-9]+/u).map((term) => Object.hasOwn(SCIENTIFIC_QUERY_ALIASES, term) ? SCIENTIFIC_QUERY_ALIASES[term] : term))]
     .filter((term) => term.length > 2 && !STOP_WORDS.has(term))
@@ -94,17 +116,16 @@ export interface SkillSearchOptions {
   candidateIds?: readonly string[];
 }
 
-/** Authoritative lexical search. A derived semantic index may only provide candidateIds. */
+/** Canonical lexical search with an optional union of derived semantic candidates. */
 export function searchScientificSkills(
   registry: ScientificSkillRegistry,
   query: string,
   options: SkillSearchOptions = {},
 ): SkillSearchResult {
-  const terms = queryTerms(query);
+  const terms = scientificQueryTerms(query);
   const candidateIds = options.candidateIds ? new Set(options.candidateIds) : undefined;
   const hits = registry
     .all()
-    .filter((skill) => !candidateIds || candidateIds.has(skill.manifest.id))
     .filter((skill) => options.includeDeprecated || skill.manifest.status === "active")
     .filter(
       (skill) =>
@@ -112,7 +133,7 @@ export function searchScientificSkills(
         options.domains.some((domain) => skill.manifest.domains.includes(domain)),
     )
     .map((skill) => scoreSkill(skill, terms, query))
-    .filter((hit) => terms.length === 0 || hit.score > 0)
+    .filter((hit) => terms.length === 0 || hit.score > 0 || candidateIds?.has(hit.skill.skillId))
     .sort(
       (left, right) =>
         right.score - left.score ||

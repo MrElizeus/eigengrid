@@ -90,6 +90,38 @@ export class PostgresMissionHttpIdempotency implements MissionHttpIdempotencySer
     readonly assertExactRevision: AssertExactMissionRevision,
   ) {}
 
+  /** Recover a lost response using its opaque key. Never submits an effect. */
+  async lookup(input: HttpOperationLookup) {
+    if (
+      ![input.actorId, input.projectId, input.missionId].every((value) => name.test(value)) ||
+      !keyPattern.test(input.key) ||
+      !/^(create|import|approve|compile|start|cancel|agent\.(open|approve|resume|cancel|reconcile))$/u.test(
+        input.operation,
+      )
+    )
+      throw new MissionHttpError("INVALID_REQUEST");
+    const client = await this.pool.connect();
+    try {
+      const rows = await client.query<StoredOperation>(
+        "SELECT operation_id,status,output_json,request_json FROM eigengrid_a5_http_operations WHERE actor_id=$1 AND project_id=$2 AND operation=$3 AND idempotency_key=$4",
+        [input.actorId, input.projectId, input.operation, input.key],
+      );
+      const row = rows.rows[0];
+      const request = row?.request_json as
+        | { missionId?: string; mission?: { id?: string } }
+        | undefined;
+      if (!row || !request || (request.missionId ?? request.mission?.id) !== input.missionId)
+        throw new MissionHttpError("NOT_FOUND");
+      return {
+        operationId: row.operation_id,
+        status: row.status,
+        ...(row.status === "complete" ? { result: row.output_json } : {}),
+      };
+    } finally {
+      client.release();
+    }
+  }
+
   async run(
     request: MissionHttpIdempotencyRequest,
     execute: () => Promise<unknown>,
@@ -228,4 +260,12 @@ export class PostgresMissionHttpIdempotency implements MissionHttpIdempotencySer
       client.release();
     }
   }
+}
+
+export interface HttpOperationLookup {
+  actorId: string;
+  projectId: string;
+  missionId: string;
+  operation: string;
+  key: string;
 }

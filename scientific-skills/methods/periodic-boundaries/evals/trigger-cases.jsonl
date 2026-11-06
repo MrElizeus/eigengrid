@@ -1,0 +1,2 @@
+{"id": "methods.periodic-boundaries.plan", "kind": "planning", "query": "Does the vacuum in this asymmetrically terminated slab remove the periodic field across the surface?", "expected_included": ["methods.periodic-boundaries"], "expected_top": "methods.periodic-boundaries"}
+{"id": "methods.periodic-boundaries.different-task", "kind": "negative", "query": "Fit an IR spectrum from molecular harmonic frequencies", "expected_excluded": ["methods.periodic-boundaries"]}

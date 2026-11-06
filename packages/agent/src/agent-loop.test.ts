@@ -1,4 +1,7 @@
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect, spyOn } from "bun:test";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { z } from "zod";
 import { ToolRegistry, type Tool, type ToolContext } from "@eigengrid/tool-registry";
 import {
@@ -11,6 +14,91 @@ import {
 import { AgentMemory } from "./memory";
 
 const context = {} as ToolContext;
+
+describe("agent experience capture", () => {
+  for (const failed of [false, true])
+    it(`captures tool ${failed ? "failure" : "success"} with evidence visible to the next inference`, async () => {
+      const root = mkdtempSync(join(tmpdir(), "eigengrid-loop-memory-"));
+      const memory = new AgentMemory({
+        dbPath: join(root, "memory.db"),
+        skillRoot: join(root, "no-skills"),
+      });
+      try {
+        await memory.connect();
+        const scripted = scriptedModel((n) =>
+          n === 1
+            ? modelToolCall("echo", { value: "AMBER availability" }, "call-memory")
+            : modelText("Check AMBER modules before concluding absence."),
+        );
+        const result = await runAgent({
+          prompt: "Inspect AMBER availability",
+          memory,
+          ctx: context,
+          tools: echoRegistry(async (input) => {
+            if (failed) throw new Error("AMBER not in PATH");
+            return input;
+          }),
+          model: scripted.model,
+          maxSteps: 2,
+        });
+        expect(result.ok).toBe(true);
+        expect(result.memoryWarning).toBeUndefined();
+        expect(JSON.stringify(scripted.requests[1])).toContain("memoryEvidence");
+        const observations = memory.experience!.recentEvidence();
+        expect(
+          observations.some((e) => e.outcome === (failed ? "tool_failed" : "tool_succeeded")),
+        ).toBe(true);
+        const hit = memory.experience!.search("AMBER", memory.experienceContext, {
+          includeIneligible: true,
+        })[0];
+        expect(hit.lesson.current.state).toBe("evidence_verified");
+        expect(hit.lesson.current.confidence.level).toBe("unknown");
+        expect(memory.experience!.search("AMBER", memory.experienceContext)).toEqual([]);
+      } finally {
+        await memory.close();
+        rmSync(root, { recursive: true, force: true });
+      }
+    });
+
+  it("reports capture failure without changing a settled tool result", async () => {
+    const root = mkdtempSync(join(tmpdir(), "eigengrid-memory-failure-"));
+    const memory = new AgentMemory({
+      dbPath: join(root, "memory.db"),
+      skillRoot: join(root, "no-skills"),
+    });
+    await memory.connect();
+    const spy = spyOn(memory.experience!, "observe").mockImplementation(() => {
+      throw new Error("disk full");
+    });
+    try {
+      const scripted = scriptedModel((n) =>
+        n === 1
+          ? modelToolCall("echo", { value: "result" }, "call-failure")
+          : modelText("Result received"),
+      );
+      let calls = 0;
+      const result = await runAgent({
+        prompt: "Inspect",
+        memory,
+        ctx: context,
+        model: scripted.model,
+        tools: echoRegistry(async (input) => {
+          calls++;
+          return input;
+        }),
+        maxSteps: 2,
+      });
+      expect(result.ok).toBe(true);
+      expect(calls).toBe(1);
+      expect(result.memoryWarning).toContain("incomplete");
+      expect(result.toolCalls?.[0].result).toMatchObject({ ok: true, data: { value: "result" } });
+    } finally {
+      spy.mockRestore();
+      await memory.close();
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
 
 function usage() {
   return {

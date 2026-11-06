@@ -1,0 +1,58 @@
+schema: eigengrid.protocol-fragment/v1
+id: diagnostics.dft-electronic-state-audit.core
+version: 1.0.0
+capability: diagnostics.dft-electronic-state-audit
+required_inputs:
+- Total charge and supported spin multiplicities with structural and chemical rationale
+- Fixed geometry for a vertical gap or separate optimized geometries for an adiabatic gap
+- SCF residuals and convergence flags, occupations, wavefunction type and restart provenance
+- Target gap precision, energy units, XC quadrature and exact-exchange approximation
+missing_input_behavior: block
+steps:
+- id: screen-states
+  kind: validation
+  reason: For a spin-only collinear model set N=sum(Z)-Q with appropriate removal of ECP core electrons.
+    M=2S+1 implies Nalpha=(N+M-1)/2 and Nbeta=N-Nalpha; require both nonnegative integers. Parity
+    permits a state but cannot determine the ground multiplicity.
+- id: test-guesses
+  kind: planning
+  reason: Give each plausible multiplicity and distinct occupation or coupling a separate starting
+    guess and checkpoint. Consider symmetry-restricted versus unrestricted initializations where appropriate.
+    Track final occupations, local spin densities and orbital identities to detect collapse to a different
+    state.
+- id: qualify-scf
+  kind: validation
+  reason: Verify residual and density convergence at the final model. Compare the unrestricted determinant
+    expectation of S squared with S(S+1); broken-symmetry determinants are deliberately spin-mixed.
+    A single deviation cutoff cannot classify them. Where available, evaluate orbital Hessian stability
+    for the relevant rotation space and archive eigenvalue(s) and state after any restart.
+- id: isolate-grids
+  kind: validation
+  reason: Hold model and geometry fixed; tighten SCF thresholds and refine the XC grid and, separately,
+    any approximate-exchange quadrature. Compare the state gap, localization and, for a gradient or
+    Hessian claim, those derivatives. A small change in a total energy alone does not establish convergence
+    of the reported property.
+- id: separate-gaps
+  kind: planning
+  reason: Report a vertical electronic gap at one common geometry; optimize each state separately
+    for an adiabatic gap. Add state-specific vibrational and environmental terms only when the intended
+    comparison calls for them. Compare with a reference targeting the same definition.
+- id: preserve-state-map
+  kind: provenance
+  reason: Tabulate state label, input guess/parent checkpoint, charge, multiplicity, actual occupations/local
+    moments, SCF residual, stability subspace/result, grid, relative energy and units. Record failed
+    seeds and state crossings along any geometry path.
+acceptance:
+- Every reported energy difference names both final states and the geometry convention.
+- The selected state is reproducible from independent initializations or remaining alternatives are
+  identified.
+- With unstable roots, unresolved state collapse, strong near-degeneracy or method/grid-dependent
+  order, withhold a unique ground-state assignment and seek a state-specific reference.
+references:
+- https://www.faccts.de/docs/orca/6.1/manual/contents/essentialelements/stabilityanalysis.html
+- https://doi.org/10.1039/C9CP00105K
+- https://doi.org/10.1021/ct900639j
+retry_policy:
+  maximum_attempts: 1
+  material_change: new_decision_and_exact_approval
+effect_authority: none

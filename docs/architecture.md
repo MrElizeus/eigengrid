@@ -40,6 +40,12 @@ work uses the mission application and mission-scoped approvals.
 
 ## Persistence domains
 
+The authenticated HTTP API shares the mission application with the CLI and TUI.
+Catalog queries intersect active membership with protected HTTP scope and exclude
+other owners' missions and historical unbound jobs. Durable HTTP intents and
+canonical mission records retain effect ownership. The browser interface is
+maintained separately and is not included in version 1.0.0.
+
 `ScientificStore` and `MdProjectionStore` are stable public facades. They delegate to
 internal repositories with one responsibility each; they do not open transactions.
 Each repository owns the complete transaction for its operation, including dependent
@@ -49,6 +55,7 @@ row-lock order and the original atomic approval/admission boundaries.
 | Domain                                            | Implementation             |
 | ------------------------------------------------- | -------------------------- |
 | Mission creation, project access and state        | `scientific-missions.ts`   |
+| Authorized project and mission discovery          | `scientific-catalog.ts`    |
 | Reservations and model usage                      | `scientific-budgets.ts`    |
 | Planning claims, skill resolutions and plans      | `scientific-plans.ts`      |
 | Work-unit DAGs, claims and completion             | `scientific-work-units.ts` |
@@ -69,6 +76,40 @@ index. New operations belong in their domain, keeping the facades as delegation 
 The refactor does not change database migrations, protocol versions or digest formats.
 A transaction must never be replaced with a series of public repository calls: those
 calls may commit independently. Cross-domain invariants use transaction-scoped helpers.
+
+## Domain modules and compatibility
+
+Large entrypoints retain their existing exports and delegate to internal modules by
+responsibility. Callers continue to import the same classes, schemas and functions.
+Implementation modules import their dependencies directly; they do not import their
+own compatibility entrypoint.
+
+| Entrypoint                                     | Internal modules                             | Responsibility                                                                                                              |
+| ---------------------------------------------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `db/src/postgres/client.ts`                    | `db/src/postgres/`                           | Connection and transactions, migration authority, jobs/attempts, dispatch, artifacts/events, access, projects and budgets   |
+| `db/src/migrate.ts`                            | `db/src/sqlite/`                             | SQLite adapter and migration descriptors, with the same persistence domains                                                 |
+| `scientific-schema/src/md.ts`                  | `scientific-schema/src/md/`                  | Execution bindings, controls, stages, protocols, replicas, trajectories, metrics, results and assessments                   |
+| `scientific-schema/src/biomolecular.ts`        | `scientific-schema/src/biomolecular/`        | Components, decisions, preparation/publication requests, force fields, atom maps and system manifests                       |
+| `model-gateway/src/model-gateway.ts`           | `model-gateway/src/`                         | Provider configuration facade, structured invocation, conversations, request boundaries, usage accounting and fake provider |
+| `mission-runtime/src/effect-reconciliation.ts` | `mission-runtime/src/effect-reconciliation/` | Effect admission/reconciliation, MD submission authority/delivery and system-preparation checks                             |
+| `runners/src/local.ts`                         | `runners/src/local/`                         | Shared process state, staging/dispatch, receipt finalization, reconciliation, cancellation and collection                   |
+| `md-analysis/src/qmmm.ts`                      | `md-analysis/src/qmmm/`                      | Request/result contracts, host-issued parse authority, binding checks and mdout parsing                                     |
+| `services/execution-coordinator.ts`            | `services/execution/`                        | Local and remote lifecycle operations, dispatch fencing, staged-input verification and parsing                              |
+| `services/mission-application.ts`              | `services/mission-application/`              | Human authority, candidates/evidence, inference accounting, approvals, compilation and mission lifecycle                    |
+
+Package paths above are relative to `packages/`; service paths are relative to
+`apps/cli/src/`. Internal contexts hold the existing connection, clock or process map;
+they do not create an independent scheduler or another authority source. Transactional
+operations keep their entire transaction and lock order in one domain function. Runner
+callbacks retain the same context after the caller returns. Inference leases remain
+scoped to one mission application, and QM/MM parse-authority issuance stays private to
+its authority module.
+
+SQLite's historical connection access and the inspection seams used by migration and
+runner fixtures remain thin delegations. They are not new package APIs. New code should
+use the typed database and runner contracts instead of reaching into private members.
+Published migration SQL, schema versions, canonical digests and scientific parsing rules
+are unchanged by this module split.
 
 ## Journal cost and integrity
 
@@ -97,6 +138,22 @@ processed 24,100 frames with full replay versus 200 with incremental replay for
 versus 0.75 s; the 20 lookups took 5.74 s versus 0.0035 s. These are synthetic
 in-memory measurements, not installation service-level targets. Frame counts are
 the reproducible scaling result; timings depend on load and hardware.
+
+## Scientific retrieval
+
+Scientific discovery is implemented by `@eigengrid/scientific-retrieval`. An authorized
+catalog snapshot feeds fragment BM25 and an optional local exact vector index. Candidate
+lists are collapsed by exact skill version before reciprocal rank fusion. Declared
+scientific constraints refine the ordering; the existing dependency resolver supplies
+mandatory knowledge independently of similarity. Context retains exact canonical fragment
+identities and reports ambiguity, unavailable closure or insufficient budget explicitly.
+
+This service does not change mission compilation, persisted graph hashes, execution
+authority, protocol maturity or the scientific corpus. `list-protocols` and
+`inspect-protocol` retain their public schemas; CLI/TUI memory uses the same retrieval
+implementation. Runtime operations and experiential lessons remain separate stores.
+See [scientific retrieval](scientific-retrieval.md) for the API, local deployment,
+evaluation gates and boundaries of the 1.0 implementation.
 
 ## Release compatibility
 

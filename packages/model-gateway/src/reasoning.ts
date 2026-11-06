@@ -41,3 +41,29 @@ export function parseReasoningLevels(value: unknown): ReasoningLevel[] | undefin
     ];
   });
 }
+
+/** Account levels, models.dev v2 capabilities, then the v1 effort controls. */
+export function parseModelReasoningLevels(
+  model: Record<string, unknown>,
+): ReasoningLevel[] | undefined {
+  const capabilities = model.capabilities as
+    | { reasoning?: { supported?: boolean; effort?: unknown } }
+    | undefined;
+  if (capabilities?.reasoning?.supported === false || model.reasoning === false) return [];
+  const explicit = parseReasoningLevels(model.supported_reasoning_levels);
+  if (explicit !== undefined) return explicit;
+  const reasoning = capabilities?.reasoning;
+  if (reasoning && typeof reasoning === "object")
+    return parseReasoningLevels(reasoning.effort) ?? [];
+  if (!Array.isArray(model.reasoning_options)) return undefined;
+  return parseReasoningLevels(
+    model.reasoning_options.flatMap((option) =>
+      option &&
+      typeof option === "object" &&
+      option.type === "effort" &&
+      Array.isArray(option.values)
+        ? option.values
+        : [],
+    ),
+  );
+}

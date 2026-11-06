@@ -1,0 +1,54 @@
+schema: eigengrid.scientific-skill/v1
+id: diagnostics.dft-electronic-state-audit
+version: 1.0.0
+title: DFT electronic-state audit for competing spin solutions
+status: active
+summary: Distinguish numerical SCF convergence from selection of the intended electronic state for
+  radicals, open-shell singlets and transition-metal spin gaps.
+domains:
+- molecular-electronic-structure
+domain_maturity:
+  molecular-electronic-structure: plannable
+engine_compatibility:
+  orca: '>=6.0.0 <7.0.0'
+knowledge_level: draft
+capability_levels:
+  reference: true
+  advisory: true
+  plannable: true
+  renderable: {}
+  executable: {}
+  validated: {}
+requires:
+- id: foundations.charge-spin-symmetry
+  range: '>=1.0.0 <2.0.0'
+  reason: Enforce electron count and distinguish chemical state hypotheses.
+- id: foundations.numerical-convergence
+  range: '>=1.0.0 <2.0.0'
+  reason: Fix thresholds and isolate numerical sensitivity before comparing states.
+required_inputs:
+- Total charge and supported spin multiplicities with structural and chemical rationale
+- Fixed geometry for a vertical gap or separate optimized geometries for an adiabatic gap
+- SCF residuals and convergence flags, occupations, wavefunction type and restart provenance
+- Target gap precision, energy units, XC quadrature and exact-exchange approximation
+missing_input_behavior: Ask for plausible states and their evidence before selecting one. Preserve
+  all converged candidates when assignments remain underdetermined.
+assets:
+  protocols: protocols/
+  rules: decision-rules/
+  references: references/
+  evals: evals/
+  diagnostics: diagnostics/
+review:
+  status: unreviewed
+  owner_role: computational-chemist
+  evidence_ids: []
+  notes: Primary references support individual decisions. Independent review and numerical qualification
+    of this workflow are pending.
+provenance:
+  created_by: model
+recommends:
+- id: diagnostics.scf-nonconvergence
+  range: '>=1.0.0 <2.0.0'
+  reason: When an attempted root fails to converge, inspect its attempt history separately before
+    comparing final electronic states.

@@ -1,11 +1,15 @@
 import {
   installedScientificSkillRoot,
-  loadScientificSkillCorpus,
-  loadScientificSkillFragments,
-  ScientificSkillRegistry,
-  searchScientificSkills,
+  type ScientificSkillRegistry,
+  resolveScientificSkillGraph,
   type LoadedScientificSkill,
 } from "@eigengrid/scientific-skills";
+import {
+  installedScientificRetrieval,
+  skillKey,
+  type CatalogSnapshot as AuthorizedSnapshot,
+  type ScientificRetrievalService,
+} from "@eigengrid/scientific-retrieval";
 import type { Tool } from "@eigengrid/tool-registry";
 import {
   MdWorkflowProtocolSchema,
@@ -18,6 +22,8 @@ interface CatalogSnapshot {
   registry: ScientificSkillRegistry;
   protocolSkills: LoadedScientificSkill[];
   protocolAssetCount: number;
+  authorized: AuthorizedSnapshot;
+  retrieval: ScientificRetrievalService;
 }
 
 let cachedCatalog: CatalogSnapshot | undefined;
@@ -32,12 +38,21 @@ function protocolAssets(skill: LoadedScientificSkill): string[] {
 
 function catalog(): CatalogSnapshot {
   const root = catalogRoot();
-  if (cachedCatalog?.root === root) return cachedCatalog;
-  const registry = new ScientificSkillRegistry(loadScientificSkillCorpus(root));
+  const retrieval = installedScientificRetrieval(root);
+  const authorized = retrieval.snapshot();
+  if (
+    cachedCatalog?.root === root &&
+    cachedCatalog.authorized.revision === authorized.revision &&
+    cachedCatalog.retrieval === retrieval
+  )
+    return cachedCatalog;
+  const registry = authorized.registry;
   const protocolSkills = registry.all().filter((skill) => protocolAssets(skill).length > 0);
   cachedCatalog = {
     root,
     registry,
+    authorized,
+    retrieval,
     protocolSkills,
     protocolAssetCount: protocolSkills.reduce(
       (count, skill) => count + protocolAssets(skill).length,
@@ -106,6 +121,7 @@ const listProtocolsInput = z.object({
     .describe("Maximum entries, default 20. Use up to 100 when matched exceeds returned."),
 });
 const listProtocolsOutput = z.object({
+  catalogRoot: z.string(),
   corpusDigest: z.string(),
   totalCapabilities: z.number().int().nonnegative(),
   totalProtocolCapabilities: z.number().int().nonnegative(),
@@ -132,15 +148,22 @@ export const listProtocolsTool: Tool<
       const snapshot = catalog();
       const ranking = input.query?.trim()
         ? new Map(
-            searchScientificSkills(snapshot.registry, input.query, { limit: 500 }).hits.map(
-              (hit, index) => [hit.skill.skillId, index],
-            ),
+            (
+              await snapshot.retrieval.search({
+                query: input.query,
+                limit: 1000,
+                candidateLimit: 1000,
+              })
+            ).hits.map((hit, index) => [skillKey(hit.skill.skillId, hit.skill.version), index]),
           )
         : undefined;
+      if (snapshot.retrieval.snapshot().revision !== snapshot.authorized.revision)
+        throw new Error("Scientific catalog changed during discovery; retry the search.");
       const domain = input.domain?.toLowerCase();
       const engine = input.engine?.toLowerCase();
       const matching = snapshot.protocolSkills.filter((skill) => {
-        if (ranking && !ranking.has(skill.manifest.id)) return false;
+        if (ranking && !ranking.has(skillKey(skill.manifest.id, skill.manifest.version)))
+          return false;
         if (domain && !skill.manifest.domains.some((item) => item.toLowerCase() === domain)) {
           return false;
         }
@@ -156,7 +179,9 @@ export const listProtocolsTool: Tool<
       });
       if (ranking)
         matching.sort(
-          (left, right) => ranking.get(left.manifest.id)! - ranking.get(right.manifest.id)!,
+          (left, right) =>
+            ranking.get(skillKey(left.manifest.id, left.manifest.version))! -
+            ranking.get(skillKey(right.manifest.id, right.manifest.version))!,
         );
       const protocols = matching.slice(0, input.limit ?? 20).map(protocolSummary);
       return {
@@ -164,6 +189,7 @@ export const listProtocolsTool: Tool<
         data: {
           corpusDigest: snapshot.registry.corpusDigest,
           totalCapabilities: snapshot.registry.all().length,
+          catalogRoot: snapshot.root,
           totalProtocolCapabilities: snapshot.protocolSkills.length,
           totalProtocolAssets: snapshot.protocolAssetCount,
           matched: matching.length,
@@ -202,9 +228,19 @@ export const listProtocolsTool: Tool<
 const inspectProtocolInput = z.object({
   id: z.string().min(3).max(160),
   version: z.string().min(1).max(40).optional(),
+  includeDependencies: z
+    .boolean()
+    .optional()
+    .describe("Resolve required knowledge dependencies as exact versions; default false."),
+  corpusDigest: z.string().optional().describe("Pin the corpus returned on the first page."),
+  cursor: z
+    .object({ fragment: z.number().int().nonnegative(), character: z.number().int().nonnegative() })
+    .optional(),
+  maxCharacters: z.number().int().min(1000).max(32000).optional(),
   assetKinds: z
     .array(
       z.enum([
+        "summary",
         "protocols",
         "decision_rules",
         "validation",
@@ -215,10 +251,17 @@ const inspectProtocolInput = z.object({
       ]),
     )
     .min(1)
-    .max(7)
+    .max(8)
     .optional(),
 });
 const inspectProtocolOutput = z.object({
+  catalogRoot: z.string(),
+  corpusDigest: z.string(),
+  resolvedSkills: z.array(
+    z.object({ id: z.string(), version: z.string(), contentDigest: z.string() }),
+  ),
+  nextCursor: z.object({ fragment: z.number(), character: z.number() }).nullable(),
+  totalFragments: z.number(),
   protocol: protocolSummarySchema,
   requiredInputs: z.array(z.string()),
   missingInputBehavior: z.string(),
@@ -229,6 +272,9 @@ const inspectProtocolOutput = z.object({
       relativePath: z.string(),
       mediaType: z.string(),
       digest: z.string(),
+      fragmentId: z.string(),
+      characterOffset: z.number(),
+      complete: z.boolean(),
       content: z.string(),
     }),
   ),
@@ -240,12 +286,15 @@ export const inspectProtocolTool: Tool<
 > = {
   name: "inspect-protocol",
   description:
-    "Inspect a scientific protocol, required inputs, decision rules, diagnostics and validation criteria with exact content digests. Guidance does not grant execution authority.",
+    "Load versioned scientific procedures, inputs, decisions, diagnostics and validation. Set includeDependencies for required knowledge. Follow nextCursor with identical options and corpusDigest to read every page; digest identifies the full fragment, complete=false marks a chunk. Guidance does not grant execution authority.",
   inputSchema: inspectProtocolInput,
   outputSchema: inspectProtocolOutput,
   async execute(_ctx, input) {
     try {
       const snapshot = catalog();
+      if (input.corpusDigest && input.corpusDigest !== snapshot.registry.corpusDigest) {
+        throw new Error("Scientific corpus changed; restart inspection against its new digest.");
+      }
       const skill = input.version
         ? snapshot.registry.exact(input.id, input.version)
         : snapshot.registry.versions(input.id)[0];
@@ -258,22 +307,68 @@ export const inspectProtocolTool: Tool<
           },
         };
       }
-      const fragments = loadScientificSkillFragments(skill, {
-        assetKinds: input.assetKinds ?? [
-          "protocols",
-          "decision_rules",
-          "validation",
-          "diagnostics",
-        ],
-      }).map((fragment) => ({
-        relativePath: fragment.reference.relativePath,
-        mediaType: fragment.mediaType,
-        digest: fragment.reference.fragmentDigest,
-        content: fragment.content,
-      }));
+      const skills = input.includeDependencies
+        ? resolveScientificSkillGraph(snapshot.registry, {
+            requested: [{ id: input.id, range: skill.manifest.version }],
+          }).skills
+        : [skill];
+      // Root first, then deterministic dependency order. Never cut a procedure silently.
+      skills.sort(
+        (a, b) =>
+          Number(b.manifest.id === input.id) - Number(a.manifest.id === input.id) ||
+          a.manifest.id.localeCompare(b.manifest.id),
+      );
+      const allFragments = skills.flatMap((entry) =>
+        snapshot.authorized.fragments.filter(
+          (fragment) =>
+            fragment.reference.skillId === entry.manifest.id &&
+            fragment.reference.version === entry.manifest.version &&
+            (input.assetKinds ?? ["protocols", "decision_rules", "validation", "diagnostics"]).some(
+              (kind) => kind === fragment.assetKind,
+            ),
+        ),
+      );
+      let index = input.cursor?.fragment ?? 0;
+      let character = input.cursor?.character ?? 0;
+      if (
+        index > allFragments.length ||
+        (index === allFragments.length && character !== 0) ||
+        (index < allFragments.length && character >= allFragments[index].content.length)
+      )
+        throw new Error("Invalid scientific fragment cursor");
+      let remaining = input.maxCharacters ?? 16000;
+      const fragments: z.infer<typeof inspectProtocolOutput>["fragments"] = [];
+      while (index < allFragments.length && remaining > 0 && fragments.length < 40) {
+        const fragment = allFragments[index];
+        const content = fragment.content.slice(character, character + remaining);
+        fragments.push({
+          relativePath: fragment.reference.relativePath,
+          fragmentId: fragment.reference.fragmentId,
+          mediaType: fragment.mediaType,
+          digest: fragment.reference.fragmentDigest,
+          characterOffset: character,
+          complete: character === 0 && content.length === fragment.content.length,
+          content,
+        });
+        remaining -= content.length;
+        character += content.length;
+        if (character === fragment.content.length) {
+          index++;
+          character = 0;
+        }
+      }
       return {
         ok: true,
         data: {
+          corpusDigest: snapshot.registry.corpusDigest,
+          resolvedSkills: skills.map((entry) => ({
+            id: entry.manifest.id,
+            version: entry.manifest.version,
+            contentDigest: entry.contentDigest,
+          })),
+          totalFragments: allFragments.length,
+          catalogRoot: snapshot.root,
+          nextCursor: index < allFragments.length ? { fragment: index, character } : null,
           protocol: protocolSummary(skill),
           requiredInputs: skill.manifest.required_inputs,
           missingInputBehavior: skill.manifest.missing_input_behavior,

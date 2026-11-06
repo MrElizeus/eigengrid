@@ -1,0 +1,53 @@
+schema: eigengrid.scientific-skill/v1
+id: methods.dft-functional-selection
+version: 1.0.0
+title: DFT functional selection against a matched benchmark
+status: active
+summary: Select a molecular ground-state exchange-correlation approximation, dispersion treatment
+  and cost tier for a specified observable using comparable reference data.
+domains:
+- molecular-electronic-structure
+domain_maturity:
+  molecular-electronic-structure: plannable
+engine_compatibility:
+  orca: '>=6.0.0 <7.0.0'
+knowledge_level: draft
+capability_levels:
+  reference: true
+  advisory: true
+  plannable: true
+  renderable: {}
+  executable: {}
+  validated: {}
+requires:
+- id: representations.molecular-structures
+  range: '>=1.0.0 <2.0.0'
+  reason: Use the actual coordinates, elements and atom identities to match candidate benchmarks.
+- id: foundations.charge-spin-symmetry
+  range: '>=1.0.0 <2.0.0'
+  reason: Establish the molecular charge and spin states over which candidates will be compared.
+required_inputs:
+- Reaction or comparison with balanced species, structures, charges and multiplicities
+- Observable, phase, temperature if applicable, target tolerance and units
+- Computational resource ceiling and any imposed method restrictions
+missing_input_behavior: If no functional is chosen, use the agreed observable, states, tolerance and
+  budget to build a provisional candidate shortlist. Hold numerical work until a complete model is
+  selected and approved. Request missing study constraints first.
+assets:
+  protocols: protocols/
+  rules: decision-rules/
+  references: references/
+  evals: evals/
+review:
+  status: unreviewed
+  owner_role: computational-chemist
+  evidence_ids: []
+  notes: Primary references support individual decisions. Independent review and numerical qualification
+    of this workflow are pending.
+provenance:
+  created_by: model
+recommends:
+- id: methods.dispersion
+  range: '>=1.0.0 <2.0.0'
+  reason: Once the shortlist names a base functional, check each candidate’s dispersion definition
+    and parameterization.

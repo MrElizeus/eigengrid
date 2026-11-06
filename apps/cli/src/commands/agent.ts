@@ -67,9 +67,14 @@ export const agentCommand: CommandModule = {
       });
 
       if (json) {
-        console.log(JSON.stringify(result, null, 2));
+        await new Promise<void>((resolve, reject) => {
+          process.stdout.write(`${JSON.stringify(result, null, 2)}\n`, (error) =>
+            error ? reject(error) : resolve(),
+          );
+        });
       } else {
         console.log("\n" + result.response + "\n");
+        if (result.memoryWarning) console.error(result.memoryWarning);
         if (result.toolCalls && result.toolCalls.length > 0) {
           console.log(`Tools called: ${result.toolCalls.map((t) => t.tool).join(", ")}`);
         }

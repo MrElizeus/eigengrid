@@ -5,8 +5,8 @@
 // startup polling, and guaranteed teardown.
 // ────────────────────────────────────────────────────────────
 
-import { describe, it, beforeAll, afterAll, expect } from "bun:test";
 import { PostgresDatabase } from "@eigengrid/db";
+import { afterAll, beforeAll, describe, expect, it } from "bun:test";
 import { runConformanceSuite } from "./db-conformance.test";
 import {
   canRunPostgres,
@@ -145,6 +145,17 @@ if (canRunPostgres) {
     let faultDb: PostgresDatabase;
     let faultCluster: PgCluster;
 
+    async function runFaultSql(statements: string[]): Promise<void> {
+      const tx = await faultDb.beginTransaction();
+      try {
+        for (const statement of statements) await tx.query(statement);
+        await tx.commit();
+      } catch (error) {
+        await tx.rollback();
+        throw error;
+      }
+    }
+
     beforeAll(async () => {
       faultCluster = await startEphemeralPostgres();
       faultDb = new PostgresDatabase(faultCluster.url);
@@ -214,15 +225,25 @@ if (canRunPostgres) {
     });
 
     it("artifact-event failure rolls back both row and event", async () => {
-      const dbSeam = faultDb as unknown as {
-        emitClientEvent: (...args: unknown[]) => Promise<void>;
-      };
+      await runFaultSql([
+        `
+          CREATE FUNCTION reject_test_artifact_event() RETURNS trigger AS $$
+          BEGIN
+            IF NEW.artifact_id = 'atomic-art-fail' THEN
+              RAISE EXCEPTION 'Simulated event emission failure';
+            END IF;
+            RETURN NEW;
+          END;
+          $$ LANGUAGE plpgsql
+        `,
+        `
+          CREATE TRIGGER reject_test_artifact_event
+          BEFORE INSERT ON job_events
+          FOR EACH ROW EXECUTE FUNCTION reject_test_artifact_event()
+        `,
+      ]);
 
       try {
-        dbSeam.emitClientEvent = async () => {
-          throw new Error("Simulated event emission failure");
-        };
-
         await expect(
           faultDb.createArtifact({
             id: "atomic-art-fail",
@@ -233,7 +254,10 @@ if (canRunPostgres) {
           }),
         ).rejects.toThrow("Simulated event emission failure");
       } finally {
-        delete (dbSeam as unknown as Record<string, unknown>).emitClientEvent;
+        await runFaultSql([
+          "DROP TRIGGER reject_test_artifact_event ON job_events",
+          "DROP FUNCTION reject_test_artifact_event()",
+        ]);
       }
 
       const artifacts = await faultDb.listArtifacts("atomic-art-job");

@@ -1,0 +1,1 @@
+{"id": "workflows.solution-redox.composition", "requested": ["workflows.solution-redox"], "include_optional": false, "expected_nodes": ["workflows.solution-redox", "workflows.frequencies-and-thermochemistry", "methods.continuum-solvation"], "expected_absent": [], "engine": {"id": "orca", "version": "6.1.1"}, "domains": ["molecular-electronic-structure"]}

@@ -185,6 +185,7 @@ export async function startApplicationHttpServer() {
       origin: host.http.origin,
       auth: new PostgresHttpAuth(sql, authority),
       idempotency,
+      lookup: (input) => idempotency.lookup(input),
       open,
       agent,
       reconcile: (input, context, current) =>

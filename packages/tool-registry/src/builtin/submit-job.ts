@@ -14,7 +14,10 @@ const submitJobInput = z.object({
     .enum(["local"])
     .optional()
     .describe("Runner (default: local, only local supported for now)"),
-  nodeId: z.string().optional().describe("Target node"),
+  nodeId: z
+    .string()
+    .optional()
+    .describe("Remote targets are unsupported; omit for local execution"),
 });
 
 const submitJobOutput = z.object({
@@ -28,10 +31,20 @@ export const submitJobTool: Tool<
   z.infer<typeof submitJobOutput>
 > = {
   name: "submit-job",
-  description: "Submit a computational chemistry job for execution on a runner",
+  description:
+    "Submit a computational chemistry job on the local runner only. Does not support remote nodes or Slurm. For Slurm, use run-command with an installed sbatch client or the documented EigenGrid CLI.",
   inputSchema: submitJobInput,
   outputSchema: submitJobOutput,
   async execute(ctx, input) {
+    if (input.nodeId !== undefined || (input.runner !== undefined && input.runner !== "local"))
+      return {
+        ok: false,
+        error: {
+          code: "UNSUPPORTED_TARGET",
+          message:
+            "submit-job supports local execution only; no job was submitted. For Slurm or SSH, use run-command with the installed client or inspect eigengrid submit --help for supported runners.",
+        },
+      };
     // Production composition supplies the canonical coordinator. Keep the
     // legacy construction below only for isolated test/compatibility contexts
     // that intentionally omit the execution boundary.

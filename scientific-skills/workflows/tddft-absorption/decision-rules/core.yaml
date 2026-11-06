@@ -1,0 +1,46 @@
+{
+  "schema": "eigengrid.decision-rule/v1",
+  "id": "workflows.tddft-absorption.core",
+  "version": "1.0.0",
+  "question": "Can a band assignment be defended across model variants?",
+  "when": {
+    "all": [
+      {
+        "fact": "inputs.complete",
+        "operator": "equals",
+        "value": true
+      },
+      {
+        "fact": "spectrum.character_and_window_supported",
+        "operator": "equals",
+        "value": true
+      }
+    ]
+  },
+  "recommendation": {
+    "action": "Report the stick energies, oscillator strengths and assigned states with sensitivity and model limits.",
+    "strength": "conditional"
+  },
+  "rationale": "Energy ordering alone can swap two states of different electronic character.",
+  "risk_class": 2,
+  "approval": "required_if_material_field_changes",
+  "immutable_fields": [
+    "objective",
+    "geometry",
+    "reference_state",
+    "method",
+    "basis",
+    "response_model",
+    "solvent_response"
+  ],
+  "evidence": {
+    "level": "draft",
+    "references": [
+      "TD-CT",
+      "TD-DOUBLES",
+      "NTO",
+      "ORCA-TD"
+    ]
+  },
+  "limitations": "Flag strong doubles or severe multireference character for a method with an appropriate excitation manifold. Standard adiabatic linear-response TDDFT can miss states entirely. TDA changes the response approximation and does not by itself resolve long-range charge transfer or restore missing double excitations."
+}

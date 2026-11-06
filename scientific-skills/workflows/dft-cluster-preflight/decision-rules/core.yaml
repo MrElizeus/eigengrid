@@ -1,0 +1,17 @@
+schema: eigengrid.decision-rule/v1
+id: workflows.dft-cluster-preflight.readiness
+version: 1.0.0
+question: Which claim does the observed cluster evidence support?
+cases:
+  - if: login host sees an engine or an inventory advertises a GPU
+    then: Identify the target allocation class and obtain allocation-scoped evidence.
+  - if: target GPU is visible but the engine build/backend or pilot is unknown
+    then: Record hardware visibility and leave accelerated DFT readiness unknown.
+  - if: the scheduler reports completion but required output is truncated or SCF convergence failed
+    then: Preserve the failed artifact and withhold scientific acceptance.
+  - if: submission receipt is ambiguous or the restart bytes cannot be linked to the prior attempt
+    then: Hold further submissions until reconciled. Request site assistance when no unique job identity can be established.
+  - if: pilot observables and resource measurements satisfy preset criteria
+    then: Propose a bounded next stage under the existing approval and budget policy.
+approval: required_if_material_field_changes
+evidence: {level: draft, references: [slurm-gres, slurm-sbatch, slurm-sacct, orca-parallel, orca-memory, cp2k-runtime]}

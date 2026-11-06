@@ -1,0 +1,4 @@
+{"id":"gimic-ring-currents.positive","kind":"positive","query":"Trace a magnetically induced ring current and integrate its flux through a bond plane","expected_included":["workflows.gimic-ring-currents"],"expected_top":"workflows.gimic-ring-currents"}
+{"id":"gimic-ring-currents.missing-matrix","kind":"planning","query":"GIMIC received MOL but no XDENS for benzene. Can I report a ring current?","expected_included":["workflows.gimic-ring-currents"],"expected_top":"workflows.gimic-ring-currents"}
+{"id":"gimic-ring-currents.fused","kind":"planning","query":"Does a vanishing central bond current in naphthalene exclude peripheral circulation?","expected_included":["workflows.gimic-ring-currents"]}
+{"id":"gimic-ring-currents.unrelated","kind":"negative","query":"Estimate a reduction potential versus a reference electrode in solution","expected_excluded":["workflows.gimic-ring-currents"]}

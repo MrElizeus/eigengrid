@@ -47,6 +47,7 @@ const env = {
   OPENAI_API_KEY: "",
   ANTHROPIC_API_KEY: "",
   EIGENGRID_SCIENTIFIC_SKILLS_ROOT: undefined,
+  EIGENGRID_RETRIEVAL_CONFIG: undefined,
 };
 async function run(binary: string, args: string[]) {
   const p = Bun.spawn([join(distribution, "bin", binary), ...args], {
@@ -74,6 +75,22 @@ try {
   assert.equal((await run("eigengrid", ["--version"])).trim(), manifest.version);
   JSON.parse(await run("eigengrid", ["mission", "schema", "create"]));
   JSON.parse(await run("eigengrid", ["amber", "schema", "render-analysis"]));
+  const retrievalStatus = JSON.parse(await run("eigengrid", ["retrieval", "status"]));
+  assert.equal(retrievalStatus.mode, "lexical");
+  assert.equal(retrievalStatus.indexState, "disabled");
+  assert.ok(retrievalStatus.fragments > 0);
+  const retrievalResult = JSON.parse(
+    await run("eigengrid", [
+      "retrieval",
+      "search",
+      "--query",
+      "workflows.geometry-optimization",
+      "--context",
+    ]),
+  );
+  assert.equal(retrievalResult.result.hits[0].skill.skillId, "workflows.geometry-optimization");
+  assert.equal(retrievalResult.result.executionAuthorized, false);
+  assert.ok(retrievalResult.context.resolved.length > 1);
   assert.equal(calls.length, 0, "Manual interfaces must not invoke inference");
   mkdirSync(join(cwd, ".eigengrid"), { mode: 0o700 });
   writeFileSync(
@@ -96,6 +113,7 @@ try {
     ]),
   );
   assert.equal(output.ok, true);
+  assert.equal(output.memoryWarning, undefined, "Installed memory capture must succeed");
   assert.equal(calls.length, 2, "Native loop must interpret the observed tool result");
   assert.equal(output.toolCalls[0].tool, "list-protocols");
   const observation = (calls[1].messages as Array<{ role: string; content: string }>).find(
@@ -104,8 +122,26 @@ try {
   assert.ok(observation);
   const result = JSON.parse(observation.content);
   assert.equal(result.result.ok, true);
-  assert.equal(result.result.data.totalCapabilities, 15);
+  const policy = JSON.parse(
+    readFileSync(new URL("../../publication.json", import.meta.url), "utf8"),
+  );
+  assert.equal(result.result.data.totalCapabilities, policy.catalogSkillIds.length);
+  assert.ok(result.result.data.availableDomains.includes("periodic-electronic-structure"));
   assert.equal(result.result.data.returned, 2);
+  assert.ok(
+    result.result.memoryEvidence.digest,
+    "Tool observations must expose exact evidence references",
+  );
+  const experiences = JSON.parse(
+    await run("eigengrid", ["memory", "search", "--include-candidates"]),
+  );
+  assert.equal(experiences.length, 1, "Compiled CLI must recover the previous process's lesson");
+  assert.equal(experiences[0].lesson.current.state, "evidence_verified");
+  assert.deepEqual(
+    JSON.parse(await run("eigengrid", ["memory", "search"])),
+    [],
+    "Unreviewed experience must not become automatic context",
+  );
   const wheels = readdirSync(join(distribution, "python")).filter((name) => name.endsWith(".whl"));
   assert.equal(wheels.length, 1, "The distribution must contain exactly one Python wheel");
   const target = join(cwd, "installed-python");
@@ -161,7 +197,7 @@ print("PASS: installed wheel independently decodes the retained trajectory")`,
     manifest.version.replace("-rc.", "rc"),
   ]);
   console.log(
-    "PASS: six binaries, no-model schemas, installed corpus, structured tool/result round trip and installed Python wheel",
+    "PASS: six binaries, no-model schemas, installed corpus, tool/result round trip, persistent governed memory and installed Python wheel",
   );
 } finally {
   await server.stop(true);
