@@ -50,7 +50,7 @@ export function newChat(owner: string): Conversation {
   return {
     id: crypto.randomUUID(),
     owner,
-    title: "Nueva conversación",
+    title: "New conversation",
     updatedAt: new Date().toISOString(),
     messages: [],
     history: [],
@@ -109,8 +109,8 @@ export class ChatStore implements WebStore {
         const used = this.db
           .query("DELETE FROM web_invitations WHERE hash = ? AND expires > ? RETURNING hash")
           .get(invitation, Date.now());
-        if (!used) throw new Error("La invitación no es válida o ha caducado.");
-      } else if (this.hasUsers()) throw new Error("La cuenta inicial ya existe.");
+        if (!used) throw new Error("The invitation is invalid or has expired.");
+      } else if (this.hasUsers()) throw new Error("The initial account already exists.");
       const user: WebUser = {
         id: crypto.randomUUID(),
         username,

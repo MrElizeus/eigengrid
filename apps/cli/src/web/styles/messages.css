@@ -1,0 +1,121 @@
+.conversation {
+  overflow-y: auto;
+  flex: 1;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+.content {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 22px 36px 15px;
+}
+.welcome {
+  padding-top: clamp(28px, 7vh, 95px);
+}
+.welcome-mark {
+  height: 64px;
+  width: 64px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  margin-bottom: 27px;
+}
+.orbit {
+  position: absolute;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  height: 64px;
+  width: 64px;
+  transform: rotate(-9deg);
+  opacity: 0.65;
+}
+.orbit-two {
+  transform: rotate(9deg);
+  opacity: 0.35;
+}
+.eyebrow {
+  font-size: 10px;
+  letter-spacing: 1.6px;
+  color: var(--subtle);
+  font-weight: 600;
+}
+.welcome h1 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(36px, 4.1vw, 56px);
+  font-weight: 400;
+  line-height: 1.13;
+  letter-spacing: -1.8px;
+  margin: 18px 0;
+  color: var(--text);
+}
+.welcome h1 em {
+  font-weight: 400;
+  color: var(--accent);
+}
+.intro {
+  font-size: 14px;
+  line-height: 1.85;
+  color: var(--muted);
+  margin: 0;
+}
+.starters {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 30px;
+}
+.starters button {
+  text-align: left;
+  position: relative;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 10px;
+  padding: 19px 17px 18px;
+  min-height: 146px;
+  transition:
+    transform 0.15s,
+    background 0.15s;
+}
+.starters button:hover {
+  transform: translateY(-3px);
+  background: var(--raised);
+  border-color: var(--accent);
+}
+.starter-icon {
+  display: block;
+  color: var(--accent);
+  margin-bottom: 18px;
+}
+.starters strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 550;
+  margin-bottom: 7px;
+}
+.starters button > span:not(.starter-icon):not(.starter-arrow) {
+  display: block;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--subtle);
+  max-width: 175px;
+}
+.starter-arrow {
+  position: absolute;
+  right: 16px;
+  top: 17px;
+  color: var(--subtle);
+}
+.discover-commands {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 20px 0 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 11px;
+  padding: 4px 0;
+}
+.discover-commands:hover {
+  color: var(--accent);
+}

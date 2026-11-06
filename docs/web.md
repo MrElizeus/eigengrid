@@ -1,5 +1,9 @@
 # Web workspace
 
+For mission creation, scientific review and execution controls, use the separate
+[mission console](web-console.md) in `eigengrid serve`. The two services have
+separate authentication and should use separate HTTPS origins.
+
 EigenGrid's React interface runs on the Bun backend included in `eigengrid web`.
 The backend uses the same native agent, configuration reader, account renewal and
 scientific tool registry as the CLI. HTTP APIs carry JSON and streamed NDJSON.
@@ -58,7 +62,7 @@ conversation through the web API.
    decide the allowed origin.
 5. Use the initial setup link from the service log to create the administrator.
    Protect that log as it contains the first-use capability. In the web header,
-   **Invitar usuario** creates a link that expires in 24 hours and can be redeemed
+   **Invite user** creates a link that expires in 24 hours and can be redeemed
    once. Share it with the intended teammate. The teammate chooses their own
    username and password; open self-registration is disabled.
 
@@ -121,13 +125,13 @@ model configuration isolation. Other users can still log in and read their histo
 - Editing a message or retrying creates a branch. Context comes from server-owned
   visible text; the original remains available. Rename, search, copy and export chats.
 - Drafts and the selected chat survive reload in the current browser tab. Logout
-  removes drafts from that tab. Scrolling upward suspends auto-follow; **Ir al final**
+  removes drafts from that tab. Scrolling upward suspends auto-follow; **Jump to latest**
   resumes it. Pending instructions interrupted by shutdown remain recoverable.
 - Light, Dark and System themes, a responsive history panel, a searchable `/` command
   menu and keyboard shortcuts are included. Ctrl/Command+K opens commands, +B toggles
   history, +Shift+O starts a chat and +Shift+F searches history.
 
-Markdown escapes HTML and does not fetch remote images. The interface is Spanish.
+Markdown escapes HTML and does not fetch remote images. The interface is English.
 Transcripts and tool context are sent to the configured model provider when chatting;
 local storage does not imply local inference.
 

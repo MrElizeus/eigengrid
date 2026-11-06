@@ -1,0 +1,263 @@
+@media (min-width: 1600px) {
+  .content,
+  .composer-area {
+    max-width: 960px;
+  }
+  .welcome {
+    padding-top: 10vh;
+  }
+  .starters {
+    margin-top: 36px;
+  }
+  .starters button {
+    min-height: 156px;
+  }
+}
+@media (max-height: 800px) and (min-width: 900px) {
+  .welcome {
+    padding-top: 28px;
+  }
+  .welcome-mark {
+    margin-bottom: 20px;
+  }
+  .welcome h1 {
+    font-size: 43px;
+  }
+  .starters {
+    margin-top: 22px;
+  }
+  .starters button {
+    min-height: 125px;
+    padding: 15px;
+  }
+  .starter-icon {
+    margin-bottom: 12px;
+  }
+  .composer-area {
+    padding-top: 12px;
+  }
+  .topbar {
+    height: 64px;
+  }
+}
+@media (max-width: 1100px) {
+  .sidebar {
+    width: 240px;
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+  .content,
+  .composer-area {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+  .starters {
+    gap: 9px;
+  }
+  .starters button {
+    padding: 15px 13px;
+  }
+  .breadcrumbs strong {
+    max-width: 240px;
+  }
+  .composer-footnote span:last-child {
+    display: none;
+  }
+}
+@media (max-width: 899px) {
+  .sidebar,
+  .app:not(.sidebar-open) .sidebar {
+    display: flex;
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 264px;
+    z-index: 30;
+    transform: translateX(-100%);
+    transition: transform 0.2s;
+  }
+  .sidebar.visible {
+    transform: translateX(0);
+  }
+  .sidebar-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: #0c1a1166;
+    border: 0;
+    z-index: 20;
+  }
+  .topbar {
+    height: 66px;
+    padding: 0 13px;
+  }
+  .breadcrumbs {
+    gap: 8px;
+  }
+  .breadcrumbs strong {
+    max-width: 220px;
+  }
+  .project-label {
+    max-width: 220px;
+  }
+  .content {
+    padding-top: 32px;
+  }
+  .welcome h1 {
+    font-size: 43px;
+  }
+  .intro {
+    font-size: 13px;
+  }
+  .command-group {
+    display: none;
+  }
+  .composer-footnote {
+    font-size: 9px;
+  }
+  .starters strong {
+    font-size: 12px;
+  }
+  .model-picker > span:nth-child(2) {
+    max-width: 150px;
+  }
+}
+@media (max-width: 560px) {
+  .top-actions {
+    gap: 1px;
+  }
+  .top-actions .icon-button {
+    padding: 6px;
+  }
+  .breadcrumbs strong,
+  .project-label {
+    max-width: 130px;
+  }
+  .theme-control {
+    padding: 5px;
+  }
+  .theme-control svg {
+    display: none;
+  }
+  .theme-control select {
+    font-size: 10px;
+    max-width: 67px;
+  }
+  .content {
+    padding: 24px 18px 10px;
+  }
+  .welcome-mark {
+    margin-bottom: 18px;
+  }
+  .welcome h1 {
+    font-size: 38px;
+  }
+  .eyebrow {
+    font-size: 8px;
+    letter-spacing: 1px;
+  }
+  .intro {
+    font-size: 12px;
+  }
+  .desktop-break {
+    display: none;
+  }
+  .starters {
+    grid-template-columns: 1fr;
+    margin-top: 24px;
+    gap: 8px;
+  }
+  .starters button {
+    min-height: 0;
+    padding: 13px 34px 13px 46px;
+  }
+  .starter-icon {
+    position: absolute;
+    left: 14px;
+    top: 19px;
+    margin: 0;
+  }
+  .starters strong {
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+  .starters button > span:not(.starter-icon):not(.starter-arrow) {
+    max-width: none;
+    font-size: 10px;
+  }
+  .starter-arrow {
+    top: 19px;
+  }
+  .discover-commands {
+    margin-top: 17px;
+  }
+  .composer-area {
+    padding: 10px 12px 12px;
+  }
+  .composer {
+    padding: 12px 12px 10px;
+  }
+  .composer textarea {
+    font-size: 16px;
+    min-height: 48px;
+  }
+  .composer-bottom {
+    gap: 5px;
+  }
+  .model-access {
+    display: none;
+  }
+  .model-picker > span:nth-child(2) {
+    max-width: 108px;
+  }
+  .stop-button {
+    font-size: 0;
+    padding: 7px;
+  }
+  .stop-button svg {
+    width: 17px;
+    height: 17px;
+  }
+  .composer-actions {
+    gap: 6px;
+  }
+  .message.user .message-body {
+    max-width: 95%;
+  }
+  .message {
+    font-size: 13px;
+  }
+  .command-menu > button {
+    gap: 7px;
+    padding: 10px 7px;
+  }
+  .command-name {
+    min-width: 63px;
+    font-size: 11px;
+  }
+  .command-menu-heading span:last-child {
+    font-size: 8px;
+  }
+  .command-menu strong {
+    font-size: 11px;
+  }
+  .command-menu small {
+    font-size: 9px;
+  }
+  .error-banner {
+    flex-wrap: wrap;
+  }
+  .help-shortcuts > div {
+    font-size: 11px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

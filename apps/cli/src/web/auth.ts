@@ -77,8 +77,8 @@ export class WebAuth {
         {
           error:
             mode === "login"
-              ? "Usuario o contraseña incorrectos."
-              : "Usa un usuario con letras, números, punto o guion y una contraseña de 12 a 256 caracteres.",
+              ? "Incorrect username or password."
+              : "Use a username with letters, numbers, dots or hyphens and a password of 12 to 256 characters.",
         },
         { status: 400 },
       );
@@ -90,7 +90,7 @@ export class WebAuth {
     const attempts = this.attempts.get(username) ?? [];
     if (attempts.length >= 10 || this.verifying >= 4 || this.attempts.size >= 2000)
       return Response.json(
-        { error: "Demasiados intentos. Vuelve a intentarlo más tarde." },
+        { error: "Too many attempts. Try again later." },
         { status: 429, headers: { "Retry-After": "900" } },
       );
     this.attempts.set(username, [...attempts, this.now()]);
@@ -104,7 +104,7 @@ export class WebAuth {
             (!(await this.setupRequired()) || !equal(value.code, this.setupCode)))
         )
           return Response.json(
-            { error: "El enlace de acceso no es válido o ya fue utilizado." },
+            { error: "The access link is invalid or has already been used." },
             { status: 403 },
           );
         const hash = await Bun.password.hash(password, {
@@ -120,7 +120,10 @@ export class WebAuth {
           );
         } catch {
           return Response.json(
-            { error: "No se pudo crear la cuenta. Revisa la invitación o elige otro usuario." },
+            {
+              error:
+                "Unable to create the account. Check the invitation or choose another username.",
+            },
             { status: 409 },
           );
         }
@@ -133,7 +136,7 @@ export class WebAuth {
         });
         const valid = await Bun.password.verify(password, found?.passwordHash ?? (await dummyHash));
         if (!valid || !found)
-          return Response.json({ error: "Usuario o contraseña incorrectos." }, { status: 401 });
+          return Response.json({ error: "Incorrect username or password." }, { status: 401 });
         user = found;
       }
       this.attempts.delete(username);

@@ -76,7 +76,7 @@ export async function startWebServer(options: WebOptions = {}) {
       remoteOrigin.username ||
       remoteOrigin.password)
   )
-    throw new Error("La web por red requiere un origen HTTPS exacto, sin ruta ni credenciales.");
+    throw new Error("Network access requires an exact HTTPS origin without a path or credentials.");
   const databaseUrl = options.databaseUrl ?? process.env.EIGENGRID_WEB_DATABASE_URL;
   if (remoteOrigin && !databaseUrl)
     throw new Error("Configura EIGENGRID_WEB_DATABASE_URL para el acceso por red.");
@@ -171,15 +171,15 @@ export async function startWebServer(options: WebOptions = {}) {
           url.host !== new URL(origin).host ||
           request.headers.get("host") !== new URL(origin).host
         )
-          return json({ error: "Host inválido" }, 403);
+          return json({ error: "Invalid host" }, 403);
         if (request.headers.get("origin") && request.headers.get("origin") !== origin)
-          return json({ error: "Origen inválido" }, 403);
+          return json({ error: "Invalid origin" }, 403);
         if (
           request.method !== "GET" &&
           (request.headers.get("origin") !== origin ||
             !request.headers.get("content-type")?.startsWith("application/json"))
         )
-          return json({ error: "Origen o contenido inválido" }, 403);
+          return json({ error: "Invalid origin or content" }, 403);
         try {
           if (url.pathname === "/api/auth/session" && request.method === "GET")
             return json(await auth.status(request));
@@ -197,7 +197,7 @@ export async function startWebServer(options: WebOptions = {}) {
             return response;
           }
           const user = auth.authenticated(request);
-          if (!user) return json({ error: "Inicia sesión para abrir tu espacio de trabajo." }, 401);
+          if (!user) return json({ error: "Sign in to open your workspace." }, 401);
           if (url.pathname === "/api/auth/logout" && request.method === "POST") {
             if (active?.chat.owner === user.id) {
               active.stopping = true;
@@ -208,7 +208,7 @@ export async function startWebServer(options: WebOptions = {}) {
           }
           if (url.pathname === "/api/admin/invitations" && request.method === "POST") {
             if (user.role !== "admin")
-              return json({ error: "Solo un administrador puede invitar usuarios." }, 403);
+              return json({ error: "Only an administrator can invite users." }, 403);
             const invitation = await auth.invitation();
             return json(
               {
@@ -240,10 +240,10 @@ export async function startWebServer(options: WebOptions = {}) {
           const match = /^\/api\/chats\/([a-f0-9-]{36})(?:\/(messages|cancel|steer|fork))?$/.exec(
             url.pathname,
           );
-          if (!match) return json({ error: "No encontrado" }, 404);
+          if (!match) return json({ error: "Not found" }, 404);
           const [, id, action] = match;
           const chat = await store.get(id!, user.id);
-          if (!chat) return json({ error: "Conversación no encontrada" }, 404);
+          if (!chat) return json({ error: "Conversation not found" }, 404);
           if (!action && request.method === "GET") return json(publicChat(chat));
           if (!action && request.method === "PATCH") {
             const { title } = z
@@ -261,10 +261,9 @@ export async function startWebServer(options: WebOptions = {}) {
               .object({ messageIndex: z.number().int().min(0) })
               .strict()
               .parse(await body(request));
-            if (active?.id === id)
-              return json({ error: "Detén la respuesta antes de editar." }, 409);
+            if (active?.id === id) return json({ error: "Stop the response before editing." }, 409);
             if (chat.messages[messageIndex]?.role !== "user")
-              return json({ error: "Mensaje no válido" }, 400);
+              return json({ error: "Invalid message" }, 400);
             const fork = await store.create(user.id);
             fork.title = `${chat.title.slice(0, 85)} · rama`;
             fork.messages = chat.messages.slice(0, messageIndex);
@@ -279,16 +278,16 @@ export async function startWebServer(options: WebOptions = {}) {
             const { prompt } = messageSchema.parse(await body(request));
             if (!active || active.id !== id || active.stopping)
               return json(
-                { error: "La respuesta ya terminó. Envía el mensaje para continuar." },
+                { error: "The response has already ended. Send the message to continue." },
                 409,
               );
             if (active.chat.pendingPrompt)
-              return json({ error: "Ya se está aplicando tu cambio. Espera un momento." }, 409);
+              return json({ error: "Your change is being applied. Please wait." }, 409);
             if (
               active.chat.messages.length >= 198 ||
               JSON.stringify(active.chat.history).length > 480000
             )
-              return json({ error: "Inicia una nueva conversación para continuar." }, 409);
+              return json({ error: "Start a new conversation to continue." }, 409);
             active.chat.pendingPrompt = prompt;
             await store.save(active.chat);
             active.send?.({ type: "steering", prompt });
@@ -296,7 +295,7 @@ export async function startWebServer(options: WebOptions = {}) {
           }
           if (!action && request.method === "DELETE") {
             if (active?.id === id)
-              return json({ error: "Detén la respuesta antes de eliminarla." }, 409);
+              return json({ error: "Stop the response before deleting it." }, 409);
             await store.delete(id!, user.id);
             return json({ ok: true });
           }
@@ -310,12 +309,12 @@ export async function startWebServer(options: WebOptions = {}) {
             return json({ ok: true });
           }
           if (action !== "messages" || request.method !== "POST")
-            return json({ error: "Método no permitido" }, 405);
+            return json({ error: "Method not allowed" }, 405);
           if (active)
             return json({ error: "Ya hay una respuesta en curso. Espera o detenla." }, 409);
           if (chat.messages.length >= 200 || JSON.stringify(chat.history).length > 500000)
             return json(
-              { error: "Esta conversación alcanzó su límite. Crea una nueva para continuar." },
+              { error: "This conversation has reached its limit. Create a new one to continue." },
               409,
             );
           const { prompt } = messageSchema.parse(await body(request));
@@ -425,8 +424,7 @@ export async function startWebServer(options: WebOptions = {}) {
                       chat.messages.push({
                         role: "assistant",
                         content:
-                          content ||
-                          "No se pudo completar la respuesta. Revisa la conexión del CLI.",
+                          content || "Unable to complete the response. Check the CLI connection.",
                         tools,
                         error: true,
                         status: chat.pendingPrompt
@@ -480,8 +478,7 @@ export async function startWebServer(options: WebOptions = {}) {
         } catch {
           return json(
             {
-              error:
-                "No se pudo procesar la solicitud. Revisa los valores y los permisos del proyecto.",
+              error: "Unable to process the request. Check the values and project permissions.",
             },
             400,
           );

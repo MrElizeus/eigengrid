@@ -13,8 +13,7 @@ export function readWebConnection(directory: string) {
         model: null,
         provider: null,
         authMode: null,
-        reason:
-          "La configuración del CLI no se puede leer de forma segura. Revísala en la terminal.",
+        reason: "The CLI configuration cannot be read safely. Check it in the terminal.",
       },
     };
   }
@@ -57,7 +56,7 @@ export function readWebConnection(directory: string) {
       authMode: config.authMode ?? "api-key",
       reason: ready
         ? null
-        : "La conexión del CLI necesita autenticación. Abre eigengrid y usa /connect.",
+        : "The CLI connection requires authentication. Open eigengrid and use /connect.",
     },
   };
 }
@@ -65,7 +64,7 @@ export function readWebConnection(directory: string) {
 export function activateWebConnection(directory: string) {
   const { config, state } = readWebConnection(directory);
   if (!state.configured || !config)
-    throw new Error(state.reason ?? "Configura la conexión en el CLI.");
+    throw new Error(state.reason ?? "Configure the connection in the CLI.");
   // Explicitly clear fields when the CLI removes them; a previous account/key must not survive.
   configureLlm({
     ...config,

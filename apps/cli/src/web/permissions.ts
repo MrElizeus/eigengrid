@@ -28,7 +28,7 @@ const reads = new Set([
 export class WebPermissions extends OperatorPermissions {
   override async authorizeTool(call: AgentToolCall & { sessionId?: string }) {
     if (!reads.has(call.name))
-      return { allow: false, reason: "La web solo permite consultar el proyecto." };
+      return { allow: false, reason: "Web chat only permits project inspection." };
     if (call.name === "read-file") {
       try {
         const input = call.input as { path?: unknown };
@@ -46,7 +46,7 @@ export class WebPermissions extends OperatorPermissions {
         return {
           allow: false,
           reason:
-            "La web solo puede leer archivos de trabajo dentro del proyecto; excluye credenciales, archivos ocultos y bases de datos.",
+            "Web chat can only read project files; credentials, hidden files and databases are excluded.",
         };
       }
     }

@@ -19,7 +19,7 @@ export class PostgresChatStore implements WebStore {
     } catch {
       await pool.end();
       throw new Error(
-        "No se pudo preparar PostgreSQL para la web. Revisa EIGENGRID_WEB_DATABASE_URL y los permisos del esquema eigengrid_web.",
+        "Unable to prepare PostgreSQL for the workspace. Check EIGENGRID_WEB_DATABASE_URL and permissions for the eigengrid_web schema.",
       );
     }
   }
@@ -46,9 +46,9 @@ export class PostgresChatStore implements WebStore {
           "DELETE FROM eigengrid_web.invitations WHERE hash=$1 AND expires>$2 RETURNING hash",
           [invitation, Date.now()],
         );
-        if (!used.rowCount) throw new Error("La invitación no es válida o ha caducado.");
+        if (!used.rowCount) throw new Error("The invitation is invalid or has expired.");
       } else if ((await client.query("SELECT 1 FROM eigengrid_web.users LIMIT 1")).rowCount)
-        throw new Error("La cuenta inicial ya existe.");
+        throw new Error("The initial account already exists.");
       const user: WebUser = {
         id: crypto.randomUUID(),
         username,
