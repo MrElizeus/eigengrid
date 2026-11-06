@@ -343,6 +343,15 @@ function Dialog({
     </dialog>
   );
 }
+function clearWebDrafts() {
+  for (const key of Object.keys(sessionStorage))
+    if (key.startsWith("eigengrid-draft:") || key === "eigengrid-last-chat")
+      sessionStorage.removeItem(key);
+}
+function announceSessionChange() {
+  localStorage.setItem("eigengrid-session-event", crypto.randomUUID());
+}
+
 function AuthGate() {
   const [session, setSession] = useState<{
     authenticated: boolean;
@@ -366,12 +375,28 @@ function AuthGate() {
   useEffect(() => {
     void refreshSession().catch((e) => setError(e.message));
     const expired = () => {
+      clearWebDrafts();
       setSession((previous) => ({ ...previous, authenticated: false, setupRequired: false }));
       setPassword("");
       setError("Tu sesión terminó. Vuelve a iniciar sesión para continuar.");
     };
+    const sync = () => {
+      void refreshSession().catch((e) => setError(e.message));
+    };
+    const changed = (event: StorageEvent) => {
+      if (event.key === "eigengrid-session-event") {
+        clearWebDrafts();
+        sync();
+      }
+    };
+    window.addEventListener("focus", sync);
+    window.addEventListener("storage", changed);
     window.addEventListener("eigengrid-session-expired", expired);
-    return () => window.removeEventListener("eigengrid-session-expired", expired);
+    return () => {
+      window.removeEventListener("focus", sync);
+      window.removeEventListener("storage", changed);
+      window.removeEventListener("eigengrid-session-expired", expired);
+    };
   }, []);
   async function login(event: FormEvent) {
     event.preventDefault();
@@ -397,6 +422,7 @@ function AuthGate() {
       setCode("");
       setInvited(false);
       await refreshSession();
+      announceSessionChange();
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -406,10 +432,13 @@ function AuthGate() {
   if (session?.authenticated)
     return (
       <App
+        key={session.username}
         username={session.username ?? "Operador"}
         admin={session.role === "admin"}
         onLogout={() => {
           setSession({ authenticated: false, setupRequired: false });
+          clearWebDrafts();
+          announceSessionChange();
           setError("");
         }}
       />
@@ -1182,9 +1211,7 @@ function App({
               onClick={() =>
                 void api("/auth/logout", "POST", {})
                   .then(() => {
-                    for (const key of Object.keys(sessionStorage))
-                      if (key.startsWith("eigengrid-draft:") || key === "eigengrid-last-chat")
-                        sessionStorage.removeItem(key);
+                    clearWebDrafts();
                     onLogout();
                   })
                   .catch((e) => setError(e.message))

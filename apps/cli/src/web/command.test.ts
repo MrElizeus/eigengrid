@@ -81,6 +81,11 @@ test("web command completes a real native tool round trip and restores a convers
           cwd: dir,
           env: {
             ...process.env,
+            XDG_STATE_HOME: join(dir, "state"),
+            XDG_DATA_HOME: join(dir, "data"),
+            XDG_CACHE_HOME: join(dir, "cache"),
+            EIGENGRID_PERMISSIONS_DIR: join(dir, "permissions"),
+            EIGENGRID_AUTH_DIR: join(dir, "auth"),
             EIGENGRID_DB_PROVIDER: "sqlite",
             EIGENGRID_DB_PATH: join(dir, "project.db"),
             LLM_API_KEY: "",
