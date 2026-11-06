@@ -637,6 +637,7 @@ describe.skipIf(!canRunPostgres)("human mission application through real Postgre
       expect(missions.result.items[0]).not.toHaveProperty("budget");
       expect((await http.request("/api/v1/projects?limit=101")).status).toBe(400);
       expect((await http.request("/api/v1/projects?limit=1&limit=2")).status).toBe(400);
+      expect((await http.request("/api/v1/projects?__proto__=unexpected")).status).toBe(400);
       expect((await http.request("/api/v1/projects/foreign/missions")).status).toBe(403);
       expect(
         (

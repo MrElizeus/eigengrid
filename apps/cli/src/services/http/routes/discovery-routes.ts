@@ -25,7 +25,8 @@ export async function handleDiscoveryRoute(
   if (request.method !== "GET") throw new MissionHttpError("METHOD_NOT_ALLOWED");
   const params: Record<string, string> = {};
   for (const [key, value] of url.searchParams) {
-    if (Object.hasOwn(params, key)) throw new MissionHttpError("INVALID_REQUEST");
+    if (!["after", "limit"].includes(key) || Object.hasOwn(params, key))
+      throw new MissionHttpError("INVALID_REQUEST");
     params[key] = value;
   }
   const page = pageSchema.parse(params);
