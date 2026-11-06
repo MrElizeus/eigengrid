@@ -25,6 +25,7 @@
     "@eigengrid/runners": "workspace:*",
     "@eigengrid/scheduler": "workspace:*",
     "@eigengrid/scientific-agent": "workspace:*",
+    "@eigengrid/scientific-retrieval": "workspace:*",
     "@eigengrid/scientific-schema": "workspace:*",
     "@eigengrid/scientific-skills": "workspace:*",
     "@eigengrid/slurm": "workspace:*",

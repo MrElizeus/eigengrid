@@ -19,3 +19,10 @@ by application-owned allowlists, not arbitrary scripts in a catalog directory.
 External knowledge cannot install missing code or grant an unsupported capability.
 Advanced implementations must run in their separately maintained private runtime;
 selecting a private catalog alone does not recreate withheld code in this build.
+
+The operator uses `ScientificRetrievalService` for discovery. Its lexical mode remains
+the default; an explicitly configured local embedding index can add hybrid discovery.
+Catalog bytes and authorization are rechecked before reuse, including during asynchronous
+embedding work. Multi-user hosts must bind their own principal and catalog grants before
+loading data. The single-user CLI adapter is not a server authorization policy.
+See [retrieval contracts, isolation and index recovery](scientific-retrieval.md).

@@ -16,6 +16,7 @@
     "@eigengrid/experience-memory": "workspace:*",
     "@eigengrid/model-gateway": "workspace:*",
     "@eigengrid/protocol": "workspace:*",
+    "@eigengrid/scientific-retrieval": "workspace:*",
     "@eigengrid/scientific-skills": "workspace:*",
     "@eigengrid/tool-registry": "workspace:*",
     "ai": "^6.0.208",

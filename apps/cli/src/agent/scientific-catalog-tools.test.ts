@@ -1,5 +1,9 @@
 import { describe, expect, it } from "bun:test";
 import { createHash } from "node:crypto";
+import { appendFileSync, cpSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { repositoryScientificSkillsRoot } from "@eigengrid/scientific-skills";
 import publication from "../../../../publication.json";
 import type { ToolContext } from "@eigengrid/tool-registry";
 import {
@@ -14,6 +18,37 @@ const context = {} as ToolContext;
 const catalogSize = publication.catalogSkillIds.length;
 
 describe("scientific catalog tools", () => {
+  it("invalidates same-directory catalog edits and rejects a previously pinned inspection cursor", async () => {
+    const temporary = mkdtempSync(join(tmpdir(), "eigengrid-catalog-cache-"));
+    const original = process.env.EIGENGRID_SCIENTIFIC_SKILLS_ROOT;
+    cpSync(
+      join(repositoryScientificSkillsRoot(), "workflows/gimic-ring-currents"),
+      join(temporary, "gimic"),
+      { recursive: true },
+    );
+    process.env.EIGENGRID_SCIENTIFIC_SKILLS_ROOT = temporary;
+    try {
+      const first = await listProtocolsTool.execute(context, {});
+      expect(first.ok).toBe(true);
+      appendFileSync(
+        join(temporary, "gimic/SKILL.md"),
+        "\n\n## Cache regression fixture\nSynthetic catalog revision for cache testing.\n",
+      );
+      const second = await listProtocolsTool.execute(context, {});
+      expect(second.ok).toBe(true);
+      expect(second.data!.corpusDigest).not.toBe(first.data!.corpusDigest);
+      const inspection = await inspectProtocolTool.execute(context, {
+        id: "workflows.gimic-ring-currents",
+        corpusDigest: first.data!.corpusDigest,
+      });
+      expect(inspection.ok).toBe(false);
+      expect(inspection.error?.message).toContain("changed");
+    } finally {
+      if (original === undefined) delete process.env.EIGENGRID_SCIENTIFIC_SKILLS_ROOT;
+      else process.env.EIGENGRID_SCIENTIFIC_SKILLS_ROOT = original;
+      rmSync(temporary, { recursive: true, force: true });
+    }
+  });
   it("reports the validated repository protocol inventory", async () => {
     const result = await listProtocolsTool.execute(context, { limit: 100 });
     expect(result.ok).toBe(true);

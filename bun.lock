@@ -50,6 +50,7 @@
         "@eigengrid/runners": "workspace:*",
         "@eigengrid/scheduler": "workspace:*",
         "@eigengrid/scientific-agent": "workspace:*",
+        "@eigengrid/scientific-retrieval": "workspace:*",
         "@eigengrid/scientific-schema": "workspace:*",
         "@eigengrid/scientific-skills": "workspace:*",
         "@eigengrid/slurm": "workspace:*",
@@ -80,6 +81,7 @@
         "@eigengrid/experience-memory": "workspace:*",
         "@eigengrid/model-gateway": "workspace:*",
         "@eigengrid/protocol": "workspace:*",
+        "@eigengrid/scientific-retrieval": "workspace:*",
         "@eigengrid/scientific-skills": "workspace:*",
         "@eigengrid/tool-registry": "workspace:*",
         "ai": "^6.0.208",
@@ -289,6 +291,15 @@
         "zod": "^3.24.0",
       },
     },
+    "packages/scientific-retrieval": {
+      "name": "@eigengrid/scientific-retrieval",
+      "version": "0.1.0",
+      "dependencies": {
+        "@eigengrid/scientific-schema": "workspace:*",
+        "@eigengrid/scientific-skills": "workspace:*",
+        "zod": "^3.24.0",
+      },
+    },
     "packages/scientific-schema": {
       "name": "@eigengrid/scientific-schema",
       "version": "0.1.0",
@@ -427,6 +438,8 @@
     "@eigengrid/scheduler": ["@eigengrid/scheduler@workspace:packages/scheduler"],
 
     "@eigengrid/scientific-agent": ["@eigengrid/scientific-agent@workspace:packages/scientific-agent"],
+
+    "@eigengrid/scientific-retrieval": ["@eigengrid/scientific-retrieval@workspace:packages/scientific-retrieval"],
 
     "@eigengrid/scientific-schema": ["@eigengrid/scientific-schema@workspace:packages/scientific-schema"],
 

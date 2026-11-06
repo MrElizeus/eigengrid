@@ -1,0 +1,9 @@
+{
+  "mode": "scientific",
+  "indexDirectory": "./index",
+  "rrfK": 60,
+  "embeddings": {
+    "python": "/absolute/path/to/embedding-venv/bin/python",
+    "manifest": "./multilingual-e5-small.json"
+  }
+}

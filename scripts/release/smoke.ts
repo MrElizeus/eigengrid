@@ -47,6 +47,7 @@ const env = {
   OPENAI_API_KEY: "",
   ANTHROPIC_API_KEY: "",
   EIGENGRID_SCIENTIFIC_SKILLS_ROOT: undefined,
+  EIGENGRID_RETRIEVAL_CONFIG: undefined,
 };
 async function run(binary: string, args: string[]) {
   const p = Bun.spawn([join(distribution, "bin", binary), ...args], {
@@ -74,6 +75,22 @@ try {
   assert.equal((await run("eigengrid", ["--version"])).trim(), manifest.version);
   JSON.parse(await run("eigengrid", ["mission", "schema", "create"]));
   JSON.parse(await run("eigengrid", ["amber", "schema", "render-analysis"]));
+  const retrievalStatus = JSON.parse(await run("eigengrid", ["retrieval", "status"]));
+  assert.equal(retrievalStatus.mode, "lexical");
+  assert.equal(retrievalStatus.indexState, "disabled");
+  assert.ok(retrievalStatus.fragments > 0);
+  const retrievalResult = JSON.parse(
+    await run("eigengrid", [
+      "retrieval",
+      "search",
+      "--query",
+      "workflows.geometry-optimization",
+      "--context",
+    ]),
+  );
+  assert.equal(retrievalResult.result.hits[0].skill.skillId, "workflows.geometry-optimization");
+  assert.equal(retrievalResult.result.executionAuthorized, false);
+  assert.ok(retrievalResult.context.resolved.length > 1);
   assert.equal(calls.length, 0, "Manual interfaces must not invoke inference");
   mkdirSync(join(cwd, ".eigengrid"), { mode: 0o700 });
   writeFileSync(

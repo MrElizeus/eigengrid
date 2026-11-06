@@ -83,6 +83,21 @@ for (const binary of binaries) {
 cpSync(join(root, "scientific-skills"), join(destination, "share/eigengrid/scientific-skills"), {
   recursive: true,
 });
+cpSync(join(root, "examples/retrieval"), join(destination, "share/eigengrid/retrieval"), {
+  recursive: true,
+});
+cpSync(
+  join(root, "python/requirements-retrieval-linux-x64-py313.lock"),
+  join(destination, "share/eigengrid/retrieval/requirements-linux-x64-py313.lock"),
+);
+cpSync(
+  join(root, "docs/scientific-retrieval.md"),
+  join(destination, "share/eigengrid/retrieval/README.md"),
+);
+cpSync(
+  join(root, "packages/scientific-retrieval/evals/retrieval-v1.jsonl"),
+  join(destination, "share/eigengrid/retrieval/evaluation-cases.jsonl"),
+);
 cpSync(join(root, "LICENSE"), join(destination, "LICENSE"));
 cpSync(join(root, "notices"), join(destination, "notices"), { recursive: true });
 const releasePython = process.env.EIGENGRID_RELEASE_PYTHON ?? "python";

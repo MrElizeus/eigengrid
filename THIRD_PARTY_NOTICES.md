@@ -22,3 +22,13 @@ for independent byte-decoder regressions. Its README documents the sanitized hea
 Other parser fixtures are compact test data; contract fixtures are synthetic and do not
 establish engine or scientific qualification. Scientific knowledge references identify
 external publications and manuals without redistributing their full text.
+
+## Optional scientific retrieval runtime
+
+The CPU embedding worker can be provisioned separately using
+`python/requirements-retrieval-linux-x64-py313.lock`. Those optional dependencies and
+model weights are not included in the native release. The example configuration pins
+the [Xenova ONNX conversion](https://huggingface.co/Xenova/multilingual-e5-small) of
+[multilingual E5 small](https://huggingface.co/intfloat/multilingual-e5-small), whose
+upstream model card declares the MIT license. Preserve upstream notices when distributing
+separately downloaded artifacts. See [retrieval setup](docs/scientific-retrieval.md).
