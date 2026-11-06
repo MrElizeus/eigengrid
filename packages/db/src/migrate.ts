@@ -513,9 +513,10 @@ export class SqliteDatabase implements DatabaseLike {
     mkdirSync(dirname(this.dbPath), { recursive: true });
     const d = new Database(this.dbPath);
     this.db = d as SqliteConnection;
+    // Opening WAL can itself contend with another connection or a checkpoint.
+    d.query("PRAGMA busy_timeout = 5000").run();
     d.query("PRAGMA journal_mode = WAL").run();
     d.query("PRAGMA foreign_keys = ON").run();
-    d.query("PRAGMA busy_timeout = 5000").run();
     this.runPendingMigrations();
   }
 
