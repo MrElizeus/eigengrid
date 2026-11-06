@@ -43,6 +43,11 @@ const SCIENTIFIC_QUERY_ALIASES: Readonly<Record<string, string>> = Object.freeze
   poblaciones: "populations", conformeros: "conformer", espin: "spin",
   contaminado: "contamination", contaminacion: "contamination", multiplicidad: "multiplicity",
   periodico: "periodic", periodica: "periodic", celda: "cell", malla: "mesh",
+  rmn: "nmr", blindaje: "shielding", blindajes: "shielding",
+  desplazamientos: "shifts", protones: "proton", carbonos: "carbon",
+  aromaticidad: "aromaticity", anillo: "ring", anillos: "ring",
+  corriente: "current", corrientes: "currents", anular: "ring", anulares: "ring",
+  sonda: "probe", sondas: "probe", barrido: "scan", periferico: "peripheral",
 });
 
 export function scientificQueryTerms(query: string): string[] {

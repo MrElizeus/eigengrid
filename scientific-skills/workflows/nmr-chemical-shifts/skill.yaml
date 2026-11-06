@@ -1,0 +1,42 @@
+schema: eigengrid.scientific-skill/v1
+id: workflows.nmr-chemical-shifts
+version: 1.0.0
+title: Proton and carbon NMR chemical shifts from nuclear shielding tensors
+status: active
+summary: Compare computed GIAO shielding tensors with proton and carbon solution NMR shifts through isotope-specific referencing, exchange-aware conformer averaging and atom-mapped assignment.
+knowledge_level: draft
+capability_levels: {reference: true, advisory: true, plannable: true, renderable: {}, executable: {}, validated: {}}
+domains: [molecular-electronic-structure]
+domain_maturity: {molecular-electronic-structure: plannable}
+engine_compatibility: {orca: '>=6.1.0 <6.2.0'}
+requires:
+  - id: methods.molecular-dft
+    range: ^1.0.0
+    reason: Pin the electronic model, numerical settings, molecular state and atom identities used for shielding.
+recommends:
+  - id: workflows.solution-conformer-free-energy
+    range: ^1.0.0
+    reason: Calculate relative solution free energies if an equilibrated flexible ensemble needs populations.
+  - id: validation.dft-reference-panel
+    range: ^1.0.0
+    reason: Evaluate predictive error or candidate discrimination on independent compounds of the intended class.
+  - id: workflows.dft-cluster-preflight
+    range: ^1.0.0
+    reason: Verify the actual property-capable engine build, allocation and durable output route for a pilot.
+required_inputs:
+  - Mapped candidate structures, stereochemistry, charge, multiplicity, sample speciation and isotope of each requested nucleus
+  - Solvent, temperature and population or exchange model for each candidate
+  - Geometry and shielding levels, gauge, basis, solvation, numerical and response settings
+  - Isotope-matched reference standard with its assigned shift, or a compatible independently documented calibration equation
+missing_input_behavior: Raw shieldings may be reported with their method. Withhold referenced shifts without a valid reference or calibration, ensemble shifts without justified weights and exchange, and assignment without measured resonances and mapping constraints.
+assets:
+  protocols: protocols/
+  rules: decision-rules/
+  references: references/
+  mappings: engine-mappings/
+  evals: evals/
+review:
+  status: unreviewed
+  owner_role: computational-chemist
+  notes: Literature-informed planning draft for diamagnetic molecules in isotropic solution. Engine and site qualification require independent evidence.
+provenance: {created_by: model}

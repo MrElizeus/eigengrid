@@ -1,6 +1,6 @@
 # DFT protocols for the operator
 
-These 13 versioned modules extend the 15 foundational entries. Each new module starts at
+These 16 versioned modules extend the 15 foundational entries. Each new module starts at
 `1.0.0` and declares `draft`, `unreviewed`, and planning capability. Version identifies
 the text and dependencies. Scientific qualification requires independent evidence for the
 target system and observable.
@@ -20,6 +20,12 @@ target system and observable.
 | `workflows.brillouin-zone-sampling`        | Converge k-space integration and occupations; distinguish an integration mesh from a band path.                                     |
 | `workflows.dft-cluster-preflight`          | Establish batch environment, staging and launch evidence, pilot budget and recovery conditions.                                     |
 | `validation.dft-reference-panel`           | Freeze reference identities, physical conventions, independent comparisons and per-property error criteria before a benchmark.      |
+| `workflows.nmr-chemical-shifts`            | Reference and ensemble-average isotropic proton and carbon shieldings with persistent atom assignments.                             |
+| `workflows.nics-tensor-scans`              | Project ghost-probe tensors onto ring-fixed directions to compare magnetic shielding profiles.                                      |
+| `workflows.gimic-ring-currents`            | Integrate the magnetic current response across oriented cuts and test possible circulation pathways.                                |
+
+For magnetic-response inputs, diagnostic cases and pilot evidence see
+[magnetic response](magnetic-response.md).
 
 ## How the agent uses a protocol
 

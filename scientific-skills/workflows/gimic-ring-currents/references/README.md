@@ -1,0 +1,7 @@
+# Sources and scope
+
+- **JSG-2004.** Jusélius, Sundholm and Gauss derive the first-order current density with gauge-including atomic orbitals and integrate the induced flux. Their benzene examples distinguish values obtained with different electronic models and bases. [Original method](https://doi.org/10.1063/1.1773136)
+- **GIMIC-USAGE.** The upstream interface contract specifies MOL, XDENS and the calculation input. Its TURBOMOLE, Gaussian and other producer routes have different export and spin restrictions. Check the producer and converter actually used. [Usage at the tested revision](https://github.com/qmcurrents/gimic/blob/38b960c655b1538bb463a9bc6a6bdb67cab04395/doc/usage.rst)
+- **GIMIC-INTERPRETATION.** The authors illustrate current maps, field direction, integration surfaces and cancellation. Signed flow at a cut acquires a circulation assignment only by following the oriented pathway. [Interpretation guide](https://gimic.readthedocs.io/en/latest/interpretation.html)
+- **PATHWAYS-2021.** Rauhalahti and co-workers analyze competing routes in fused porphyrinoids. Figure 3 and the discussion of naphthalene show a peripheral current with zero net central-bond current by symmetry. [Primary study](https://doi.org/10.1039/D1CP02381K)
+- **UPSTREAM-TESTS.** The archived integration inputs and response files support a downstream regression replay. See `fixture-replay.md` for the observed values, perturbations and scope. [Pinned fixtures](https://github.com/qmcurrents/gimic/tree/38b960c655b1538bb463a9bc6a6bdb67cab04395/test)

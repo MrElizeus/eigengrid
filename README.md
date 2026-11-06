@@ -69,7 +69,7 @@ ORCA and other engines require separate installations and appropriate licenses.
 EigenGrid is MIT licensed. Each build and release manifest identifies its exact
 source commit.
 
-The bundled catalog contains 15 foundational entries and 13 versioned DFT planning
+The bundled catalog contains 15 foundational entries and 16 versioned DFT planning
 protocols for molecules, periodic systems and cluster qualification. The operator
 can retrieve their procedures, dependencies and literature sources by exact revision.
 [DFT catalog and cluster examples](docs/dft-protocols.md).

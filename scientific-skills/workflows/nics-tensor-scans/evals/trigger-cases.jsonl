@@ -1,0 +1,3 @@
+{"id":"nics-scan.rotated-ring","kind":"planning","query":"My ring is tilted in the output frame. Which NICS tensor component measures shielding along its normal?","expected_included":["workflows.nics-tensor-scans"],"expected_top":"workflows.nics-tensor-scans"}
+{"id":"nics-scan.lateral","kind":"positive","query":"Compare local and peripheral magnetic aromaticity using ghost probes above fused rings along a lateral path","expected_included":["workflows.nics-tensor-scans"],"expected_top":"workflows.nics-tensor-scans"}
+{"id":"nics-scan.unrelated","kind":"negative","query":"Counterpoise correction of basis set superposition error in a frozen dimer interaction","expected_excluded":["workflows.nics-tensor-scans"]}

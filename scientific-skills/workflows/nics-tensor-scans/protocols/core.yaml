@@ -1,0 +1,35 @@
+schema: eigengrid.protocol-fragment/v1
+id: workflows.nics-tensor-scans.project-scan
+version: 1.0.0
+capability: workflows.nics-tensor-scans
+effect_authority: none
+missing_input_behavior: block
+steps:
+  - id: define-observable
+    kind: planning
+    reason: Freeze atom-indexed geometry, units, charge, state, Hamiltonian, medium, targeted ring and output component. Give every probe an identity tied to that geometry. Keep geometry and physical electronic model fixed while scanning.
+  - id: construct-ring-frame
+    kind: planning
+    reason: For a planar ring, specify its center c (for example the unweighted centroid of named ring atoms). Fit the coordinates to a least-squares plane and record RMS and maximum out-of-plane distances in angstrom. Anchor the unit normal n to a named atom order or a reference vector. Project an anchor bond into the plane to define x, then take y = n cross x. Reject an ill-defined normal or collinear anchors.
+    branch: For fused rings declare whether centers share a global plane or use local frames. Curvature or substantial puckering can make an unqualified common normal meaningless. If a tilted or local frame is used, preserve all transforms and report sensitivity to the plane definition.
+  - id: choose-scan
+    kind: planning
+    reason: For a normal-height scan use p = c + h*n, recording h, its units and which face is sampled. For an XY path use p(s) = c + u(s)*x + v(s)*y + h*n, reporting the projected path and fixed height. Include both faces when inequivalent. Select multiple heights or refine the lateral spacing to distinguish robust features from point selection.
+    branch: NICS(0) at the center and NICS(1) at 1 angstrom alone provide two samples. The original NICS-XY comparison reported qualitative agreement with a pi-resolved profile at 1.7 angstrom for its tested systems. Check height dependence for the present molecule.
+  - id: verify-response-calculation
+    kind: validation
+    reason: Use an engine-documented point-shielding or ghost-center procedure and record the magnetic gauge (for example GIAO), basis and any auxiliary functions. Preserve real nuclei, electrons and geometry. Check that ghost centers are actually evaluated by the response solver. Converge SCF and magnetic response and inspect linear-dependence and grid warnings. Record the actual output coordinate frame and probe ordering.
+    branch: Engines can reorient the molecule, and some ghost implementations change the orbital basis or numerical quadrature. Compare at least one common probe evaluated alone and in the planned batch. If the difference exceeds the predeclared tolerance, repair the numerical setup or use separately verified jobs.
+  - id: project-tensors
+    kind: validation
+    reason: Parse the full shielding tensor sigma in Cartesian ppm at each probe. Express the ring normal in that same frame. Compute NICSiso = -trace(sigma)/3 and NICSperp = -n^T sigma n for a unit normal. Keep the minus sign exactly once. The antisymmetric part cancels in this projection. An explicitly identified eigensystem of the symmetric part with its orthonormal axes suffices for the projection. Singular values or a diagonalization of sigma^T sigma discard sign information. Withhold the projection when only these data or unaligned principal values survive.
+    branch: A reference standard for experimental nuclear shifts is unnecessary. NICSperp is the zz component in ring coordinates only. Label total and orbital-resolved results separately. Claim a pi-only result only after documenting decomposition, orbital selection and completeness checks.
+  - id: test-and-report
+    kind: provenance
+    reason: Track job and input/output digests, ring definition, geometry frame, probe IDs/XYZ, units, method, response convergence, and numerical uncertainty. Join scan shards by probe ID and coordinates. Recheck selected extrema and zero crossings at finer scan spacing and tighter electronic basis/grid settings. Report raw tensors, profiles and incomplete points.
+    branch: Stop quantitative comparison if a missing shard, mixed model, mismatched coordinate frame or numerical uncertainty can change the conclusion. For an ambiguous polycycle use additional paths and independently integrated current density rather than converting ppm to nA/T.
+acceptance:
+  - Every derived point can be reconstructed from the archived tensor, unit normal, frame and coordinates.
+  - Isotropic trace and quadratic projection survive joint rigid rotation, and scan features survive the declared electronic and spatial refinements.
+  - Any interpretation states whether the shielding is total or decomposed, identifies the sampled region and records other explanations compatible with the observations.
+sources: [schleyer-1996, stanger-2006, gershoni-poranne-2014, stanger-2019, vist-2021, orca-nics]

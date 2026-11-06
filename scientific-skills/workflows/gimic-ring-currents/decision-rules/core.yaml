@@ -1,0 +1,18 @@
+schema: eigengrid.decision-rule/v1
+id: workflows.gimic-ring-currents.oriented-flux
+version: 1.0.0
+question: What does a signed flux through this particular cut establish?
+when:
+  all:
+    - {fact: inputs.complete, operator: equals, value: true}
+    - {fact: magnetic_response.same_basis_and_state, operator: equals, value: true}
+    - {fact: current.reversal_mesh_and_extent_checked, operator: equals, value: true}
+recommendation:
+  strength: conditional
+  action: Report the oriented susceptibility in nA/T. Assign a specific circuit only if the vector field and independent cuts account for the return path and alternative branches.
+rationale: A surface measures signed local transport. Contributions from different branches may cancel even when a perimeter current is present.
+risk_class: 2
+approval: required_if_material_field_changes
+immutable_fields: [geometry, electronic_state, basis, producer_and_converter, response_digests, field_vector, surface_normal, surface_limits, quadrature, tolerance]
+evidence: {level: draft, references: [JSG-2004, GIMIC-USAGE, GIMIC-INTERPRETATION, PATHWAYS-2021]}
+limitations: Signed positive and negative parts alone do not isolate orbital contributions or identify diatropic and paratropic circulation. Finite boundaries and a change of orientation affect the reported integral.

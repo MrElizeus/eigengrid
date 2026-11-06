@@ -1,0 +1,27 @@
+schema: eigengrid.scientific-skill/v1
+id: workflows.nics-tensor-scans
+version: 1.0.0
+title: NICS tensor scans of ring shielding and magnetic aromaticity
+summary: Plan a nucleus-independent chemical shift profile over nonnuclear probes. Project Cartesian shielding tensors onto a defined ring normal for height and lateral NICS scans and diagnose ambiguous local versus global magnetic response.
+status: active
+knowledge_level: draft
+capability_levels: {reference: true, advisory: true, plannable: true, renderable: {}, executable: {}, validated: {}}
+domains: [molecular-electronic-structure]
+domain_maturity: {molecular-electronic-structure: plannable}
+engine_compatibility: {orca: ">=6.1.0 <6.2.0"}
+requires:
+  - id: methods.molecular-dft
+    range: ^1.0.0
+    reason: Fix the geometry, electronic state, orbital basis and numerical model shared by the probe evaluations.
+recommends: []
+required_inputs:
+  - Fixed molecular coordinates in declared units, ring atom indices, charge and closed-shell ground state
+  - Ring center and oriented plane construction, scan coordinates and target quantity
+  - Supported gauge and probe implementation, SCF and magnetic-response settings, numerical tolerance in ppm
+missing_input_behavior: Request missing ring or frame definitions before interpreting a directional scan. If only isotropic shielding or principal values without axes are available, withhold the normal projection.
+assets: {protocols: protocols/, validation: validation/, mappings: engine-mappings/, references: references/, evals: evals/}
+review:
+  status: unreviewed
+  owner_role: computational-chemist
+  notes: Planning and interpretation of closed-shell molecular response. ORCA 6.1 documents a probe setup. Site-specific execution and scientific qualification are pending.
+provenance: {created_by: model}
