@@ -7,6 +7,60 @@ import { runCommand, spawnCommand } from "@eigengrid/runners";
 describe("process-utils argv execution", () => {
   const childScript = "process.stdout.write(process.argv[1])";
 
+  test.skipIf(process.platform === "win32")(
+    "timeout terminates descendants holding output pipes",
+    async () => {
+      const start = performance.now();
+      const result = await runCommand("/bin/sh", ["-c", "sleep 15 & wait"], { timeout: 100 });
+      expect(result.timedOut).toBe(true);
+      expect(performance.now() - start).toBeLessThan(4500);
+    },
+    6000,
+  );
+
+  test.skipIf(process.platform === "win32")(
+    "abort escalates for a child that ignores SIGTERM",
+    async () => {
+      const controller = new AbortController();
+      const handle = spawnCommand("/bin/sh", ["-c", "trap '' TERM; sleep 15 & wait"], {
+        signal: controller.signal,
+        disableTimeout: true,
+      });
+      await Bun.sleep(100);
+      const start = performance.now();
+      controller.abort();
+      const result = await handle.result;
+      expect(result.timedOut).toBe(false);
+      expect(result.exitCode).not.toBe(0);
+      expect(performance.now() - start).toBeLessThan(4500);
+    },
+    6000,
+  );
+
+  test.skipIf(process.platform === "win32")(
+    "drainage is bounded when a descendant escapes the owned group",
+    async () => {
+      const script = `const {spawn}=require('node:child_process');
+      const child=spawn('/bin/sh',['-c','sleep 15'],{detached:true,stdio:'inherit'});
+      console.log(child.pid); setInterval(()=>{},1000);`;
+      const start = performance.now();
+      const result = await runCommand(process.execPath, ["-e", script], { timeout: 300 });
+      const descendant = Number(result.stdout.trim());
+      try {
+        expect(result.timedOut).toBe(true);
+        expect(performance.now() - start).toBeLessThan(4500);
+        expect(Number.isSafeInteger(descendant) && descendant > 1).toBe(true);
+      } finally {
+        if (Number.isSafeInteger(descendant) && descendant > 1) {
+          try {
+            process.kill(-descendant, "SIGKILL");
+          } catch {}
+        }
+      }
+    },
+    6000,
+  );
+
   test("spawnCommand settles promptly when the executable is missing", async () => {
     const executable = "definitely-not-installed-eigengrid-process-utils";
     const result = await Promise.race([

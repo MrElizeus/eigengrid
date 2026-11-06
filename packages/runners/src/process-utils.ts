@@ -87,7 +87,7 @@ export interface RunOptions {
    * Future hardening: native `setrlimit` for non-shell spawns.
    */
   maxMemory?: number;
-  /** Start the process in its own process group. */
+  /** Start in an owned process group (default on POSIX); false disables group signalling. */
   detached?: boolean;
   /** Disable parent-owned pipes when a trusted wrapper redirects output durably. */
   stdio?: "pipe" | "ignore";
@@ -319,13 +319,14 @@ export function spawnCommand(
   const maxErr = options.maxErrorBytes ?? MAX_ERROR_BYTES;
   const timeoutMs = Math.min(options.timeout ?? DEFAULT_TIMEOUT_MS, MAX_TIMEOUT_MS);
   const invocation = getCommandInvocation(command, args, options);
+  const ownsProcessGroup = platform() !== "win32" && options.detached !== false;
 
   const child: ChildProcess = spawn(invocation.executable, invocation.args, {
     cwd,
     shell: false,
     stdio: options.stdio === "ignore" ? ["ignore", "ignore", "ignore"] : ["ignore", "pipe", "pipe"],
     env: options.env ? { ...process.env, ...options.env } : process.env,
-    detached: options.detached ?? false,
+    detached: ownsProcessGroup || options.detached === true,
   });
 
   if (options.unref) child.unref();
@@ -344,39 +345,40 @@ export function spawnCommand(
         finish: () => ({ buffer: "", truncated: false }),
       };
 
-  // ── Timeout ───────────────────────────────────────────
   let timedOut = false;
-  const timer = options.disableTimeout
-    ? undefined
-    : setTimeout(() => {
-        timedOut = true;
-        child.kill("SIGTERM");
-
-        setTimeout(() => {
-          if (child.exitCode === null) {
-            child.kill("SIGKILL");
-          }
-        }, FORCE_KILL_DELAY_MS).unref();
-      }, timeoutMs).unref();
-
-  // ── External abort signal ─────────────────────────────
-  const abortHandler = () => {
-    child.kill("SIGTERM");
-  };
-
-  if (options.signal) {
-    if (options.signal.aborted) {
-      child.kill("SIGTERM");
-    } else {
-      options.signal.addEventListener("abort", abortHandler, { once: true });
+  let settled = false;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let forceTimer: ReturnType<typeof setTimeout> | undefined;
+  let settleForced = () => {};
+  const signalProcess = (signal: NodeJS.Signals) => {
+    try {
+      if (ownsProcessGroup && child.pid !== undefined) process.kill(-child.pid, signal);
+      else child.kill(signal);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ESRCH") throw error;
     }
-  }
+  };
+  const terminate = () => {
+    if (settled || forceTimer) return;
+    signalProcess("SIGTERM");
+    // The group can outlive its leader and keep both pipes open. Escalate
+    // regardless of child.exitCode, then bound drainage even for escaped heirs.
+    forceTimer = setTimeout(() => {
+      signalProcess("SIGKILL");
+      stdoutCollected.finish();
+      stderrCollected.finish();
+      child.stdout?.destroy();
+      child.stderr?.destroy();
+      settleForced();
+    }, FORCE_KILL_DELAY_MS);
+  };
+  const abortHandler = () => terminate();
 
   // ── Result promise ────────────────────────────────────
   const result = new Promise<RunResult>((resolve) => {
-    let settled = false;
     const cleanup = () => {
       if (timer) clearTimeout(timer);
+      if (forceTimer) clearTimeout(forceTimer);
       if (options.signal) options.signal.removeEventListener("abort", abortHandler);
     };
     const settle = (result: RunResult) => {
@@ -384,6 +386,21 @@ export function spawnCommand(
       settled = true;
       cleanup();
       resolve(result);
+    };
+
+    settleForced = () => {
+      const stdout = stdoutCollected.finish();
+      const stderr = stderrCollected.finish();
+      settle({
+        command: `${command} ${args.join(" ")}`.trim(),
+        exitCode: child.exitCode ?? undefined,
+        stdout: stdout.buffer,
+        stderr: stderr.buffer,
+        stdoutTruncated: stdout.truncated,
+        stderrTruncated: stderr.truncated,
+        timedOut,
+        signal: child.signalCode ?? "SIGKILL",
+      });
     };
 
     child.on("exit", (exitCode, signal) => {
@@ -423,10 +440,23 @@ export function spawnCommand(
     });
   });
 
+  if (!options.disableTimeout) {
+    timer = setTimeout(() => {
+      timedOut = true;
+      terminate();
+    }, timeoutMs).unref();
+  }
+  if (options.signal?.aborted) terminate();
+  else options.signal?.addEventListener("abort", abortHandler, { once: true });
+
   return {
     pid: child.pid ?? undefined,
     result,
-    kill: (signal?: string) => child.kill(signal as NodeJS.Signals),
+    kill: (signal = "SIGTERM") => {
+      if (settled) return;
+      if (signal === "SIGTERM") terminate();
+      else signalProcess(signal as NodeJS.Signals);
+    },
   };
 }
 
@@ -459,131 +489,19 @@ export function runCommand(
   args: string[] = [],
   options: RunOptions = {},
 ): Promise<RunResult> {
-  return new Promise<RunResult>((resolve) => {
-    const cwd = options.cwd ?? process.cwd();
-    const maxOut = options.maxOutputBytes ?? MAX_CAPTURE_BYTES;
-    const maxErr = options.maxErrorBytes ?? MAX_ERROR_BYTES;
-    const timeoutMs = Math.min(options.timeout ?? DEFAULT_TIMEOUT_MS, MAX_TIMEOUT_MS);
-    let invocation: { executable: string; args: string[] };
-    try {
-      invocation = getCommandInvocation(command, args, options);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      resolve({
-        command: `${command} ${args.join(" ")}`.trim(),
-        exitCode: undefined,
-        stdout: "",
-        stderr: message,
-        stdoutTruncated: false,
-        stderrTruncated: false,
-        timedOut: false,
-      });
-      return;
-    }
-
-    // ── Spawn ─────────────────────────────────────────────
-    const child: ChildProcess = spawn(invocation.executable, invocation.args, {
-      cwd,
-      shell: false,
-      stdio: ["ignore", "pipe", "pipe"],
-      env: options.env ? { ...process.env, ...options.env } : process.env,
+  try {
+    return spawnCommand(command, args, options).result;
+  } catch (error) {
+    return Promise.resolve({
+      command: `${command} ${args.join(" ")}`.trim(),
+      exitCode: undefined,
+      stdout: "",
+      stderr: error instanceof Error ? error.message : String(error),
+      stdoutTruncated: false,
+      stderrTruncated: false,
+      timedOut: false,
     });
-
-    // ── Collect stdout / stderr ───────────────────────────
-    const stdoutCollected = child.stdout
-      ? collectStream(child.stdout, maxOut)
-      : {
-          result: Promise.resolve({ buffer: "", truncated: false }),
-          finish: () => ({ buffer: "", truncated: false }),
-        };
-
-    const stderrCollected = child.stderr
-      ? collectStream(child.stderr, maxErr)
-      : {
-          result: Promise.resolve({ buffer: "", truncated: false }),
-          finish: () => ({ buffer: "", truncated: false }),
-        };
-
-    // ── Timeout ───────────────────────────────────────────
-    let timedOut = false;
-    const timer = options.disableTimeout
-      ? undefined
-      : setTimeout(() => {
-          timedOut = true;
-          child.kill("SIGTERM");
-
-          // Grace period, then SIGKILL
-          setTimeout(() => {
-            if (child.exitCode === null) {
-              child.kill("SIGKILL");
-            }
-          }, FORCE_KILL_DELAY_MS).unref();
-        }, timeoutMs).unref();
-
-    // ── External abort signal ─────────────────────────────
-    const abortHandler = () => {
-      child.kill("SIGTERM");
-    };
-
-    if (options.signal) {
-      if (options.signal.aborted) {
-        child.kill("SIGTERM");
-      } else {
-        options.signal.addEventListener("abort", abortHandler, { once: true });
-      }
-    }
-
-    // ── Wait for exit ─────────────────────────────────────
-    let settled = false;
-    const cleanup = () => {
-      if (timer) clearTimeout(timer);
-      if (options.signal) options.signal.removeEventListener("abort", abortHandler);
-    };
-    const settle = (result: RunResult) => {
-      if (settled) return;
-      settled = true;
-      cleanup();
-      resolve(result);
-    };
-
-    child.on("exit", (exitCode, signal) => {
-      // Wait a microtask for pending stream data
-      setImmediate(async () => {
-        const [stdout, stderr] = await Promise.all([
-          stdoutCollected.result,
-          stderrCollected.result,
-        ]);
-
-        settle({
-          command: `${command} ${args.join(" ")}`.trim(),
-          exitCode: exitCode ?? undefined,
-          stdout: stdout.buffer,
-          stderr: stderr.buffer,
-          stdoutTruncated: stdout.truncated,
-          stderrTruncated: stderr.truncated,
-          timedOut,
-          signal: signal ?? undefined,
-        });
-      });
-    });
-
-    child.on("error", (err) => {
-      const stdout = stdoutCollected.finish();
-      const stderr = stderrCollected.finish();
-      const errorMessage = formatSpawnError(err);
-      child.stdout?.destroy();
-      child.stderr?.destroy();
-      settle({
-        command: `${command} ${args.join(" ")}`.trim(),
-        exitCode: undefined,
-        stdout: stdout.buffer,
-        stderr: `${stderr.buffer}\n${errorMessage}`,
-        stdoutTruncated: stdout.truncated,
-        stderrTruncated: stderr.truncated,
-        timedOut: false,
-      });
-    });
-  });
+  }
 }
 
 // ────────────────────────────────────────────────────────────
