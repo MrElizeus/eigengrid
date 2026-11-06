@@ -3,7 +3,10 @@ import { mkdtempSync, mkdirSync, writeFileSync, symlinkSync, rmSync } from "node
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { WebPermissions } from "./permissions";
-import { saveOperatorPermissions } from "../services/operator-permission-store";
+import {
+  saveOperatorPermissions,
+  operatorPermissionPath,
+} from "../services/operator-permission-store";
 
 test("web file authority cannot inherit host-wide CLI Full Access or follow a parent symlink out", async () => {
   const root = mkdtempSync(join(tmpdir(), "eigengrid-web-scope-"));
@@ -32,6 +35,9 @@ test("web file authority cannot inherit host-wide CLI Full Access or follow a pa
         (await permissions.authorizeTool({ id: crypto.randomUUID(), name, input: {} })).allow,
       ).toBe(false);
   } finally {
+    const policy = operatorPermissionPath(workspace);
+    rmSync(policy, { force: true });
+    rmSync(`${policy}.audit.jsonl`, { force: true });
     rmSync(root, { recursive: true, force: true });
   }
 });
