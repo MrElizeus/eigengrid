@@ -1,0 +1,2 @@
+{"id":"workflows.solution-conformer-free-energy.planning","kind":"planning","query":"How do I combine conformer Boltzmann populations with the 1 M solution association free energy?","expected_included":["workflows.solution-conformer-free-energy"],"expected_top":"workflows.solution-conformer-free-energy"}
+{"id":"workflows.solution-conformer-free-energy.negative","kind":"negative","query":"Determine a plane-wave cutoff and k-point grid for a bulk semiconductor.","expected_excluded":["workflows.solution-conformer-free-energy"]}

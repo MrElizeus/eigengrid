@@ -1,0 +1,64 @@
+{
+  "schema": "eigengrid.scientific-skill/v1",
+  "id": "workflows.solution-redox",
+  "version": "1.0.0",
+  "title": "Solution redox potential on a specified reference scale",
+  "status": "active",
+  "summary": "Plan an equilibrium molecular reduction potential in solution from balanced redox free energies on a stated reference electrode scale. Use a same-solvent reference couple to cancel the electron convention.",
+  "knowledge_level": "draft",
+  "capability_levels": {
+    "reference": true,
+    "advisory": true,
+    "plannable": true,
+    "renderable": {},
+    "executable": {},
+    "validated": {}
+  },
+  "domains": [
+    "molecular-electronic-structure"
+  ],
+  "domain_maturity": {
+    "molecular-electronic-structure": "plannable"
+  },
+  "engine_compatibility": {
+    "orca": ">=6.1.0 <6.2.0"
+  },
+  "requires": [
+    {
+      "id": "workflows.frequencies-and-thermochemistry",
+      "range": ">=1.0.0 <2.0.0",
+      "reason": "Supply thermal corrections under a common state convention."
+    },
+    {
+      "id": "methods.continuum-solvation",
+      "range": ">=1.0.0 <2.0.0",
+      "reason": "Define solvent, cavity and solvation free-energy convention for each charged state."
+    }
+  ],
+  "recommends": [],
+  "conflicts": [],
+  "required_inputs": [
+    "Balanced target and reference half-reactions with electron counts, charges and multiplicities",
+    "Temperature, solvent, electrolyte/speciation assumptions, standard states and experimental reference scale",
+    "Geometry, conformer and solvation treatment for each redox state, with an internally consistent free-energy cycle",
+    "Reference potential and its conditions for conversion to an external electrode scale, if requested"
+  ],
+  "missing_input_behavior": "Hold any electrode-referenced value until the reference, solvent, sign and balanced reaction are resolved. A gas-phase electron affinity or a frontier orbital alone cannot supply the missing solution free energy.",
+  "assets": {
+    "protocols": "protocols/",
+    "rules": "decision-rules/",
+    "references": "references/",
+    "evals": "evals/",
+    "mappings": "engine-mappings/"
+  },
+  "helpers": [],
+  "review": {
+    "status": "unreviewed",
+    "owner_role": "computational-chemist",
+    "evidence_ids": [],
+    "notes": "Literature-informed planning draft awaiting independent review and system-specific qualification."
+  },
+  "provenance": {
+    "created_by": "model"
+  }
+}

@@ -1,0 +1,19 @@
+schema: eigengrid.scientific-skill/v1
+id: validation.dft-reference-panel
+version: 1.0.0
+title: DFT reference panel and benchmark design
+summary: Design a held-out observable-specific benchmark panel for DFT, including reference uncertainties, sensitivity, failed cases and signed residuals.
+status: active
+knowledge_level: draft
+capability_levels: {reference: true, advisory: true, plannable: true, renderable: {}, executable: {}, validated: {}}
+domains: [molecular-electronic-structure, periodic-electronic-structure]
+domain_maturity: {molecular-electronic-structure: plannable, periodic-electronic-structure: plannable}
+engine_compatibility: {}
+requires: []
+recommends: []
+conflicts: []
+required_inputs: [chemical domain and observable, pinned reference records and units, acceptance budget including reference uncertainty, independent test cases]
+missing_input_behavior: Request traceable reference data, uncertainty or a scientific decision threshold before claiming validation. A panel design may be returned pending those inputs.
+assets: {protocols: protocols/, references: references/, evals: evals/}
+review: {status: unreviewed, owner_role: computational-chemist, evidence_ids: [], notes: Panel design only. No benchmark outcomes or expert approval are recorded.}
+provenance: {created_by: model}

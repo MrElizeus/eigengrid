@@ -1,0 +1,16 @@
+{
+  "schema": "eigengrid.engine-mapping/v1",
+  "engine": "orca",
+  "engine_range": ">=6.1.0 <6.2.0",
+  "maturity": "advisory",
+  "renderable": false,
+  "executable": false,
+  "validated": false,
+  "observable_fields": [
+    "response approximation and solvent response",
+    "converged roots by multiplicity",
+    "transition energies, units and oscillator strengths",
+    "NTO pair weights and density character"
+  ],
+  "notes": "Advisory evidence vocabulary. The adapter and exact build available inside a target batch allocation require separate qualification."
+}

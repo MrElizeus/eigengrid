@@ -1,0 +1,45 @@
+{
+  "schema": "eigengrid.decision-rule/v1",
+  "id": "workflows.solution-redox.core",
+  "version": "1.0.0",
+  "question": "Does the assembled cycle define the reported potential scale?",
+  "when": {
+    "all": [
+      {
+        "fact": "inputs.complete",
+        "operator": "equals",
+        "value": true
+      },
+      {
+        "fact": "redox.cycle_balanced_reference_matched",
+        "operator": "equals",
+        "value": true
+      }
+    ]
+  },
+  "recommendation": {
+    "action": "Report the relative reduction potential, reference scale and conditions with state-specific sensitivity.",
+    "strength": "conditional"
+  },
+  "rationale": "Balancing target and reference exchanges cancels the electron contribution and fixes the sign of the potential difference.",
+  "risk_class": 2,
+  "approval": "required_if_material_field_changes",
+  "immutable_fields": [
+    "objective",
+    "half_reactions",
+    "reference",
+    "electron_count",
+    "standard_state",
+    "solvent",
+    "species",
+    "method"
+  ],
+  "evidence": {
+    "level": "draft",
+    "references": [
+      "REDOX-BENCH",
+      "REF-SCALE"
+    ]
+  },
+  "limitations": "An irreversible voltammetric peak or a potential in another solvent gives a different comparison. Strong ion pairing, a different protonation state or loss of a ligand can change which half-reaction is observed. Escalate these before interpreting a computed shift."
+}

@@ -1,0 +1,2 @@
+{"id": "workflows.brillouin-zone-sampling.plan", "kind": "planning", "query": "How dense should the k-points be for metallic occupations in my Brillouin zone?", "expected_included": ["workflows.brillouin-zone-sampling"], "expected_top": "workflows.brillouin-zone-sampling"}
+{"id": "workflows.brillouin-zone-sampling.different-task", "kind": "negative", "query": "Find a molecular transition state and trace its intrinsic reaction coordinate", "expected_excluded": ["workflows.brillouin-zone-sampling"]}

@@ -1,0 +1,1 @@
+{"id": "workflows.brillouin-zone-sampling.composition", "requested": ["workflows.brillouin-zone-sampling"], "include_optional": false, "expected_nodes": ["methods.periodic-boundaries", "workflows.brillouin-zone-sampling"], "expected_absent": ["methods.molecular-dft"], "engine": {"id": "cp2k", "version": "2025.2.0"}, "domains": ["periodic-electronic-structure"]}

@@ -1,6 +1,6 @@
 # Catalog boundaries
 
-The public release ships only the basic catalog enumerated in `publication.json`.
+The public release ships the scientific catalog enumerated in `publication.json`.
 `publication-catalog.json` pins the exact reviewed file set and SHA-256 hashes.
 The source guard rejects additions, omissions and changes until deliberately
 reviewed. Updating the lock is a publication decision, not a CI repair step.

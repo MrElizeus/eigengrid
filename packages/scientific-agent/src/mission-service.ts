@@ -611,6 +611,7 @@ export class ScientificMissionService {
           "protocols",
           "diagnostics",
           "validation",
+          "references",
         ],
         maxFragments: 32,
         maxCharacters: Math.max(8_000, Math.floor(input.contextMaximumBytes * 0.65)),

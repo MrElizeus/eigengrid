@@ -1,0 +1,3 @@
+{"id":"diagnostics.dft-electronic-state-audit.planning","kind":"planning","query":"SCF converged twice to different occupations in my electronic-state audit. Which spin state do I keep?","expected_included":["diagnostics.dft-electronic-state-audit"],"expected_top":"diagnostics.dft-electronic-state-audit"}
+{"id":"diagnostics.dft-electronic-state-audit.negative","kind":"negative","query":"Which low-frequency thermochemistry correction applies to conformers in solution?","expected_excluded":["diagnostics.dft-electronic-state-audit"]}
+{"id":"diagnostics.dft-electronic-state-audit.diagnose","kind":"diagnostic","query":"A broken-symmetry determinant passed SCF. How do I diagnose spin contamination and stability?","expected_included":["diagnostics.dft-electronic-state-audit"]}

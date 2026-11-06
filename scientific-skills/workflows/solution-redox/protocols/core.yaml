@@ -1,0 +1,55 @@
+{
+  "schema": "eigengrid.protocol-fragment/v1",
+  "id": "workflows.solution-redox.plan",
+  "version": "1.0.0",
+  "capability": "workflows.solution-redox",
+  "required_inputs": [
+    "Balanced target and reference half-reactions with electron counts, charges and multiplicities",
+    "Temperature, solvent, electrolyte/speciation assumptions, standard states and experimental reference scale",
+    "Geometry, conformer and solvation treatment for each redox state, with an internally consistent free-energy cycle",
+    "Reference potential and its conditions for conversion to an external electrode scale, if requested"
+  ],
+  "missing_input_behavior": "block",
+  "steps": [
+    {
+      "id": "balance-couples",
+      "kind": "validation",
+      "reason": "Write both reductions and combine the target reduction with reference oxidation. Match electron counts, sum charges and atoms, check proton balance and declare the final reduction convention."
+    },
+    {
+      "id": "enumerate-states",
+      "kind": "planning",
+      "reason": "Treat each target and reference oxidation state separately. Enumerate plausible conformers, multiplicities and solvent coordination. Optimize and verify minima for an adiabatic free energy. Hold ambiguous dominant species as alternatives."
+    },
+    {
+      "id": "construct-cycle",
+      "kind": "planning",
+      "reason": "Tabulate electronic, thermal and solvation contributions in a common convention per species. Check solution versus gas-phase standard states and avoid duplicating continuum energies, standard-state shifts or ensemble corrections."
+    },
+    {
+      "id": "compute-offset",
+      "kind": "validation",
+      "reason": "Multiply the state free energies by their signed stoichiometric coefficients and sum to get the exchange free energy. Divide its negative by nF with matching units. Equal target and reference couples must give zero; reversing exchange must reverse the sign."
+    },
+    {
+      "id": "place-on-scale",
+      "kind": "planning",
+      "reason": "For comparison on an external scale, add the reference couple's potential measured on that scale under compatible conditions. Save the original potential difference separately. Avoid transplanting an aqueous reference offset into another solvent."
+    },
+    {
+      "id": "stress-and-record",
+      "kind": "provenance",
+      "reason": "Check sensitivity to charge localization, diffuse functions, solvation, pairing and accessible redox isomers. Report the reference datum, conditions, uncertainty sources and digests of all state energies. Test independent comparable couples before claiming transferability."
+    }
+  ],
+  "acceptance": [
+    "Atom, charge, proton and electron balances close on the chosen cycle.",
+    "Every species has a converged, chemically matched state free energy in the same thermodynamic convention.",
+    "The potential reproduces the declared sign test and includes reference, units, solvent, temperature and sensitivity assumptions."
+  ],
+  "retry_policy": {
+    "maximum_attempts": 1,
+    "material_change": "new_decision_and_exact_approval"
+  },
+  "effect_authority": "none"
+}

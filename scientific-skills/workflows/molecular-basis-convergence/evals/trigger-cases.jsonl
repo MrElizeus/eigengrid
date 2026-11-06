@@ -1,0 +1,2 @@
+{"id":"workflows.molecular-basis-convergence.planning","kind":"planning","query":"How do I test diffuse augmentation and molecular basis convergence for the vertical electron affinity of an anion?","expected_included":["workflows.molecular-basis-convergence"],"expected_top":"workflows.molecular-basis-convergence"}
+{"id":"workflows.molecular-basis-convergence.negative","kind":"negative","query":"Find a dispersion damping parametrization for an existing functional.","expected_excluded":["workflows.molecular-basis-convergence"]}

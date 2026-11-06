@@ -1,0 +1,2 @@
+{"id": "methods.cp2k-gpw-convergence.plan", "kind": "planning", "query": "Why do my CP2K forces change after increasing REL_CUTOFF despite a flat CUTOFF curve?", "expected_included": ["methods.cp2k-gpw-convergence"], "expected_top": "methods.cp2k-gpw-convergence"}
+{"id": "methods.cp2k-gpw-convergence.different-task", "kind": "negative", "query": "Determine the Brillouin zone sampling for a metallic Fermi surface", "expected_excluded": ["methods.cp2k-gpw-convergence"]}

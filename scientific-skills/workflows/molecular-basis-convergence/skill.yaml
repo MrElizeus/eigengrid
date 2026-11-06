@@ -1,0 +1,52 @@
+schema: eigengrid.scientific-skill/v1
+id: workflows.molecular-basis-convergence
+version: 1.0.0
+title: Molecular basis convergence, diffuse augmentation and ECP coverage
+status: active
+summary: Converge an atom-centered basis for the molecular target property. Test diffuse augmentation,
+  auxiliary fitting space, ECP electron counts and near-linear dependence independently.
+domains:
+- molecular-electronic-structure
+domain_maturity:
+  molecular-electronic-structure: plannable
+engine_compatibility:
+  orca: '>=6.0.0 <7.0.0'
+knowledge_level: draft
+capability_levels:
+  reference: true
+  advisory: true
+  plannable: true
+  renderable: {}
+  executable: {}
+  validated: {}
+requires:
+- id: foundations.basis-ecp-relativity
+  range: '>=1.0.0 <2.0.0'
+  reason: Specify the all-electron or effective-core Hamiltonian for each atom.
+- id: foundations.numerical-convergence
+  range: '>=1.0.0 <2.0.0'
+  reason: Separate basis error from grid, integral and SCF tolerances.
+required_inputs:
+- Fixed geometry hashes and state identity for every species and fragment
+- Observable with sign convention, numerical tolerance and energy units
+- Element-to-basis and ECP/core-electron assignments, basis library version, auxiliary fitting model
+- Fragment mapping, geometries, charges and multiplicities if an interaction energy is requested
+missing_input_behavior: Block a quantitative convergence claim when any element assignment, fragment
+  electronic state or target tolerance is unknown.
+assets:
+  protocols: protocols/
+  rules: decision-rules/
+  references: references/
+  evals: evals/
+review:
+  status: unreviewed
+  owner_role: computational-chemist
+  evidence_ids: []
+  notes: Primary references support individual decisions. Independent review and numerical qualification
+    of this workflow are pending.
+provenance:
+  created_by: model
+recommends:
+- id: workflows.counterpoise-interaction
+  range: ^1.0.0
+  reason: For dimer interaction energies, assess basis borrowing at frozen fragment geometries.

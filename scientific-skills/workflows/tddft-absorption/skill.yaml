@@ -1,0 +1,63 @@
+{
+  "schema": "eigengrid.scientific-skill/v1",
+  "id": "workflows.tddft-absorption",
+  "version": "1.0.0",
+  "title": "TDDFT vertical UV-visible absorption",
+  "status": "active",
+  "summary": "Plan vertical molecular electronic absorption by linear-response time-dependent DFT (TDDFT) or TDA. Assign a UV-visible band using excitation energy, oscillator strength and electronic character.",
+  "knowledge_level": "draft",
+  "capability_levels": {
+    "reference": true,
+    "advisory": true,
+    "plannable": true,
+    "renderable": {},
+    "executable": {},
+    "validated": {}
+  },
+  "domains": [
+    "molecular-electronic-structure"
+  ],
+  "domain_maturity": {
+    "molecular-electronic-structure": "plannable"
+  },
+  "engine_compatibility": {
+    "orca": ">=6.1.0 <6.2.0"
+  },
+  "requires": [
+    {
+      "id": "methods.molecular-dft",
+      "range": ">=1.0.0 <2.0.0",
+      "reason": "Provide the ground-state method and reference identity."
+    },
+    {
+      "id": "foundations.basis-ecp-relativity",
+      "range": ">=1.0.0 <2.0.0",
+      "reason": "Record orbital, diffuse and relativistic coverage for the excitation character."
+    }
+  ],
+  "recommends": [],
+  "conflicts": [],
+  "required_inputs": [
+    "Ground-state geometry or weighted ensemble, electronic state and converged reference orbitals",
+    "Target energy or wavelength interval, units, spin manifold and desired resolution",
+    "Functional, basis, response approximation and solvent/environment response appropriate to vertical excitation"
+  ],
+  "missing_input_behavior": "Ask for the spectral window, sample conditions or reference state if missing. Leave upper-window coverage and assignments open if the root spectrum or state-character evidence is incomplete.",
+  "assets": {
+    "protocols": "protocols/",
+    "rules": "decision-rules/",
+    "references": "references/",
+    "evals": "evals/",
+    "mappings": "engine-mappings/"
+  },
+  "helpers": [],
+  "review": {
+    "status": "unreviewed",
+    "owner_role": "computational-chemist",
+    "evidence_ids": [],
+    "notes": "Literature-informed planning draft awaiting independent review and system-specific qualification."
+  },
+  "provenance": {
+    "created_by": "model"
+  }
+}

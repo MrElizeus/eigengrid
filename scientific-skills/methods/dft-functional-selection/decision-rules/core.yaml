@@ -1,0 +1,30 @@
+schema: eigengrid.decision-rule/v1
+id: methods.dft-functional-selection.hold
+version: 1.0.0
+question: Does the proposed dispersion term duplicate a component of the named functional or composite
+  method?
+when:
+  all:
+  - fact: method.dispersion_double_counted
+    operator: equals
+    value: true
+recommendation:
+  action: Block this specification. Inspect the published definition, remove duplication in a new
+    proposed revision and recompute all compared species consistently.
+  strength: conditional
+rationale: Hold any definitive ordering if method sensitivity reaches the decision margin or the relevant
+  reference chemistry is missing.
+risk_class: 2
+approval: required_if_material_field_changes
+immutable_fields:
+- objective
+- charge
+- multiplicity
+- method
+- basis
+- physical_model
+evidence:
+  level: draft
+  references:
+  - https://doi.org/10.1039/C7CP04913G
+  - https://doi.org/10.1063/5.0040021

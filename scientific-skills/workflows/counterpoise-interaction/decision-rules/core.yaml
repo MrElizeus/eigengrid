@@ -1,0 +1,45 @@
+{
+  "schema": "eigengrid.decision-rule/v1",
+  "id": "workflows.counterpoise-interaction.core",
+  "version": "1.0.0",
+  "question": "Can a frozen-dimer counterpoise energy be formed?",
+  "when": {
+    "all": [
+      {
+        "fact": "inputs.complete",
+        "operator": "equals",
+        "value": true
+      },
+      {
+        "fact": "counterpoise.five_roles_match",
+        "operator": "equals",
+        "value": true
+      }
+    ]
+  },
+  "recommendation": {
+    "action": "Report both energy differences and test sensitivity to the orbital basis.",
+    "strength": "conditional"
+  },
+  "rationale": "Subtracting terms with different atom maps, geometries or electronic models changes the quantity being computed.",
+  "risk_class": 2,
+  "approval": "required_if_material_field_changes",
+  "immutable_fields": [
+    "objective",
+    "geometry",
+    "fragment_map",
+    "fragment_states",
+    "method",
+    "basis",
+    "dispersion"
+  ],
+  "evidence": {
+    "level": "draft",
+    "references": [
+      "BB-CP",
+      "S66",
+      "ORCA-CP"
+    ]
+  },
+  "limitations": "Check a larger compatible basis. If the sign or ranking changes on that test, report the unresolved range. A composite method with a built-in geometrical counterpoise model requires separate justification before adding Boys–Bernardi terms."
+}

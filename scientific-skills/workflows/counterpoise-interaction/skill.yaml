@@ -1,0 +1,63 @@
+{
+  "schema": "eigengrid.scientific-skill/v1",
+  "id": "workflows.counterpoise-interaction",
+  "version": "1.0.0",
+  "title": "Dimer interaction energy, basis set superposition error (BSSE) and counterpoise",
+  "status": "active",
+  "summary": "Compute a gas-phase frozen-dimer electronic interaction energy with atom-centered basis functions and quantify basis set superposition error (BSSE) using Boys–Bernardi counterpoise.",
+  "knowledge_level": "draft",
+  "capability_levels": {
+    "reference": true,
+    "advisory": true,
+    "plannable": true,
+    "renderable": {},
+    "executable": {},
+    "validated": {}
+  },
+  "domains": [
+    "molecular-electronic-structure"
+  ],
+  "domain_maturity": {
+    "molecular-electronic-structure": "plannable"
+  },
+  "engine_compatibility": {
+    "orca": ">=6.1.0 <6.2.0"
+  },
+  "requires": [
+    {
+      "id": "methods.molecular-dft",
+      "range": ">=1.0.0 <2.0.0",
+      "reason": "Identify the complete molecular Hamiltonian and basis."
+    },
+    {
+      "id": "methods.dispersion",
+      "range": ">=1.0.0 <2.0.0",
+      "reason": "Disambiguate intrinsic or added dispersion and built-in small-basis corrections."
+    }
+  ],
+  "recommends": [],
+  "conflicts": [],
+  "required_inputs": [
+    "Exact dimer coordinates, atom-to-fragment map, and fragment charge and spin states",
+    "Dimer charge and spin coupling compatible with both fragments",
+    "Method, orbital/auxiliary basis, dispersion treatment, numerical thresholds and basis-sensitivity criterion"
+  ],
+  "missing_input_behavior": "Request the fragment states, atom mapping or model details before taking energy differences. Keep a partially completed fragment set as incomplete evidence.",
+  "assets": {
+    "protocols": "protocols/",
+    "rules": "decision-rules/",
+    "references": "references/",
+    "evals": "evals/",
+    "mappings": "engine-mappings/"
+  },
+  "helpers": [],
+  "review": {
+    "status": "unreviewed",
+    "owner_role": "computational-chemist",
+    "evidence_ids": [],
+    "notes": "Literature-informed planning draft awaiting independent review and system-specific qualification."
+  },
+  "provenance": {
+    "created_by": "model"
+  }
+}

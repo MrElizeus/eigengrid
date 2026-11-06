@@ -1,0 +1,32 @@
+schema: eigengrid.decision-rule/v1
+id: workflows.solution-conformer-free-energy.hold
+version: 1.0.0
+question: Has the same standard-state or solvent-transfer contribution already appeared elsewhere
+  in the cycle?
+when:
+  all:
+  - fact: cycle.duplicate_contribution
+    operator: equals
+    value: true
+recommendation:
+  action: Hold the assembled value. Reconcile the species-level terms and conventions, then recompute
+    the balanced reaction sum.
+  strength: conditional
+rationale: Report unresolved ordering or ranges when missing conformers, protonation ambiguity, strong
+  specific solvation or low-mode sensitivity can change the observable.
+risk_class: 2
+approval: required_if_material_field_changes
+immutable_fields:
+- objective
+- charge
+- multiplicity
+- method
+- basis
+- physical_model
+evidence:
+  level: draft
+  references:
+  - https://doi.org/10.1039/C9CP06869D
+  - https://doi.org/10.1021/jp810292n
+  - https://doi.org/10.1002/chem.201200497
+  - https://orca-manual.mpi-muelheim.mpg.de/contents/structurereactivity/thermochemistry.html

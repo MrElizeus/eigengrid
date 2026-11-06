@@ -1,0 +1,27 @@
+schema: eigengrid.scientific-skill/v1
+id: workflows.dft-cluster-preflight
+version: 1.0.0
+title: DFT cluster preflight and Slurm recovery
+summary: Establish batch-node engine identity, allocation, staging and restart evidence before a molecular or periodic DFT pilot on a heterogeneous Slurm cluster.
+status: active
+knowledge_level: draft
+capability_levels: {reference: true, advisory: true, plannable: true, renderable: {}, executable: {}, validated: {}}
+domains: [molecular-electronic-structure, periodic-electronic-structure]
+domain_maturity: {molecular-electronic-structure: plannable, periodic-electronic-structure: plannable}
+engine_compatibility: {}
+requires: []
+recommends: []
+conflicts: []
+required_inputs:
+  - scientific input identity and target observable with units
+  - site execution profile, permitted allocation and requested engine build
+  - storage and staging contract, pilot budget and acceptance tolerance
+missing_input_behavior: Keep readiness unknown when allocation-scoped evidence, site admission or a pilot criterion is missing. Identify the smallest outstanding probe.
+assets: {protocols: protocols/, rules: decision-rules/, references: references/, evals: evals/}
+helpers: []
+review:
+  status: unreviewed
+  owner_role: computational-chemist
+  evidence_ids: []
+  notes: Original planning guidance. Site qualification and scientific review are pending.
+provenance: {created_by: model}

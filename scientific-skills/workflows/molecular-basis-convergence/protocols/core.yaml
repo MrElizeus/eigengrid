@@ -1,0 +1,61 @@
+schema: eigengrid.protocol-fragment/v1
+id: workflows.molecular-basis-convergence.core
+version: 1.0.0
+capability: workflows.molecular-basis-convergence
+required_inputs:
+- Fixed geometry hashes and state identity for every species and fragment
+- Observable with sign convention, numerical tolerance and energy units
+- Element-to-basis and ECP/core-electron assignments, basis library version, auxiliary fitting model
+- Fragment mapping, geometries, charges and multiplicities if an interaction energy is requested
+missing_input_behavior: block
+steps:
+- id: verify-coverage
+  kind: validation
+  reason: Record each element’s orbital basis, contraction, polarization and diffuse augmentation,
+    ECP core size or all-electron relativistic Hamiltonian, and auxiliary basis for each fitting role.
+    Check the engine output for fallback assignments and electron counts; retain a common core treatment
+    along the ladder.
+- id: build-ladder
+  kind: planning
+  reason: At identical geometries compare successive sizes of a compatible family (e.g. TZ and QZ),
+    keeping functional, dispersion, solvent, state and numerics fixed. For anions or diffuse density,
+    include a separate augmentation comparison at fixed cardinality. A named composite method has
+    a fixed basis; test a separate full model rather than replacing that component.
+- id: test-property-coverage
+  kind: planning
+  reason: Use a property-specific comparison on identical states. For electron attachment, compare
+    the neutral and anion at one fixed geometry for a vertical affinity. Augment each basis consistently
+    and check the spatial extent of the excess electron. For a polarizability, converge the response
+    at the same field strength or with the same analytic response settings. For dimer energies inspect
+    workflows.counterpoise-interaction and repeat its raw and corrected differences at each basis
+    size.
+- id: check-numerical-artifacts
+  kind: validation
+  reason: Record overlap warnings, smallest eigenvalues and removed functions for each species, each
+    ghost calculation and each basis. An unbound excess electron, changing state or inconsistent rank
+    truncation invalidates a simple two-point comparison. Examine density/orbitals and stricter numerical
+    settings before attributing shifts to basis size.
+- id: judge-observable
+  kind: validation
+  reason: Compute the change of the signed energy difference across the ladder; test raw versus CP
+    where applicable. Record actual shifts with units against a predeclared tolerance. If CP is combined
+    with an empirical BSSE-corrected model, require a separate justification addressing double counting.
+- id: capture-evidence
+  kind: provenance
+  reason: Retain per-state observables and electronic energies, geometry and job identities, ECP core
+    and valence count, basis/auxiliary file identity, overlap diagnostics and the comparison table.
+    Verify that each cluster task loaded the intended library.
+acceptance:
+- All compared systems preserve composition, state, core treatment and geometry convention.
+- The basis/augmentation table reports target energy differences and conditioning or rank warnings.
+- If the last basis change, augmentation sensitivity or unresolved BSSE could reverse the conclusion,
+  report the range and keep the ranking provisional.
+references:
+- https://doi.org/10.1039/B508541A
+- https://pubmed.ncbi.nlm.nih.gov/20942521/
+- https://doi.org/10.1080/00268977000101561
+- https://orca-manual.mpi-muelheim.mpg.de/contents/essentialelements/basisset.html
+retry_policy:
+  maximum_attempts: 1
+  material_change: new_decision_and_exact_approval
+effect_authority: none
