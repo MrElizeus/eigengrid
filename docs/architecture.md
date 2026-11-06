@@ -70,6 +70,40 @@ The refactor does not change database migrations, protocol versions or digest fo
 A transaction must never be replaced with a series of public repository calls: those
 calls may commit independently. Cross-domain invariants use transaction-scoped helpers.
 
+## Domain modules and compatibility
+
+Large entrypoints retain their existing exports and delegate to internal modules by
+responsibility. Callers continue to import the same classes, schemas and functions.
+Implementation modules import their dependencies directly; they do not import their
+own compatibility entrypoint.
+
+| Entrypoint                                     | Internal modules                             | Responsibility                                                                                                              |
+| ---------------------------------------------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `db/src/postgres/client.ts`                    | `db/src/postgres/`                           | Connection and transactions, migration authority, jobs/attempts, dispatch, artifacts/events, access, projects and budgets   |
+| `db/src/migrate.ts`                            | `db/src/sqlite/`                             | SQLite adapter and migration descriptors, with the same persistence domains                                                 |
+| `scientific-schema/src/md.ts`                  | `scientific-schema/src/md/`                  | Execution bindings, controls, stages, protocols, replicas, trajectories, metrics, results and assessments                   |
+| `scientific-schema/src/biomolecular.ts`        | `scientific-schema/src/biomolecular/`        | Components, decisions, preparation/publication requests, force fields, atom maps and system manifests                       |
+| `model-gateway/src/model-gateway.ts`           | `model-gateway/src/`                         | Provider configuration facade, structured invocation, conversations, request boundaries, usage accounting and fake provider |
+| `mission-runtime/src/effect-reconciliation.ts` | `mission-runtime/src/effect-reconciliation/` | Effect admission/reconciliation, MD submission authority/delivery and system-preparation checks                             |
+| `runners/src/local.ts`                         | `runners/src/local/`                         | Shared process state, staging/dispatch, receipt finalization, reconciliation, cancellation and collection                   |
+| `md-analysis/src/qmmm.ts`                      | `md-analysis/src/qmmm/`                      | Request/result contracts, host-issued parse authority, binding checks and mdout parsing                                     |
+| `services/execution-coordinator.ts`            | `services/execution/`                        | Local and remote lifecycle operations, dispatch fencing, staged-input verification and parsing                              |
+| `services/mission-application.ts`              | `services/mission-application/`              | Human authority, candidates/evidence, inference accounting, approvals, compilation and mission lifecycle                    |
+
+Package paths above are relative to `packages/`; service paths are relative to
+`apps/cli/src/`. Internal contexts hold the existing connection, clock or process map;
+they do not create an independent scheduler or another authority source. Transactional
+operations keep their entire transaction and lock order in one domain function. Runner
+callbacks retain the same context after the caller returns. Inference leases remain
+scoped to one mission application, and QM/MM parse-authority issuance stays private to
+its authority module.
+
+SQLite's historical connection access and the inspection seams used by migration and
+runner fixtures remain thin delegations. They are not new package APIs. New code should
+use the typed database and runner contracts instead of reaching into private members.
+Published migration SQL, schema versions, canonical digests and scientific parsing rules
+are unchanged by this module split.
+
 ## Journal cost and integrity
 
 `EffectJournal` supports an optional `readAfter(cursor)` port for stores with an immutable,
