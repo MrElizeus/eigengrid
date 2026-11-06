@@ -465,6 +465,8 @@ describe.skipIf(!canRunPostgres)("human mission application through real Postgre
       origin: local.http!.origin,
       auth,
       idempotency,
+      lookup: (input: Parameters<PostgresMissionHttpIdempotency["lookup"]>[0]) =>
+        idempotency.lookup(input),
       open,
       agent: (_context: MissionLocalContext, live: () => Promise<void>) => {
         let service!: AgentSessionService;
@@ -597,6 +599,77 @@ describe.skipIf(!canRunPostgres)("human mission application through real Postgre
       },
     };
   }
+
+  test("browser bootstrap, embedded assets and discovery enforce live HTTP authority", async () => {
+    const http = await httpFixture();
+    try {
+      const html = await http.request("/");
+      expect(html.status).toBe(200);
+      expect(html.headers.get("content-security-policy")).toContain("frame-ancestors 'none'");
+      expect(await html.text()).toContain("/assets/app.browser.js");
+      expect((await http.request("/api/v1/projects")).status).toBe(401);
+      await http.login();
+      const bootstrap = await http.request("/api/v1/auth/session");
+      const body = await bootstrap.json();
+      expect(Object.keys(body).sort()).toEqual(["actor", "csrfToken", "roles"]);
+      expect(body.csrfToken).toBe(http.headers()["x-csrf-token"]);
+      expect((await (await http.request("/api/v1/auth/session")).json()).csrfToken).toBe(
+        body.csrfToken,
+      );
+      expect(JSON.stringify(body)).not.toContain(cluster.url);
+      expect(JSON.stringify(body)).not.toContain(directory);
+      // Upgrade an existing RC session without changing the published schema.
+      await http.pool.query("UPDATE eigengrid_a5_http_sessions SET csrf_digest=$1", [
+        "a".repeat(64),
+      ]);
+      expect((await (await http.request("/api/v1/auth/session")).json()).csrfToken).toBe(
+        body.csrfToken,
+      );
+      await create();
+      const projects = await (await http.request("/api/v1/projects?limit=1")).json();
+      expect(projects.result.items.map((item: { id: string }) => item.id)).toEqual([
+        address.projectId,
+      ]);
+      const missions = await (
+        await http.request(`/api/v1/projects/${address.projectId}/missions`)
+      ).json();
+      expect(missions.result.items[0].id).toBe(mission.id);
+      expect(missions.result.items[0]).not.toHaveProperty("budget");
+      expect((await http.request("/api/v1/projects?limit=101")).status).toBe(400);
+      expect((await http.request("/api/v1/projects?limit=1&limit=2")).status).toBe(400);
+      expect((await http.request("/api/v1/projects/foreign/missions")).status).toBe(403);
+      expect(
+        (
+          await http.request(
+            `/api/v1/projects/${address.projectId}/requests/start/missing?missionId=${mission.id}`,
+          )
+        ).status,
+      ).toBe(404);
+      expect(
+        (
+          await http.request(
+            `/api/v1/projects/${address.projectId}/requests/start/missing?missionId=${mission.id}&missionId=other`,
+          )
+        ).status,
+      ).toBe(400);
+      await database.removeProjectMember(address.projectId, actor.id);
+      expect((await (await http.request("/api/v1/projects")).json()).result.items).toEqual([]);
+      expect(
+        (await http.request(`/api/v1/projects/${address.projectId}/missions`)).status,
+      ).not.toBe(200);
+      expect(
+        (
+          await http.request(
+            `/api/v1/projects/${address.projectId}/requests/start/missing?missionId=${mission.id}`,
+          )
+        ).status,
+      ).not.toBe(200);
+      await http.pool.query("UPDATE eigengrid_a5_http_sessions SET revoked=TRUE");
+      expect((await http.request("/api/v1/auth/session")).status).toBe(401);
+    } finally {
+      await http.close();
+    }
+  });
 
   test("application live HTTP: manual no-model workflow, durable replay after listener restart, CSRF, IDOR and logout", async () => {
     const http = await httpFixture();

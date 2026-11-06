@@ -8,7 +8,7 @@ import { httpSecretDigest } from "../services/http/auth";
 
 export const serveCommand: CommandModule = {
   command: "serve",
-  describe: "Run the authenticated application HTTP listener using protected Head configuration",
+  describe: "Serve the web console and authenticated API using protected Head configuration",
   builder(y) {
     return y
       .command(

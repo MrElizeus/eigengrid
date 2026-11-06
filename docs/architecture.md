@@ -13,6 +13,7 @@ history and provider output never grant permission to run an engine.
 | Native agent        | Bounded inference steps, validated tools, approval interrupts and journal replay    | `packages/agent-runtime`, `packages/tool-registry`                                        |
 | Inference transport | Optional provider adapters and usage accounting                                     | `packages/model-gateway`                                                                  |
 | Application         | Shared CLI, TUI and authenticated HTTP mission services                             | `apps/cli/src/services/mission-application.ts`                                            |
+| Browser console     | Guided missions, exact reviews, evidence and durable session controls               | `apps/web`, `apps/cli/src/services/http`                                                  |
 
 `protocol-core` depends on scientific schemas and validation libraries, not a model,
 agent or scheduler. `scientific-agent` re-exports compiler interfaces for compatibility.
@@ -40,6 +41,13 @@ work uses the mission application and mission-scoped approvals.
 
 ## Persistence domains
 
+The browser is a same-origin client of the mission application. Its modular JavaScript
+is checked against application/domain types and embedded as text in the CLI executable.
+Only a fixed public asset allowlist is served before authentication. Catalog queries
+intersect active membership with protected HTTP scope and exclude other owners' missions
+and historical unbound jobs. Browser recovery references carry no scientific payload or
+authority; durable HTTP intents and canonical mission records retain effect ownership.
+
 `ScientificStore` and `MdProjectionStore` are stable public facades. They delegate to
 internal repositories with one responsibility each; they do not open transactions.
 Each repository owns the complete transaction for its operation, including dependent
@@ -49,6 +57,7 @@ row-lock order and the original atomic approval/admission boundaries.
 | Domain                                            | Implementation             |
 | ------------------------------------------------- | -------------------------- |
 | Mission creation, project access and state        | `scientific-missions.ts`   |
+| Authorized project and mission discovery          | `scientific-catalog.ts`    |
 | Reservations and model usage                      | `scientific-budgets.ts`    |
 | Planning claims, skill resolutions and plans      | `scientific-plans.ts`      |
 | Work-unit DAGs, claims and completion             | `scientific-work-units.ts` |

@@ -25,6 +25,7 @@ import {
 import { missionApprove } from "./mission-application/approvals";
 import { missionAssertProjectAccess } from "./mission-application/authority";
 import { missionImportCandidate } from "./mission-application/candidate-import";
+import { listApplicationProjects, listApplicationMissions } from "./mission-application/discovery";
 import type { MissionApplicationState } from "./mission-application/contracts";
 import {
   missionBeginAgentInference,
@@ -84,6 +85,14 @@ export class MissionApplication<C extends MissionApplicationContext = MissionApp
 
   async assertProjectAccess(projectId: string): Promise<void> {
     return missionAssertProjectAccess(this.state, projectId);
+  }
+
+  listProjects(projectIds: readonly string[], page: { after?: string; limit?: number } = {}) {
+    return listApplicationProjects(this.state, projectIds, page);
+  }
+
+  listMissions(input: { projectId: string; after?: string; limit?: number }) {
+    return listApplicationMissions(this.state, input);
   }
 
   /** Host-only inference admission using the mission runtime's existing atomic mission budget ledger. */

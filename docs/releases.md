@@ -3,6 +3,14 @@
 Source and release artifacts follow [the publication policy](publication.md).
 Run `bun run verify:publication` before building and publishing any release.
 
+On the 1.0.0 development branch, the English [web console](web-console.md) is embedded
+in `eigengrid serve`. It adds project/mission discovery, guided mission creation,
+exact candidate review, work/evidence inspection and durable agent session controls.
+No frontend runtime or external assets are added to the installation. HTTP discovery
+and request-result lookup preserve current authority checks; published database and
+HTTP migration bytes remain unchanged. This does not promote the existing release
+candidate or establish installation-specific scientific qualification.
+
 Version **1.0.0-rc.3** improves interactive operator conversations and diagnostics:
 
 - Assistant output enters the transcript as it streams. Completed rows scroll into

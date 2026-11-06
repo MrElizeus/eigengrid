@@ -13,6 +13,10 @@ import {
 } from "../../commands/agent-session";
 import { PostgresHttpAuth, SessionCookieName, type HttpSession } from "./auth";
 import { PostgresHttpArtifactGrants } from "./artifact-grants";
+import { handleDiscoveryRoute } from "./routes/discovery-routes";
+import { serveWebAsset } from "./web-assets";
+import { handleRecoveryRoute } from "./routes/recovery-routes";
+import type { HttpOperationLookup } from "./idempotency";
 import {
   assertOrigin,
   createMissionRouteHandler,
@@ -46,6 +50,7 @@ export interface ApplicationHttpOptions {
     current: () => Promise<void>,
   ) => Promise<unknown>;
   readonly reportIncident?: MissionRouteOptions["reportIncident"];
+  readonly lookup?: (input: HttpOperationLookup) => Promise<unknown>;
 }
 const id = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9_.:@-]{0,159}$/u);
 const hash = z.string().regex(/^[a-f0-9]{64}$/u);
@@ -104,6 +109,8 @@ export function createApplicationHttpHandler(options: ApplicationHttpOptions) {
     try {
       const url = new URL(request.url);
       assertOrigin(request, url, options.origin, !["GET", "HEAD"].includes(request.method));
+      const asset = serveWebAsset(request);
+      if (asset) return asset;
       if (url.pathname === "/api/v1/auth/login") {
         if (request.method !== "POST" || url.search) throw new MissionHttpError("INVALID_REQUEST");
         const body = z
@@ -117,6 +124,16 @@ export function createApplicationHttpHandler(options: ApplicationHttpOptions) {
       }
       const session = await options.auth.resolve(request);
       if (!session) throw new MissionHttpError("UNAUTHENTICATED");
+      if (url.pathname === "/api/v1/auth/session") {
+        if (request.method !== "GET" || url.search) throw new MissionHttpError("INVALID_REQUEST");
+        const csrfToken = await session.csrfToken();
+        await session.assertCurrent();
+        return json({
+          actor: session.context.authenticatedActor,
+          roles: session.context.authorizedRoles,
+          csrfToken,
+        });
+      }
       if (url.pathname === "/api/v1/auth/logout") {
         if (request.method !== "POST" || url.search) throw new MissionHttpError("INVALID_REQUEST");
         await csrf(session, request);
@@ -125,6 +142,19 @@ export function createApplicationHttpHandler(options: ApplicationHttpOptions) {
       }
       const open = async () =>
         (applicationSession ??= await options.open(session.context, session.assertCurrent));
+      const discovery = await handleDiscoveryRoute(
+        request,
+        session,
+        async () => (await open()).application,
+      );
+      if (discovery) return discovery;
+      const recovery = await handleRecoveryRoute(
+        request,
+        session,
+        async (projectId) => (await open()).application.assertProjectAccess(projectId),
+        options.lookup,
+      );
+      if (recovery) return recovery;
       const parts = url.pathname.split("/");
       const projectUpload =
         parts[5] === "artifacts" && parts.length === 7 && request.method === "PUT";

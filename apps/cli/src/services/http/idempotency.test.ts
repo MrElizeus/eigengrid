@@ -96,6 +96,45 @@ describe.skipIf(!canRunPostgres)("application PostgreSQL HTTP durable idempotenc
     ).rejects.toMatchObject({ code: "IDEMPOTENCY_CONFLICT" });
     expect(calls).toBe(0);
   });
+  test("response lookup is read-only and bound to actor, project, mission, operation and key", async () => {
+    const request = { ...mock, key: "lookup-complete" };
+    const result = await service.run(request, async () => ({ acknowledged: true }));
+    const input = {
+      actorId: mock.actorId,
+      projectId: mock.projectId,
+      missionId: "mission-1",
+      operation: mock.operation,
+      key: request.key,
+    };
+    expect(await service.lookup(input)).toEqual({
+      operationId: result.operationId,
+      status: "complete",
+      result: { acknowledged: true },
+    });
+    for (const changed of [
+      { actorId: "another-actor" },
+      { projectId: "another-project" },
+      { missionId: "another-mission" },
+      { operation: "cancel" },
+      { key: "another-key" },
+    ]) {
+      await expect(service.lookup({ ...input, ...changed })).rejects.toMatchObject({
+        code: "NOT_FOUND",
+      });
+    }
+    await expect(service.lookup({ ...input, operation: "sql-query" })).rejects.toMatchObject({
+      code: "INVALID_REQUEST",
+    });
+    await expect(
+      service.run({ ...request, key: "lookup-pending" }, async () => {
+        throw new Error("Lost response");
+      }),
+    ).rejects.toThrow();
+    const pending = await service.lookup({ ...input, key: "lookup-pending" });
+    expect(pending.status).toBe("pending");
+    expect(pending).not.toHaveProperty("result");
+    expect(pending).not.toHaveProperty("request_json");
+  });
   test("lost ACK leaves pending durable barrier, even after a new Head begins", async () => {
     let effects = 0;
     const changed = { ...mock, key: "lost-ack" };

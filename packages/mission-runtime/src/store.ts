@@ -30,6 +30,7 @@ import { type ScientificMissionProjectAssociation } from "./mission-project";
 import { type OperationIntentOutbox, type ScientificEffectAdmission } from "./operation-outbox";
 import { ScientificApprovals } from "./scientific-approvals";
 import { ScientificBudgets } from "./scientific-budgets";
+import { ScientificCatalog } from "./scientific-catalog";
 import { ScientificEvidence } from "./scientific-evidence";
 import { ScientificMissions } from "./scientific-missions";
 import { ScientificOperations } from "./scientific-operations";
@@ -55,6 +56,7 @@ export {
 } from "./scientific-store-validation";
 export type { CreateMissionInProjectInput } from "./scientific-store-validation";
 export class ScientificStore {
+  private readonly catalog: ScientificCatalog;
   private readonly plans: ScientificPlans;
   private readonly missions: ScientificMissions;
   private readonly budgets: ScientificBudgets;
@@ -65,6 +67,7 @@ export class ScientificStore {
   private readonly provenance: ScientificProvenance;
   constructor(database: ScientificDatabase) {
     const context = new ScientificStoreContext(database);
+    this.catalog = new ScientificCatalog(context);
     this.plans = new ScientificPlans(context);
     this.missions = new ScientificMissions(context);
     this.budgets = new ScientificBudgets(context);
@@ -76,6 +79,14 @@ export class ScientificStore {
   }
 
   // ── Missions and budgets ─────────────────────────────────
+
+  listProductionProjects(input: Parameters<ScientificCatalog["listProjects"]>[0]) {
+    return this.catalog.listProjects(input);
+  }
+
+  listProductionMissions(input: Parameters<ScientificCatalog["listMissions"]>[0]) {
+    return this.catalog.listMissions(input);
+  }
 
   async createMission(
     missionInput: ScientificMission,

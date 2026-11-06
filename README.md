@@ -3,6 +3,8 @@
 EigenGrid is a computational chemistry control plane: versioned scientific protocols,
 durable missions, typed engine adapters and an optional native tool-calling agent.
 Scientists can create, review, approve and start missions without a language model.
+The English [web console](docs/web-console.md) is included in `eigengrid serve` and
+the native binary, alongside the CLI and terminal interface.
 
 This is the **1.0.0-rc.3 release candidate**. Linux x64 software contracts are covered by
 local and PostgreSQL integration tests. Installation-specific Slurm/AMBER qualification,
@@ -50,6 +52,7 @@ ORCA and other engines require separate installations and appropriate licenses.
 - [Scientific workflows and campaign limits](docs/scientific-capabilities.md)
 - [Agent, tools and model configuration](docs/agent.md)
 - [Operation, identity and recovery](docs/operations.md)
+- [Web console and browser workflows](docs/web-console.md)
 - [Development and verification](CONTRIBUTING.md)
 - [Security reporting](SECURITY.md)
 - [Shared cluster installation and inventory](docs/cluster.md)

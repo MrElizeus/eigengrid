@@ -154,6 +154,87 @@ describe.skipIf(!canRunPostgres)(
       });
     }
 
+    test("catalog pages only expose allowed active projects and the requesting human's bound missions", async () => {
+      await database.createProject({ id: "project-second", name: "Second project" });
+      await database.addProjectMember("project-second", owner.id, "member");
+      await database.createProject({ id: "project-unjoined", name: "Not a member" });
+      const scope = {
+        ownerUserId: owner.id,
+        projectIds: ["project-fixture", "project-second", "project-unjoined"],
+        limit: 1,
+      };
+      const first = await store.listProductionProjects(scope);
+      expect(first.items.map((item) => item.id)).toEqual(["project-fixture"]);
+      expect(first.nextCursor).toBe("project-fixture");
+      const second = await store.listProductionProjects({ ...scope, after: first.nextCursor! });
+      expect(second.items.map((item) => item.id)).toEqual(["project-second"]);
+      expect(second.nextCursor).toBeNull();
+      expect((await store.listProductionProjects({ ...scope, projectIds: [] })).items).toEqual([]);
+      expect(
+        (
+          await store.listProductionProjects({ ...scope, projectIds: ["project-second"] })
+        ).items.map((item) => item.id),
+      ).toEqual(["project-second"]);
+      await createBoundMission(missionFixture("mission-a"));
+      await createBoundMission(missionFixture("mission-b"));
+      const unbound = missionFixture("mission-unbound");
+      await store.createMission(unbound, budgetFixture(unbound));
+      const other = { ...owner, id: "other-catalog-human" };
+      await database.createUser({ id: other.id, username: other.id });
+      await database.addProjectMember("project-fixture", other.id, "member");
+      await createBoundMission(missionFixture("mission-other", other), "project-fixture", other.id);
+      const page = await store.listProductionMissions({
+        ownerUserId: owner.id,
+        projectId: "project-fixture",
+        limit: 1,
+      });
+      expect(page.items.map((item) => item.id)).toEqual(["mission-a"]);
+      expect(page.nextCursor).toBe("mission-a");
+      const next = await store.listProductionMissions({
+        ownerUserId: owner.id,
+        projectId: "project-fixture",
+        after: page.nextCursor!,
+        limit: 1,
+      });
+      expect(next.items.map((item) => item.id)).toEqual(["mission-b"]);
+      expect(next.nextCursor).toBeNull();
+      expect(Object.keys(next.items[0]!).sort()).toEqual(
+        [
+          "activePlanId",
+          "createdAt",
+          "id",
+          "revision",
+          "state",
+          "statement",
+          "targetProperties",
+          "updatedAt",
+        ].sort(),
+      );
+      await database.removeProjectMember("project-fixture", owner.id);
+      expect((await store.listProductionProjects(scope)).items.map((item) => item.id)).toEqual([
+        "project-second",
+      ]);
+      await expect(
+        store.listProductionMissions({ ownerUserId: owner.id, projectId: "project-fixture" }),
+      ).rejects.toThrow();
+    });
+
+    test("catalog rejects malformed cursors, unbounded pages and corrupted mission payloads", async () => {
+      await createBoundMission(missionFixture("mission-catalog-integrity"));
+      const input = { ownerUserId: owner.id, projectId: "project-fixture" };
+      await expect(store.listProductionMissions({ ...input, after: "' OR 1=1" })).rejects.toThrow();
+      await expect(store.listProductionMissions({ ...input, limit: 101 })).rejects.toThrow();
+      const tx = (await database.beginTransaction()) as ScientificTransaction;
+      await tx.query("UPDATE scientific_missions SET payload_digest = $1 WHERE id = $2", [
+        D("f"),
+        "mission-catalog-integrity",
+      ]);
+      await tx.commit();
+      await expect(store.listProductionMissions(input)).rejects.toBeInstanceOf(
+        ScientificIntegrityError,
+      );
+    });
+
     test("commits mission, budget and immutable association atomically and is exact-idempotent", async () => {
       const mission = missionFixture();
       const input = {

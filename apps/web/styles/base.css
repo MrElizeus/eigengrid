@@ -1,0 +1,131 @@
+@layer base {
+  :root {
+    font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+    color: #253c35;
+    background: #f5f7f3;
+    font-synthesis: none;
+    line-height: 1.5;
+    --ink: #203b33;
+    --muted: #697a72;
+    --line: #dfe6dd;
+    --green: #245b46;
+    --accent: #c3e7a7;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+  }
+  h1,
+  h2,
+  h3,
+  p {
+    margin-top: 0;
+  }
+  h1 {
+    font-size: clamp(1.8rem, 3vw, 2.5rem);
+    line-height: 1.18;
+    font-weight: 600;
+    letter-spacing: -0.045em;
+    margin-bottom: 12px;
+  }
+  h2 {
+    font-size: 1.05rem;
+    letter-spacing: -0.02em;
+    font-weight: 600;
+  }
+  h3 {
+    font-size: 0.95rem;
+  }
+  a {
+    color: var(--green);
+    text-underline-offset: 3px;
+  }
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+  button,
+  select,
+  summary {
+    cursor: pointer;
+  }
+  button:disabled,
+  [aria-busy="true"] {
+    cursor: wait;
+    opacity: 0.65;
+  }
+  input,
+  select,
+  textarea {
+    background: #fff;
+    border: 1px solid #ced9ce;
+    border-radius: 7px;
+    padding: 11px 12px;
+    color: var(--ink);
+    max-width: 100%;
+    width: 100%;
+  }
+  textarea {
+    resize: vertical;
+    min-height: 80px;
+  }
+  input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--green);
+  }
+  input::placeholder,
+  textarea::placeholder {
+    color: #7b887f;
+  }
+  :focus-visible {
+    outline: 3px solid #53a985;
+    outline-offset: 3px;
+  }
+  pre,
+  code {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    font-size: 0.78rem;
+    overflow-wrap: anywhere;
+  }
+  pre {
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin: 0;
+    padding: 16px;
+    max-height: 440px;
+    overflow: auto;
+    background: #f4f7f2;
+  }
+  small {
+    font-size: 0.78rem;
+  }
+  summary {
+    font-weight: 550;
+    padding: 12px 0;
+  }
+  summary::marker {
+    color: var(--muted);
+  }
+  ::selection {
+    background: #d7edc4;
+  }
+  .skip-link {
+    position: fixed;
+    top: -80px;
+    left: 20px;
+    z-index: 100;
+    background: #fff;
+    padding: 12px;
+  }
+  .skip-link:focus {
+    top: 10px;
+  }
+  .boot {
+    padding: 15vh 10vw;
+  }
+}

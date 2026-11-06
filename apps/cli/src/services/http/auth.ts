@@ -10,6 +10,10 @@ export interface HttpSql {
 }
 export const httpSecretDigest = (secret: string) =>
   createHash("sha256").update(secret).digest("hex");
+// Derived from the HttpOnly session secret so independent tabs can bootstrap
+// the same CSRF token without persisting a readable secret or rotating peers.
+const sessionCsrfToken = (token: string) =>
+  createHash("sha256").update("eigengrid.http.csrf/v1\0").update(token).digest("base64url");
 const tokenPattern = /^[A-Za-z0-9_-]{43}$/u;
 export const SessionCookieName = "__Host-eigengrid";
 export type HttpAuthority = Pick<
@@ -20,6 +24,7 @@ export interface HttpSession {
   readonly context: MissionLocalContext;
   assertCurrent(): Promise<void>;
   verifyCsrf(request: Request): Promise<boolean>;
+  csrfToken(): Promise<string>;
   revoke(): Promise<void>;
 }
 
@@ -50,7 +55,7 @@ export class PostgresHttpAuth {
     if (!context.http) throw new MissionHttpError("UNAUTHENTICATED");
     await this.active(context);
     const token = randomBytes(32).toString("base64url");
-    const csrf = randomBytes(32).toString("base64url");
+    const csrf = sessionCsrfToken(token);
     const expiresAt = new Date(this.now() + context.http.sessionSeconds * 1000).toISOString();
     await this.sql.query(
       `INSERT INTO eigengrid_a5_http_sessions(token_digest,csrf_digest,actor_id,config_digest,expires_at)
@@ -107,6 +112,21 @@ export class PostgresHttpAuth {
       context: initial.context,
       assertCurrent: async () => {
         await load();
+      },
+      csrfToken: async () => {
+        const { row } = await load();
+        const csrf = sessionCsrfToken(token);
+        const csrfDigest = httpSecretDigest(csrf);
+        // Existing RC sessions used random CSRF tokens. Adopt the deterministic
+        // token only after validating the original authenticated session.
+        if (row.csrf_digest !== csrfDigest) {
+          await this.sql.query(
+            "UPDATE eigengrid_a5_http_sessions SET csrf_digest=$1 WHERE token_digest=$2 AND csrf_digest=$3 AND revoked=FALSE",
+            [csrfDigest, digest, row.csrf_digest],
+          );
+        }
+        await load();
+        return csrf;
       },
       verifyCsrf: async (req) => {
         const { row } = await load();
