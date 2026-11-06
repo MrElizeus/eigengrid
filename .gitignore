@@ -12,8 +12,6 @@ dist/
 !.env.example
 *.js
 *.js.map
-!apps/web/src/*.browser.js
-!apps/web/src/contracts.d.ts
 node_modules/
 *.pyc
 __pycache__/

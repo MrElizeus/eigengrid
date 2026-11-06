@@ -3,8 +3,9 @@
 EigenGrid is a computational chemistry control plane: versioned scientific protocols,
 durable missions, typed engine adapters and an optional native tool-calling agent.
 Scientists can create, review, approve and start missions without a language model.
-The English [web console](docs/web-console.md) is included in `eigengrid serve` and
-the native binary, alongside the CLI and terminal interface.
+Version 1.0.0 includes the CLI, terminal interface and authenticated HTTP API.
+The React web interface is deferred to a separate development branch and is not
+included in this release.
 
 This branch prepares **1.0.0, the stable software release**. Linux x64 software contracts are covered by
 local and PostgreSQL integration tests. Installation-specific Slurm/AMBER qualification,
@@ -31,17 +32,12 @@ These commands inspect interfaces without a model or scientific engine. For a lo
 project, run `bun run eigengrid init --role head --no-gen-key`. Mission execution requires
 [protected site configuration](docs/operations.md), reviewed inputs and explicit authority.
 
-## Web workspace
+## HTTP API
 
-Run `eigengrid serve` (`eigengrid web` is an alias) for the unified English React
-workspace. A light interface combines mission tabs, plan review, evidence and a
-resizable agent panel on the right. It uses the same-origin `/api/v1` HTTP API;
-the browser never connects directly to PostgreSQL, model providers or Slurm.
-
-Provision the protected HTTP configuration, PostgreSQL schema and HTTPS reverse
-proxy described in [operations](docs/operations.md). Sign in with an administrator-issued
-credential. The server checks actor identity, project membership and scientific roles.
-See the [web workspace guide](docs/web-console.md).
+Run `eigengrid serve` for the authenticated `/api/v1` API. Provision the protected
+HTTP configuration, PostgreSQL schema and HTTPS reverse proxy described in
+[operations](docs/operations.md). The server checks actor identity, project
+membership and scientific roles. Version 1.0.0 does not serve a browser interface.
 
 ## Native distribution
 
@@ -64,7 +60,6 @@ ORCA and other engines require separate installations and appropriate licenses.
 - [Scientific workflows and campaign limits](docs/scientific-capabilities.md)
 - [Agent, tools and model configuration](docs/agent.md)
 - [Operation, identity and recovery](docs/operations.md)
-- [Web console and browser workflows](docs/web-console.md)
 - [Development and verification](CONTRIBUTING.md)
 - [Security reporting](SECURITY.md)
 - [Shared cluster installation and inventory](docs/cluster.md)

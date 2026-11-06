@@ -600,15 +600,16 @@ describe.skipIf(!canRunPostgres)("human mission application through real Postgre
     };
   }
 
-  test("browser bootstrap, embedded assets and discovery enforce live HTTP authority", async () => {
+  test("API bootstrap and discovery enforce live HTTP authority", async () => {
     const http = await httpFixture();
     try {
-      const html = await http.request("/");
-      expect(html.status).toBe(200);
-      expect(html.headers.get("content-security-policy")).toContain("frame-ancestors 'none'");
-      expect(await html.text()).toContain("/assets/app.browser.js");
       expect((await http.request("/api/v1/projects")).status).toBe(401);
       await http.login();
+      for (const path of ["/", "/assets/app.browser.js", "/assets/styles.css"]) {
+        const response = await http.request(path);
+        expect(response.status).toBe(404);
+        expect(response.headers.get("content-type")).toContain("application/json");
+      }
       const bootstrap = await http.request("/api/v1/auth/session");
       const body = await bootstrap.json();
       expect(Object.keys(body).sort()).toEqual(["actor", "csrfToken", "roles"]);

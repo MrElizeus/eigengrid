@@ -14,7 +14,6 @@ import {
 import { PostgresHttpAuth, SessionCookieName, type HttpSession } from "./auth";
 import { PostgresHttpArtifactGrants } from "./artifact-grants";
 import { handleDiscoveryRoute } from "./routes/discovery-routes";
-import { serveWebAsset } from "./web-assets";
 import { handleRecoveryRoute } from "./routes/recovery-routes";
 import type { HttpOperationLookup } from "./idempotency";
 import {
@@ -109,8 +108,6 @@ export function createApplicationHttpHandler(options: ApplicationHttpOptions) {
     try {
       const url = new URL(request.url);
       assertOrigin(request, url, options.origin, !["GET", "HEAD"].includes(request.method));
-      const asset = serveWebAsset(request);
-      if (asset) return asset;
       if (url.pathname === "/api/v1/auth/login") {
         if (request.method !== "POST" || url.search) throw new MissionHttpError("INVALID_REQUEST");
         const body = z

@@ -8,18 +8,16 @@ passing CI. It includes:
 
 - Domain modules extracted from the database, migrations, scientific schemas,
   model gateway, runners and execution coordinator, preserving their public contracts.
-- One English React [workspace](web-console.md), served by `eigengrid serve`
-  (`web` is an alias): mission discovery and creation, exact candidate review,
-  work units, evidence, activity and a persistent mission agent panel on the right.
-- A single protected account/session boundary and same-origin `/api/v1` HTTP API.
-  The separate experimental chat server, login store and UI are retired.
+- The authenticated `/api/v1` HTTP API with protected account/session boundaries,
+  project discovery, mission operations and durable request recovery.
 - Durable agent task discovery scoped to actor, project, mission and current policy;
   tool approvals, budget accounting and uncertain-request recovery remain canonical.
 - Agent catalog pagination, provider compatibility, permission diagnostics and
-  runtime fixes integrated with the workspace.
+  runtime fixes for the native agent.
 
-React and its styles are embedded in the native executables; no frontend runtime
-is required at the installation. Existing database migration bytes remain unchanged.
+The web interface is deferred and developed separately from 1.0.0. No browser
+assets or web server alias are included in this release; `eigengrid serve` exposes
+the backend API. Existing database migration bytes remain unchanged.
 Software stability does not certify scientific correctness or an installation's
 AMBER/Slurm configuration. Site qualification remains pending per installation.
 

@@ -8,8 +8,7 @@ import { httpSecretDigest } from "../services/http/auth";
 
 export const serveCommand: CommandModule = {
   command: "serve",
-  aliases: ["web"],
-  describe: "Serve the React workspace and authenticated API using protected Head configuration",
+  describe: "Serve the authenticated API using protected Head configuration",
   builder(y) {
     return y
       .command(

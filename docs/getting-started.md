@@ -272,8 +272,7 @@ its own reviewed configuration, credentials and scientific inputs. Provision in 
    explicitly run `eigengrid serve init-schema` with the protected admin role, then start
    `eigengrid serve` behind the TLS reverse proxy. Preserve the published HTTP migration
    and existing session/idempotency records when upgrading.
-   Open the configured HTTPS origin for the included [web console](web-console.md).
-   No separate frontend installation is required.
+   Version 1.0.0 exposes the backend API only; the web interface is developed separately.
 
 The supported scheduler contract is Slurm 23.11.x. An unsupported scheduler or engine tuple
 needs its own adapter qualification. Never bypass a version, digest or authority check to

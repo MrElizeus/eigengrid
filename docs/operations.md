@@ -46,11 +46,8 @@ only the digest in protected configuration. `eigengrid serve --help` describes e
 schema setup. Session revocation, CSRF, project access and idempotency are enforced in
 the application; a reverse proxy is not an authorization substitute.
 
-The same listener serves the embedded English [web console](web-console.md) at `/`.
-Proxy the root and API paths together. The browser uses the configured credentials,
-active project memberships and exact mission approvals; it adds no separate identity
-store or execution path. Assets are bundled in the executable and require no frontend
-service or runtime asset directory.
+Version 1.0.0 serves the `/api/v1` backend API only. The web interface is deferred;
+there are no embedded browser assets or `eigengrid web` command in this release.
 
 ## Failure handling
 
