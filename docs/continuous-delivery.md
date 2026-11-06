@@ -1,17 +1,23 @@
 # Continuous delivery
 
-Pushes to `main` run verification on the repository's rootless Linux runner.
-Pull requests use hosted runners. Repository settings must require approval for
-all external contributors before running workflows; inspect workflow changes
-before approval. The local runner has its own Unix account, Docker daemon,
-private scratch space and resource limits. It has no administrative access or
-cluster credentials.
+Pull requests, pushes to `main`, release verification and publication use GitHub's
+standard `ubuntu-24.04` hosted runners. For public repositories, these runners are
+[free and unlimited](https://docs.github.com/en/actions/how-tos/write-workflows/choose-where-workflows-run/choose-the-runner-for-a-job#standard-github-hosted-runners-for-public-repositories)
+and do not consume the account's included private-repository compute allowance.
+There is no minute-exhaustion fallback to activate for this public repository;
+test failures must remain failures rather than retrying on a local runner.
+
+Rootless Docker remains available for local verification through
+`scripts/release/verify-workflow.sh`. If the repository becomes private, review
+billing and implement explicit quota detection before enabling a rootless CI
+fallback. Repository settings must require approval for all external contributors
+before running workflows; inspect workflow changes before approval.
 
 To release a version in the `1.0.0-rc.x` series:
 
 1. Update the JavaScript and Python versions together and merge the change into
    `main` using a Conventional Commit.
-2. Push the corresponding tag, for example `v1.0.0-rc.2`.
+2. Push the corresponding tag, for example `v1.0.0-rc.3`.
 3. The software workflow checks publication scope, commit policy, static quality,
    native binaries, reproducibility, TypeScript tests and Python tests. Only after
    all checks pass does its publication job upload and publish the release.

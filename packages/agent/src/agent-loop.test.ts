@@ -490,3 +490,36 @@ describe("agent-loop module structure", () => {
     expect(events.at(-1)?.type).toBe("done");
   });
 });
+
+it("delivers steering as user context with explicit non-execution results and retains it for followups", async () => {
+  const inbox: string[] = [];
+  let executions = 0;
+  const model = scriptedModel((n) => {
+    if (n === 1) {
+      inbox.push("Only explain; do not execute");
+      return modelToolCall("echo", { value: "obsolete" }, "obsolete-call");
+    }
+    return modelText("Explanation only");
+  });
+  const accepted: string[] = [];
+  const result = await runAgent({
+    prompt: "execute",
+    ctx: context,
+    tools: echoRegistry(async (input) => {
+      executions++;
+      return input;
+    }),
+    model: model.model,
+    maxSteps: 3,
+    takeSteering: () => inbox.splice(0),
+    onSteering: async (messages) => {
+      accepted.push(...messages);
+    },
+  });
+  expect(result.ok).toBe(true);
+  expect(executions).toBe(0);
+  expect(accepted).toEqual(["Only explain; do not execute"]);
+  expect(JSON.stringify(model.requests[1])).toContain("Not executed: superseded");
+  expect(result.messages).toContainEqual({ role: "user", content: "Only explain; do not execute" });
+  expect(result.messages.at(-1)).toEqual({ role: "assistant", content: "Explanation only" });
+});

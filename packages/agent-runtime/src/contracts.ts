@@ -83,6 +83,7 @@ export type AgentEvent =
   | { type: "inference_requested"; step: number }
   | { type: "inference_observed"; step: number; reply: AgentInferenceReply }
   | { type: "inference_abandoned"; step: number }
+  | { type: "steering_received"; messages: readonly string[] }
   | { type: "effect_intent"; call: AgentToolCall }
   | { type: "effect_observed"; observation: AgentObservation }
   | { type: "effect_reconciled"; observation: AgentObservation }

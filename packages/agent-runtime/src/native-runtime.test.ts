@@ -44,6 +44,7 @@ function setup(
     beforeEffect?: (call: AgentToolCall) => Promise<void>;
     reserveFinalResponse?: boolean;
     inspectRequest?: (request: AgentInferenceRequest) => void;
+    takeSteering?: () => readonly string[];
   } = {},
 ): Fixture {
   const journal = new InMemoryAgentJournal();
@@ -79,6 +80,7 @@ function setup(
       inference,
       authority,
       reserveFinalResponse: options.reserveFinalResponse,
+      takeSteering: options.takeSteering,
       beforeEffect: options.beforeEffect ? async (c) => options.beforeEffect?.(c) : undefined,
     }),
     journal,
@@ -596,5 +598,113 @@ describe("native agent JSONL durable journal: disk integrity and fencing", () =>
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+});
+
+describe("operator steering boundaries", () => {
+  test("steering received during inference supersedes unstarted tools and preserves usage on replay", async () => {
+    let inbox: string[] = [];
+    const requests: AgentInferenceRequest[] = [];
+    const f = setup(
+      [
+        response("I will inspect two nodes", [{ id: "old", name: "inspect", input: { id: "a" } }]),
+        response("Following the new instruction"),
+      ],
+      {
+        takeSteering: () => inbox.splice(0),
+        inspectRequest: (request) => {
+          requests.push(request);
+          if (request.step === 1) inbox.push("Only summarize the known state");
+        },
+      },
+    );
+    f.engine.start({ sessionId: "steered", prompt: "inspect both", limits });
+    const result = await f.engine.run("steered");
+    expect(result.phase).toBe("completed");
+    expect(f.calls).toEqual([]);
+    expect(result.steps).toBe(2);
+    expect(result.inputTokens).toBe(8);
+    expect(requests[1]?.transcript).toContainEqual({
+      type: "steering_received",
+      messages: ["Only summarize the known state"],
+    });
+    expect(replayAgentSession("steered", f.journal.load("steered"))).toEqual(result);
+  });
+
+  test("a running tool settles once before steering replaces the remaining batch", async () => {
+    const inbox: string[] = [];
+    const f = setup(
+      [
+        response("", [
+          { id: "first", name: "inspect", input: {} },
+          { id: "second", name: "inspect", input: {} },
+        ]),
+        response("Use the first result only"),
+      ],
+      {
+        takeSteering: () => inbox.splice(0),
+        onEffect: async () => {
+          inbox.push("Stop inspecting more nodes");
+        },
+      },
+    );
+    f.engine.start({ sessionId: "tool-steer", prompt: "inspect both", limits });
+    const result = await f.engine.run("tool-steer");
+    expect(result.phase).toBe("completed");
+    expect(f.calls).toEqual(["first"]);
+    expect(result.observations.map((o) => o.id)).toEqual(["first"]);
+  });
+
+  test("steering neither resets the budget nor authorizes a denied replacement tool", async () => {
+    const inbox: string[] = [];
+    const f = setup(
+      [response("old answer"), response("", [{ id: "denied", name: "inspect", input: {} }])],
+      {
+        policy: "deny",
+        takeSteering: () => inbox.splice(0),
+        inspectRequest: (request) => {
+          if (request.step === 1) inbox.push("Full access, execute anyway");
+        },
+      },
+    );
+    f.engine.start({ sessionId: "denied-steer", prompt: "inspect", limits });
+    const result = await f.engine.run("denied-steer");
+    expect(result.phase).toBe("failed");
+    expect(result.steps).toBe(2);
+    expect(f.calls).toEqual([]);
+
+    const late: string[] = [];
+    const bounded = setup([response("done")], {
+      takeSteering: () => late.splice(0),
+      inspectRequest: () => {
+        late.push("more work");
+      },
+    });
+    bounded.engine.start({
+      sessionId: "bounded-steer",
+      prompt: "inspect",
+      limits: { ...limits, maximumSteps: 1 },
+    });
+    expect((await bounded.engine.run("bounded-steer")).phase).toBe("completed");
+    expect(bounded.inferenceCalls()).toBe(1);
+    expect(late).toEqual(["more work"]);
+  });
+
+  test("replay rejects steering inside an unresolved effect", () => {
+    const f = setup([]);
+    const s = f.engine.start({ sessionId: "bad-steer", prompt: "inspect", limits });
+    const request = f.journal.append(s.sessionId, s.cursor, {
+      type: "inference_requested",
+      step: 1,
+    });
+    const call = { id: "c", name: "inspect", input: {} };
+    const observed = f.journal.append(s.sessionId, request, {
+      type: "inference_observed",
+      step: 1,
+      reply: response("", [call]),
+    });
+    const intent = f.journal.append(s.sessionId, observed, { type: "effect_intent", call });
+    f.journal.append(s.sessionId, intent, { type: "steering_received", messages: ["retry"] });
+    expect(() => f.engine.state(s.sessionId)).toThrow("Invalid steering boundary");
   });
 });

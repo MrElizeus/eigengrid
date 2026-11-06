@@ -1720,7 +1720,12 @@ export class ModelGateway {
       },
       onAbort: () => {
         rejectMetadata(
-          new DOMException("Model conversation aborted with unconfirmed usage", "AbortError"),
+          new DOMException(
+            request.signal?.aborted
+              ? "Model response interrupted. Partial text is retained; final usage could not be confirmed."
+              : `Model response timed out after ${request.timeoutMilliseconds / 1000}s. Partial text is retained; final usage could not be confirmed.`,
+            request.signal?.aborted ? "AbortError" : "TimeoutError",
+          ),
         );
       },
     } as Parameters<typeof streamText>[0]);

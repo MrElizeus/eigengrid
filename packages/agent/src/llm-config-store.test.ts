@@ -43,6 +43,13 @@ describe("private operator model preferences", () => {
     costPerOutputToken: 0,
   };
 
+  test("model timeout preferences survive reload and reject invalid limits", () => {
+    saveLlmConfig({ ...config, timeoutMilliseconds: 450000 });
+    expect(loadLlmConfig()?.timeoutMilliseconds).toBe(450000);
+    saveLlmConfig({ ...config, timeoutMilliseconds: -1 });
+    expect(() => loadLlmConfig()).toThrow("invalid");
+  });
+
   test("forgetting a key preserves provider, model and explicit free pricing", () => {
     saveLlmConfig(config);
     expect(forgetStoredLlmApiKey()).toBe(true);

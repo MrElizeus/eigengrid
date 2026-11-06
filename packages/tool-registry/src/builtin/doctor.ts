@@ -64,11 +64,14 @@ export const doctorTool: Tool<z.infer<typeof doctorInput>, z.infer<typeof doctor
 
     // Check nodes
     try {
-      const nodes = await ctx.db.listNodes();
+      const nodes = await (ctx.listComputeNodes ? ctx.listComputeNodes() : ctx.db.listNodes());
       checks.push({
         name: "Compute nodes",
         status: nodes.length > 0 ? "ok" : "warn",
-        detail: nodes.length > 0 ? `${nodes.length} node(s) configured` : "No nodes configured",
+        detail:
+          nodes.length > 0
+            ? `${nodes.length} node(s) in current inventory`
+            : "No nodes in current inventory",
       });
     } catch {
       checks.push({ name: "Compute nodes", status: "warn", detail: "Could not query nodes" });

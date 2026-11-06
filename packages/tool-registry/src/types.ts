@@ -14,6 +14,8 @@ import type { DatabaseLike } from "@eigengrid/db";
  */
 export interface ToolContext {
   db: DatabaseLike;
+  /** Shared live inventory when configured; otherwise the persisted node registry. */
+  listComputeNodes?: () => ReturnType<DatabaseLike["listNodes"]>;
   python: PythonBridge;
   runners: Record<string, Runner>;
   bus: EventBus;

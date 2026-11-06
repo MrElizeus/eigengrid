@@ -183,19 +183,56 @@ describe("operator terminal experience", () => {
     expect(redactCommand("/status")).toBe("/status");
   });
 
-  it("bounds the live draft and retains its latest text", async () => {
+  it("streams into the transcript before completion, keeps the composer visible and commits once", async () => {
+    let state = tuiReducer(initialTuiState, { type: "USER_SUBMIT", text: "hello" });
+    state = tuiReducer(state, { type: "TEXT_DELTA", text: "First line\nPartial" });
+    const view = () => (
+      <>
+        <MessageList
+          messages={state.messages}
+          assistantDraft={state.assistantDraft}
+          assistantDraftId={state.assistantDraftId}
+        />
+        <StatusBar processing={state.processing} spinnerFrame={0} />
+        <PromptInput
+          value="my unsent instruction"
+          onChange={() => {}}
+          onSubmit={() => {}}
+          processing={state.processing}
+        />
+      </>
+    );
+    const { session, stdout } = mount(view());
+    const live = await frame(stdout);
+    expect(live).toContain("OPERATOR");
+    expect(live).toContain("First line");
+    expect(live).toContain("Partial");
+    expect(live).toContain("my unsent instruction");
+    expect(live).toContain("CONVERSATION · STEER");
+    state = tuiReducer(state, { type: "TEXT_DELTA", text: " answer" });
+    state = tuiReducer(state, { type: "STREAM_FINISH" });
+    session.rerender(view());
+    const final = await frame(stdout);
+    expect(final.match(/First line/g)).toHaveLength(1);
+    expect(final.match(/Partial answer/g)).toHaveLength(1);
+    expect(final.match(/OPERATOR/g)).toHaveLength(1);
+    expect(final).toContain("my unsent instruction");
+  });
+
+  it("puts long answers into scrollback instead of an expanding status panel", async () => {
+    const long = Array.from({ length: 200 }, (_, i) => `progress ${i}`).join("\n");
     const { stdout } = mount(
-      <StatusBar
-        processing
-        spinnerFrame={0}
-        assistantDraft={Array.from({ length: 200 }, (_, i) => `progress ${i}`).join("\n")}
-      />,
+      <>
+        <MessageList messages={[]} assistantDraft={long} assistantDraftId="long" />
+        <StatusBar processing spinnerFrame={0} queued={["Inspect only"]} />
+        <PromptInput value="" onChange={() => {}} onSubmit={() => {}} processing />
+      </>,
     );
     const text = await frame(stdout);
+    expect(text).toContain("progress 0");
     expect(text).toContain("progress 199");
-    expect(text).not.toContain("progress 0");
-    expect(text).toContain("full response");
-    expect(text.split("\n").length).toBeLessThan(24);
+    expect(text).toContain("1 queued · Inspect only");
+    expect(text).toContain("CONVERSATION · STEER");
   });
 
   it("does not leave tools spinning when their stream terminates", () => {

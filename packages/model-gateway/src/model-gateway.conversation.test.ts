@@ -485,3 +485,35 @@ describe("shared conversational model boundary", () => {
     await expect(response.text()).rejects.toBeInstanceOf(ModelConversationResponseLimitError);
   });
 });
+
+test("a streaming deadline reports timeout distinctly and never confirms incomplete usage", async () => {
+  const model = {
+    specificationVersion: "v3",
+    provider: identity.providerId,
+    modelId: identity.modelId,
+    supportedUrls: {},
+    doStream: async ({ abortSignal }: { abortSignal: AbortSignal }) => ({
+      stream: new ReadableStream({
+        start(controller) {
+          controller.enqueue({ type: "stream-start", warnings: [] });
+          controller.enqueue({ type: "text-start", id: "partial" });
+          controller.enqueue({ type: "text-delta", id: "partial", delta: "Partial result" });
+          abortSignal.addEventListener("abort", () => controller.error(abortSignal.reason), {
+            once: true,
+          });
+        },
+      }),
+    }),
+  } as unknown as LanguageModel;
+  const execution = new ModelGateway().streamConversation(
+    request(model, { timeoutMilliseconds: 50 }),
+  );
+  const outcome = execution.metadata.catch((error: Error) => error);
+  const parts = [];
+  for await (const part of execution.result.fullStream) parts.push(part);
+  expect(parts.some((part) => part.type === "text-delta" && part.text === "Partial result")).toBe(
+    true,
+  );
+  expect(await outcome).toMatchObject({ name: "TimeoutError" });
+  expect(((await outcome) as Error).message).toContain("timed out");
+});

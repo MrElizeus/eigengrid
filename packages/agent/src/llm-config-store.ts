@@ -36,6 +36,7 @@ interface StoredLlmConfig {
   apiKey?: string;
   temperature?: number;
   maxTokens?: number;
+  timeoutMilliseconds?: number;
   costPerInputToken?: number;
   costPerOutputToken?: number;
 }
@@ -86,6 +87,7 @@ export function saveLlmConfig(config: LlmConfig, apiKey?: string): void {
     apiKey: apiKey ?? config.apiKey,
     temperature: config.temperature,
     maxTokens: config.maxTokens,
+    timeoutMilliseconds: config.timeoutMilliseconds,
     costPerInputToken: config.costPerInputToken,
     costPerOutputToken: config.costPerOutputToken,
   };
@@ -180,6 +182,8 @@ export function loadLlmConfig(): Partial<LlmConfig> | null {
       !stored.baseUrl ||
       typeof stored.model !== "string" ||
       !stored.model ||
+      (stored.timeoutMilliseconds !== undefined &&
+        (!Number.isSafeInteger(stored.timeoutMilliseconds) || stored.timeoutMilliseconds <= 0)) ||
       (stored.apiKey !== undefined && typeof stored.apiKey !== "string") ||
       (stored.reasoningEffort !== undefined && !isReasoningEffort(stored.reasoningEffort)) ||
       (stored.authMode !== undefined &&
@@ -199,6 +203,9 @@ export function loadLlmConfig(): Partial<LlmConfig> | null {
       apiKey: stored.apiKey,
       temperature: stored.temperature,
       maxTokens: stored.maxTokens,
+      ...(stored.timeoutMilliseconds === undefined
+        ? {}
+        : { timeoutMilliseconds: stored.timeoutMilliseconds }),
       costPerInputToken: stored.costPerInputToken,
       costPerOutputToken: stored.costPerOutputToken,
     };
