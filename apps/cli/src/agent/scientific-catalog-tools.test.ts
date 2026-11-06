@@ -58,6 +58,10 @@ describe("scientific catalog tools", () => {
         "¿Puedo asignar la banda de absorción a partir del espectro calculado?",
         "workflows.tddft-absorption",
       ],
+      [
+        "Tengo una frecuencia imaginaria. ¿Ya puedo reportar la barrera?",
+        "diagnostics.imaginary-frequencies",
+      ],
     ] as const;
     for (const [query, expected] of cases) {
       const listed = await listProtocolsTool.execute(context, { query, limit: 3 });

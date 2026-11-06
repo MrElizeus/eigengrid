@@ -36,6 +36,7 @@ const SCIENTIFIC_QUERY_ALIASES: Readonly<Record<string, string>> = Object.freeze
   topologia: "topology", trayectoria: "trajectory", trayectorias: "trajectory",
   replicas: "replica", incertidumbre: "uncertainty",
   absorcion: "absorption", espectro: "spectrum", transicion: "transition",
+  frecuencia: "frequency", imaginaria: "imaginary", imaginarias: "imaginary", barrera: "barrier",
   reduccion: "reduction", electrodo: "electrode", ferroceno: "ferrocene",
   dimero: "dimer", fantasma: "ghost", superposicion: "superposition", interaccion: "interaction",
   funcional: "functional", funcionales: "functional", convergencia: "convergence",
