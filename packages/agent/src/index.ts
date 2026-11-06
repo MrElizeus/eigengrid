@@ -3,6 +3,7 @@ export type { AgentInput, AgentOutput, AgentEvent } from "./agent-loop";
 export { createPlan } from "./planner";
 export { getToolPolicy, requiresApproval, isToolDenied } from "./approvals";
 export { AgentMemory, type StoreOpts } from "./memory";
+export { captureAgentExperience, captureToolExperience } from "./experience-capture";
 export {
   AgentAuthorityLevel,
   type AgentAuthorityLevel as AgentAuthorityLevelName,

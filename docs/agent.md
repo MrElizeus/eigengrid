@@ -75,6 +75,11 @@ No model is needed for manual mission creation, review, approval, compilation or
 
 ## Recovery
 
+Local Operator turns also capture tool observations and unreviewed lessons in
+[experiential memory](experiential-memory.md). Its evidence checks and human review
+are separate from session recovery and scientific execution approval. The web
+runtime does not share the CLI's local memory.
+
 Observe a session before resuming it. Approval binds actor, project, mission, session, call,
 input digest, journal cursor, current policy and expiry. Expired or revoked approval cannot
 be replayed. An interrupted effect requires `reconcile`; that action checks canonical

@@ -77,6 +77,7 @@ describe("createAgentRuntime", () => {
       ).toEqual([
         "doctor",
         "get-job-status",
+        "inspect-experience",
         "inspect-node",
         "inspect-protocol",
         "list-artifacts",
@@ -89,6 +90,7 @@ describe("createAgentRuntime", () => {
         "operator-info",
         "read-file",
         "read-log",
+        "search-experiences",
         "validate-md-protocol",
       ]);
     });
@@ -108,7 +110,15 @@ describe("createAgentRuntime", () => {
           .materialize()
           .approvalRequiredDefinitions.map((tool) => tool.name)
           .sort(),
-      ).toEqual(["cancel-job", "parse-job-output", "run-command", "submit-job", "write-file"]);
+      ).toEqual([
+        "cancel-job",
+        "contest-lesson",
+        "parse-job-output",
+        "propose-lesson",
+        "run-command",
+        "submit-job",
+        "write-file",
+      ]);
     });
 
     it("reports the native operator architecture through operator-info", async () => {

@@ -1,5 +1,5 @@
-import { existsSync, mkdirSync, readdirSync, readFileSync } from "fs";
-import { dirname, join } from "path";
+import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync } from "fs";
+import { basename, dirname, join, resolve } from "path";
 import {
   installedScientificSkillRoot,
   loadScientificSkillCorpus,
@@ -10,6 +10,12 @@ import {
   type LoadedScientificSkill,
 } from "@eigengrid/scientific-skills";
 import { AgentAuthorityLevel, type AgentContextBlock } from "./authority";
+import {
+  ExperienceMemory,
+  memoryDigest,
+  type MemoryBoundary,
+  type RetrievalContext,
+} from "@eigengrid/experience-memory";
 
 // Use dynamic import for bun:sqlite to avoid type issues
 interface SqliteStatement {
@@ -62,6 +68,9 @@ export interface AgentMemoryOptions {
   allowLegacySkills?: boolean;
   /** Optional legacy context directory; read only when allowLegacySkills is true. */
   legacySkillRoot?: string;
+  /** Trusted host identity only; never populated from a model tool argument. */
+  experienceBoundary?: MemoryBoundary;
+  experienceContext?: RetrievalContext;
 }
 
 const MAX_MEMORY_TITLE_BYTES = 512;
@@ -103,9 +112,28 @@ export class AgentMemory {
   private readonly allowLegacySkills: boolean;
   private readonly legacySkillRoot: string;
   private canonicalSkills?: ScientificSkillRegistry;
+  experience?: ExperienceMemory;
+  readonly experienceContext: RetrievalContext;
+  private readonly experienceBoundary: MemoryBoundary;
 
   constructor(opts?: AgentMemoryOptions) {
     this.dbPath = opts?.dbPath ?? findMemoryDbPath();
+    let projectDirectory = resolve(dirname(this.dbPath));
+    const missing: string[] = [];
+    while (!existsSync(projectDirectory)) {
+      missing.unshift(basename(projectDirectory));
+      projectDirectory = dirname(projectDirectory);
+    }
+    const projectIdentity = join(realpathSync(projectDirectory), ...missing);
+    this.experienceBoundary = opts?.experienceBoundary ?? {
+      projectId: "project:" + memoryDigest(projectIdentity),
+      ownerId: "os-user:" + (process.getuid?.() ?? process.env.USER ?? "local"),
+    };
+    this.experienceContext = structuredClone(
+      opts?.experienceContext ?? {
+        facts: { platform: process.platform, architecture: process.arch },
+      },
+    );
     this.skillRoot = opts?.skillRoot ?? installedScientificSkillRoot();
     this.allowLegacySkills = opts?.allowLegacySkills ?? false;
     this.legacySkillRoot =
@@ -156,6 +184,10 @@ export class AgentMemory {
           if (!String(error).toLowerCase().includes("duplicate column")) throw error;
         }
       }
+      this.experience = new ExperienceMemory(
+        join(dir, "experience", "memory.sqlite"),
+        this.experienceBoundary,
+      );
       this.db = database;
     } catch (error) {
       database?.close();
@@ -165,6 +197,8 @@ export class AgentMemory {
   }
 
   async disconnect(): Promise<void> {
+    this.experience?.close();
+    this.experience = undefined;
     this.db?.close();
     this.db = null;
   }
@@ -336,7 +370,33 @@ export class AgentMemory {
         authority: AgentAuthorityLevel.RETRIEVED_MEMORY,
         source: "retrieved-memory",
         name: observation.title,
-        content: sanitizeMemoryText(observation.content, 512),
+        content:
+          "Legacy unverified observation; it may be stale or contradicted. Verify current evidence.\n" +
+          sanitizeMemoryText(observation.content, 512),
+      });
+    }
+    for (const hit of this.experience?.search(prompt, this.experienceContext, { limit: 3 }) ?? []) {
+      const { candidate, current } = hit.lesson;
+      blocks.push({
+        authority: AgentAuthorityLevel.RETRIEVED_MEMORY,
+        source: "retrieved-memory",
+        name: "experience:" + candidate.id,
+        content: JSON.stringify({
+          kind: "reviewed_experience_not_execution_authority",
+          id: candidate.id,
+          digest: candidate.digest,
+          revisionDigest: current.digest,
+          state: current.state,
+          claim: candidate.claim.slice(0, 1500),
+          claimComplete: candidate.claim.length <= 1500,
+          applicability:
+            "All stored conditions matched host facts; inspect the full lesson before applying it",
+          confidence: current.confidence.level,
+          confidenceMeaning: "reviewer_assessment_not_calibrated_probability",
+          expiresAt: candidate.expiresAt,
+          evidence: candidate.evidence.slice(0, 4),
+          evidenceCount: candidate.evidence.length,
+        }),
       });
     }
     return blocks;

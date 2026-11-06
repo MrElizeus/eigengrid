@@ -74,6 +74,7 @@ export const agentCommand: CommandModule = {
         });
       } else {
         console.log("\n" + result.response + "\n");
+        if (result.memoryWarning) console.error(result.memoryWarning);
         if (result.toolCalls && result.toolCalls.length > 0) {
           console.log(`Tools called: ${result.toolCalls.map((t) => t.tool).join(", ")}`);
         }

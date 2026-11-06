@@ -13,6 +13,7 @@
     "@eigengrid/agent-runtime": "workspace:*",
     "@eigengrid/core": "workspace:*",
     "@eigengrid/events": "workspace:*",
+    "@eigengrid/experience-memory": "workspace:*",
     "@eigengrid/model-gateway": "workspace:*",
     "@eigengrid/protocol": "workspace:*",
     "@eigengrid/scientific-skills": "workspace:*",

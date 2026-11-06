@@ -42,6 +42,7 @@
         "@eigengrid/core": "workspace:*",
         "@eigengrid/db": "workspace:*",
         "@eigengrid/events": "workspace:*",
+        "@eigengrid/experience-memory": "workspace:*",
         "@eigengrid/mission-runtime": "workspace:*",
         "@eigengrid/protocol": "workspace:*",
         "@eigengrid/python-bridge": "workspace:*",
@@ -76,6 +77,7 @@
         "@eigengrid/agent-runtime": "workspace:*",
         "@eigengrid/core": "workspace:*",
         "@eigengrid/events": "workspace:*",
+        "@eigengrid/experience-memory": "workspace:*",
         "@eigengrid/model-gateway": "workspace:*",
         "@eigengrid/protocol": "workspace:*",
         "@eigengrid/scientific-skills": "workspace:*",
@@ -178,6 +180,13 @@
     "packages/events": {
       "name": "@eigengrid/events",
       "version": "0.1.0",
+    },
+    "packages/experience-memory": {
+      "name": "@eigengrid/experience-memory",
+      "version": "0.1.0",
+      "dependencies": {
+        "zod": "^3.24.0",
+      },
     },
     "packages/md-analysis": {
       "name": "@eigengrid/md-analysis",
@@ -394,6 +403,8 @@
     "@eigengrid/effect-journal": ["@eigengrid/effect-journal@workspace:packages/effect-journal"],
 
     "@eigengrid/events": ["@eigengrid/events@workspace:packages/events"],
+
+    "@eigengrid/experience-memory": ["@eigengrid/experience-memory@workspace:packages/experience-memory"],
 
     "@eigengrid/md-analysis": ["@eigengrid/md-analysis@workspace:packages/md-analysis"],
 

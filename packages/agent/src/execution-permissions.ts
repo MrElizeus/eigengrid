@@ -80,11 +80,14 @@ export const READ_ONLY_OPERATOR_TOOLS = Object.freeze([
   "validate-md-protocol",
   "operator-info",
   "read-file",
+  "search-experiences",
+  "inspect-experience",
 ]);
 
 export function operatorToolKind(name: string): OperationKind {
   if (READ_ONLY_OPERATOR_TOOLS.includes(name)) return "read";
-  if (name === "write-file" || name === "parse-job-output") return "write";
+  if (["write-file", "parse-job-output", "propose-lesson", "contest-lesson"].includes(name))
+    return "write";
   if (name === "submit-job") return "compute";
   if (name === "run-command") return "shell";
   if (name === "cancel-job") return "destructive";

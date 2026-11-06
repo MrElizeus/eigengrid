@@ -17,6 +17,7 @@
     "@eigengrid/core": "workspace:*",
     "@eigengrid/db": "workspace:*",
     "@eigengrid/events": "workspace:*",
+    "@eigengrid/experience-memory": "workspace:*",
     "@eigengrid/mission-runtime": "workspace:*",
     "@eigengrid/protocol": "workspace:*",
     "@eigengrid/python-bridge": "workspace:*",
