@@ -18,6 +18,7 @@ from ..protocol import (
     ParseResult,
     ParseResultData,
 )
+from .termination import latest_run, termination_status
 
 
 def parse_xtb(log_path: str) -> dict:
@@ -49,18 +50,32 @@ def parse_xtb(log_path: str) -> dict:
         ).model_dump()
 
     # -- Termination ------------------------------------------
-    normal_term = "normal termination of xtb" in text
+    text = latest_run(text, r"^[ \t]*\*[ \t]*started run on\b")
+    status = termination_status(
+        text,
+        r"^[ \t]*(?i:normal termination of xtb)\b",
+        r"^[ \t]*(?i:abnormal termination of xtb)\b",
+    )
+    normal_term = status == "completed"
 
     # -- Method -----------------------------------------------
-    method_m = re.search(r"Method:\s+(.+)", text)
+    method_m = re.search(r"Method:[ \t]+(.+)", text) or re.search(
+        r"Hamiltonian[ \t]+(GFN(?:[012]-xTB|-FF))\b", text
+    )
     method = method_m.group(1).strip() if method_m else None
 
     # -- Total energy (LAST occurrence -- freq runs print twice) -
-    energy_matches = re.findall(r"TOTAL ENERGY\s*=\s*([-\d.]+)\s*Eh", text)
-    energy = float(energy_matches[-1]) if energy_matches else None
+    number = r"([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?)"
+    energy_matches = re.findall(
+        rf"^[ \t]*\|?[ \t]*TOTAL ENERGY[ \t]*(?:=[ \t]*)?{number}[ \t]+Eh\b",
+        text,
+        re.MULTILINE,
+    )
+    energy = (
+        float(energy_matches[-1].replace("D", "E").replace("d", "e")) if energy_matches else None
+    )
 
     scf_conv = normal_term and energy is not None
-    status = "completed" if normal_term else "failed"
 
     # -- Geometry -- parse XYZ block after final marker ---------
     geometry = None
@@ -138,7 +153,7 @@ def parse_xtb(log_path: str) -> dict:
     wall_m = re.search(r"Wall time:\s+([-\d.]+)\s+seconds", text)
 
     result = ParseResult(
-        ok=normal_term,
+        ok=True,
         parser="xtb",
         status=status,
         data=ParseResultData(
@@ -156,6 +171,7 @@ def parse_xtb(log_path: str) -> dict:
             scf_iterations=None,
             cpu_time_seconds=float(cpu_m.group(1)) if cpu_m else None,
             wall_time_seconds=float(wall_m.group(1)) if wall_m else None,
+            errors=["Abnormal termination of xTB"] if status == "failed" else [],
         ),
     )
 
