@@ -139,8 +139,8 @@ export function saveLlmConfig(config: LlmConfig, apiKey?: string): void {
  * Load LLM config from .eigengrid/llm.json.
  * Returns full config including API key if saved.
  */
-export function loadLlmConfig(): Partial<LlmConfig> | null {
-  const configPath = getConfigPath();
+export function loadLlmConfig(cwd?: string): Partial<LlmConfig> | null {
+  const configPath = getConfigPath(cwd);
   let descriptor: number;
   try {
     // A named pipe must reach fstat validation without waiting for a writer.
