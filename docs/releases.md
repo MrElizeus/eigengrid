@@ -14,6 +14,12 @@ passing CI. It includes:
   tool approvals, budget accounting and uncertain-request recovery remain canonical.
 - Agent catalog pagination, provider compatibility, permission diagnostics and
   runtime fixes for the native agent.
+- A 31-entry versioned planning catalog, including molecular/periodic DFT and
+  magnetic-response protocols. These remain draft knowledge, without new engine
+  execution authority or installation qualification.
+- [Experiential memory](experiential-memory.md) for local CLI/TUI observations,
+  evidence-backed candidates, contradictions and exact-revision human review.
+  Memory promotion does not approve scientific protocols or tool execution.
 
 The web interface is deferred and developed separately from 1.0.0. No browser
 assets or web server alias are included in this release; `eigengrid serve` exposes

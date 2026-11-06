@@ -77,8 +77,8 @@ No model is needed for manual mission creation, review, approval, compilation or
 
 Local Operator turns also capture tool observations and unreviewed lessons in
 [experiential memory](experiential-memory.md). Its evidence checks and human review
-are separate from session recovery and scientific execution approval. The web
-runtime does not share the CLI's local memory.
+are separate from session recovery and scientific execution approval. Multi-user
+hosts must disable CLI-local memory; the web interface is deferred beyond 1.0.0.
 
 Observe a session before resuming it. Approval binds actor, project, mission, session, call,
 input digest, journal cursor, current policy and expiry. Expired or revoked approval cannot

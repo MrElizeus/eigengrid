@@ -23,8 +23,9 @@ are exact key/value facts: missing facts prevent automatic retrieval. The defaul
 Operator supplies platform and architecture; applications may bind additional facts
 through `AgentMemoryOptions.experienceContext`.
 
-This is a local OS-account trust boundary, not multi-tenant authentication. The web
-runtime disables local memory and its tools; web conversation histories remain
+This is a local OS-account trust boundary, not multi-tenant authentication. Version
+1.0.0 excludes the web interface. Multi-user hosts must disable local memory and
+its tools with `createAgentRuntime({ memory: false })`. Conversation stores remain
 separate. A future shared-memory service needs authenticated identities, explicit
 ACLs and a separate promotion policy. Never bind a tenant from model arguments.
 
@@ -183,7 +184,8 @@ consolidation or pruning yet. Close all Operator processes before backing up the
 experience directory or deleting it to reset local experience memory; include WAL
 sidecars if using an external live SQLite backup mechanism. This local store is not
 automatically included in a Mission Runtime database backup. Sessions, projects,
-skills and web conversations keep their existing retention mechanisms.
+and skills keep their existing retention mechanisms. The deferred web interface
+must retain its own authenticated conversation storage.
 
 Deferred work includes semantic indexing, scheduled consolidation, automatic causal
 evaluation, authenticated collective memory and governed protocol-publication
