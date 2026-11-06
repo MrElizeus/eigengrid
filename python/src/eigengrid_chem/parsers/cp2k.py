@@ -9,6 +9,7 @@ from __future__ import annotations
 import re
 from datetime import datetime
 
+from eigengrid_chem.parsers.termination import latest_run, termination_status
 from eigengrid_chem.protocol import (
     ParseError,
     ParseResult,
@@ -34,12 +35,13 @@ def parse_cp2k(log_path: str) -> dict:
         ).model_dump()
 
     # -- Termination -------------------------------------------
-    normal_termination = "PROGRAM ENDED AT" in text
-    error_termination = "PROGRAM STOPPED" in text and not normal_termination
+    text = latest_run(text, r"^[ \t]*PROGRAM STARTED AT\b")
+    status = termination_status(text, r"^[ \t]*PROGRAM ENDED AT\b", r"^[ \t]*PROGRAM STOPPED\b")
+    normal_termination = status == "completed"
 
     # -- SCF convergence ---------------------------------------
     scf_converged = "SCF run converged" in text
-    errors: list[str] = []
+    errors: list[str] = ["CP2K program stopped"] if status == "failed" else []
     warnings: list[str] = []
 
     if "SCF run NOT converged" in text:
@@ -92,14 +94,6 @@ def parse_cp2k(log_path: str) -> dict:
             pass
 
     cpu_time_seconds = wall_time_seconds
-
-    # -- Status ------------------------------------------------
-    if normal_termination:
-        status = "completed"
-    elif error_termination:
-        status = "failed"
-    else:
-        status = "completed" if energy_hartree is not None else "partial"
 
     data = ParseResultData(
         normal_termination=normal_termination,

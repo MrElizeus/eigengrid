@@ -9,6 +9,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from eigengrid_chem.parsers.termination import latest_run, termination_status
 from eigengrid_chem.protocol import (
     Atom,
     Frequency,
@@ -145,11 +146,17 @@ def parse_gaussian(log_path: str) -> dict:
             ),
         ).model_dump()
 
+    original_text = text
+    text = latest_run(
+        text,
+        r"^[ \t]*(?:Entering Gaussian System\b|Entering Link 1\s*=|--Link1--"
+        r"|Link1:\s+Proceeding to internal job step number\b)",
+    )
     lines = text.splitlines()
 
     # -- Termination & convergence -----------------------------
-    normal_termination = "Normal termination" in text
-    error_termination = "Error termination" in text
+    status = termination_status(text, r"^[ \t]*Normal termination\b", r"^[ \t]*Error termination\b")
+    normal_termination = status == "completed"
     scf_converged = "SCF Done" in text and "SCF convergence failure" not in text
 
     # -- Error / warning collection ----------------------------
@@ -180,7 +187,7 @@ def parse_gaussian(log_path: str) -> dict:
 
     # -- cclib extraction (primary path) -----------------------
     cc: dict[str, Any] = {}
-    if HAS_CCLIB:
+    if HAS_CCLIB and text == original_text:
         cc = _cclib_extract(log_path)
 
     # -- Geometry ----------------------------------------------
@@ -240,14 +247,8 @@ def parse_gaussian(log_path: str) -> dict:
         raw=raw,
     )
 
-    if normal_termination:
-        status = "completed"
-    elif error_termination:
+    if status == "partial" and not scf_converged and errors:
         status = "failed"
-    elif not scf_converged and errors:
-        status = "failed"
-    else:
-        status = "completed" if energy_hartree is not None else "partial"
 
     return ParseResult(
         ok=True,

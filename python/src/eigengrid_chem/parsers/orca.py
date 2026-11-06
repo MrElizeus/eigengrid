@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from eigengrid_chem.parsers.termination import latest_run, termination_status
 from eigengrid_chem.protocol import ParseResult, ParseResultData
 
 _SCF_SUCCESS_PATTERNS = (
@@ -38,13 +39,20 @@ def parse_orca(log_path: str) -> dict:
             },
         ).model_dump()
 
+    text = latest_run(text, r"^[ \t]*(?:\*+[ \t]*O[ \t]+R[ \t]+C[ \t]+A[ \t]*\*+|\$new_job\b)")
     lines = text.splitlines()
     warnings: list[str] = []
     errors: list[str] = []
 
     # -- Normal termination ----------------------------------
-    normal_termination = "****ORCA TERMINATED NORMALLY****" in text
-    error_termination = "ORCA TERMINATED WITH ERRORS" in text
+    status = termination_status(
+        text,
+        r"^[ \t]*\**[ \t]*ORCA TERMINATED NORMALLY\b",
+        r"^[ \t]*\**[ \t]*ORCA TERMINATED WITH ERRORS\b",
+    )
+    normal_termination = status == "completed"
+    if status == "failed":
+        errors.append("ORCA terminated with errors")
 
     # -- SCF convergence -------------------------------------
     scf_converged = any(
@@ -146,13 +154,6 @@ def parse_orca(log_path: str) -> dict:
         errors=errors,
         raw=raw,
     )
-
-    if normal_termination:
-        status = "completed"
-    elif error_termination:
-        status = "failed"
-    else:
-        status = "completed" if energy_hartree is not None else "partial"
 
     return ParseResult(
         ok=True,
