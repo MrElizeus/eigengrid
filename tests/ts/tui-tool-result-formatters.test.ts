@@ -6,7 +6,10 @@
  *   7. submitGaussianTool is not registered in runtime/TUI
  */
 import { describe, it, expect } from "bun:test";
-import { summarizeToolResult } from "../../apps/cli/src/tui/render/tool-result-formatters";
+import {
+  summarizeToolResult,
+  summarizeToolError,
+} from "../../apps/cli/src/tui/render/tool-result-formatters";
 
 describe("summarizeToolResult", () => {
   it("summarizes list-jobs with count and status breakdown", () => {
@@ -118,5 +121,43 @@ describe("summarizeToolResult", () => {
   it("handles null/undefined result gracefully", () => {
     expect(() => summarizeToolResult("list-jobs", null)).not.toThrow();
     expect(() => summarizeToolResult("list-jobs", undefined)).not.toThrow();
+  });
+});
+
+describe("canonical operational result shapes", () => {
+  it("reads nested job and node records", () => {
+    expect(
+      summarizeToolResult("get-job-status", {
+        ok: true,
+        data: { ok: true, job: { id: "job-1", status: "running" } },
+      }),
+    ).toBe("job-1 · running");
+    expect(
+      summarizeToolResult("inspect-node", {
+        ok: true,
+        data: { node: { name: "beast", status: "online" } },
+      }),
+    ).toBe("beast · online");
+  });
+  it("reports actual log content and missing logs, and counts failed diagnostics", () => {
+    expect(
+      summarizeToolResult("read-log", {
+        data: { ok: true, content: "first\nsecond\n", path: "/tmp/stderr.log", truncated: true },
+      }),
+    ).toBe("stderr 2 lines · truncated");
+    expect(
+      summarizeToolResult("read-log", { data: { ok: false, error: "No stdout log found" } }),
+    ).toBe("No stdout log found");
+    expect(summarizeToolResult("doctor", { data: { checks: [{ status: "fail" }] } })).toBe(
+      "1 check · 1 error",
+    );
+  });
+  it("retains structured tool errors and hints", () => {
+    expect(
+      summarizeToolError({
+        ok: false,
+        error: { code: "READ_ERROR", message: "File too large", hint: "Read the tail" },
+      }),
+    ).toBe("READ_ERROR · File too large · Read the tail");
   });
 });

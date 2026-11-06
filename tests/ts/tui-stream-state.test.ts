@@ -153,3 +153,30 @@ describe("tuiReducer stream lifecycle", () => {
     expect(state.processing).toBe(false);
   });
 });
+
+it("keeps streamed identity and text across steering and error boundaries", () => {
+  let state = applyActions([
+    { type: "USER_SUBMIT", text: "inspect" },
+    { type: "TEXT_DELTA", text: "  partial\n" },
+  ]);
+  const id = state.assistantDraftId;
+  state = tuiReducer(state, {
+    type: "STEERING_RECEIVED",
+    messages: ["only check logs", "in Spanish"],
+  });
+  expect(state.processing).toBe(true);
+  expect(state.messages[1]).toMatchObject({ id, kind: "assistant", text: "  partial\n" });
+  expect(state.messages.slice(2).map((m) => m.kind === "user" && m.text)).toEqual([
+    "only check logs",
+    "in Spanish",
+  ]);
+  state = tuiReducer(state, { type: "TEXT_DELTA", text: "next response" });
+  expect(state.assistantDraftId).not.toBe(id);
+  const next = state.assistantDraftId;
+  state = tuiReducer(state, { type: "STREAM_ERROR", error: "interrupted" });
+  expect(state.messages.at(-2)).toMatchObject({
+    id: next,
+    kind: "assistant",
+    text: "next response",
+  });
+});

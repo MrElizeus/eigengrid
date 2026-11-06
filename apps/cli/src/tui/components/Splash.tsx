@@ -4,8 +4,8 @@
  * Architecture:
  *   Splash (root)
  *     ├── <Static> MessageList   (committed history, scrolls into past)
- *     ├── StatusBar              (spinner / active tool / draft preview)
- *     └── PromptInput            (fixed at bottom, hidden while processing)
+ *     ├── StatusBar              (spinner / active tool / queued instructions)
+ *     └── PromptInput            (available during inference for steering)
  *
  * State is managed by a pure reducer (tuiReducer). Module-level globals
  * are limited to the agent infrastructure singleton (lazily initialized once).
@@ -54,6 +54,7 @@ import { selectProvider, selectableProviders, selectChatGptAccount } from "../pr
 import { OperatorWelcome } from "./OperatorWelcome";
 import { consoleTheme as palette } from "../../presentation/console-theme";
 import { terminalText, useTerminalSize } from "../terminal";
+import { summarizeToolError } from "../render/tool-result-formatters";
 import { redactCommand } from "../secret-input";
 import { join } from "path";
 
@@ -152,7 +153,10 @@ function handleTabCompletion(query: string): string | null {
 
 // ── Slash command runner ──────────────────────────────────────────────────────
 
+type TurnControl = Pick<import("@eigengrid/agent").AgentInput, "signal" | "takeSteering">;
+
 type StreamChunk =
+  | { type: "steering"; messages: readonly string[] }
   | { type: "variants"; modelId?: string }
   | { type: "models" }
   | { type: "connect"; provider: import("@eigengrid/agent").CatalogProvider }
@@ -168,11 +172,12 @@ async function* runSlashCommand(
   conversationHistory: import("@eigengrid/agent").AgentInput["history"] | undefined,
   onHistoryUpdate: (h: import("@eigengrid/agent").AgentInput["history"]) => void,
   permissions: OperatorPermissions,
+  control: TurnControl = {},
 ): AsyncGenerator<StreamChunk, void, unknown> {
   const parts = input.trim().slice(1).split(/\s+/);
   const cmd = parts[0].toLowerCase();
   const execute = () =>
-    executeSlashCommand(input, conversationHistory, onHistoryUpdate, permissions);
+    executeSlashCommand(input, conversationHistory, onHistoryUpdate, permissions, control);
   if (
     !input.trim().startsWith("/") ||
     [
@@ -211,13 +216,14 @@ async function* executeSlashCommand(
   conversationHistory: import("@eigengrid/agent").AgentInput["history"] | undefined,
   onHistoryUpdate: (h: import("@eigengrid/agent").AgentInput["history"]) => void,
   permissions: OperatorPermissions,
+  control: TurnControl = {},
 ): AsyncGenerator<StreamChunk, void, unknown> {
   const trimmed = input.trim();
   if (!trimmed) return;
 
   // ── AI mode ──────────────────────────────────────────
   if (!trimmed.startsWith("/")) {
-    yield* runAgentTurn(trimmed, conversationHistory, onHistoryUpdate, permissions);
+    yield* runAgentTurn(trimmed, conversationHistory, onHistoryUpdate, permissions, control);
     return;
   }
 
@@ -226,7 +232,7 @@ async function* executeSlashCommand(
   const args = parts.slice(1);
 
   if (cmd === "agent") {
-    yield* runAgentTurn(args.join(" "), conversationHistory, onHistoryUpdate, permissions);
+    yield* runAgentTurn(args.join(" "), conversationHistory, onHistoryUpdate, permissions, control);
     return;
   }
 
@@ -452,6 +458,7 @@ async function* runAgentTurn(
   conversationHistory: import("@eigengrid/agent").AgentInput["history"] | undefined,
   onHistoryUpdate: (h: import("@eigengrid/agent").AgentInput["history"]) => void,
   permissions: OperatorPermissions,
+  control: TurnControl = {},
 ): AsyncGenerator<StreamChunk, void, unknown> {
   try {
     const { getLlmConfig } = await import("@eigengrid/agent");
@@ -482,7 +489,8 @@ async function* runAgentTurn(
       reserveFinalResponse: true,
       permissionRules: runtime.permissionRules,
       approvalAuthority: runtime.approvalAuthority,
-      signal: AbortSignal.timeout(300_000),
+      signal: control.signal,
+      takeSteering: control.takeSteering,
     });
 
     // Track tool call IDs for matching
@@ -490,6 +498,9 @@ async function* runAgentTurn(
 
     for await (const event of stream) {
       switch (event.type) {
+        case "steering":
+          yield event;
+          break;
         case "text":
           yield { type: "text", text: event.text };
           break;
@@ -520,13 +531,8 @@ async function* runAgentTurn(
         }
 
         case "done": {
-          // Update conversation history for multi-turn
-          const updated = [
-            ...(conversationHistory ?? []),
-            { role: "user" as const, content: message },
-            { role: "assistant" as const, content: event.fullText },
-          ];
-          onHistoryUpdate(updated.slice(-20));
+          // Keep user steering and observed results in their original order.
+          onHistoryUpdate(event.messages);
           break;
         }
       }
@@ -598,6 +604,22 @@ export function Splash(): ReactNode {
     useState<import("@eigengrid/agent").CatalogProvider>();
   const submittingRef = useRef(false);
   const lastCmdRef = useRef("");
+  const turnRef = useRef<AbortController>();
+  const queuedRef = useRef<string[]>([]);
+  const [queued, setQueued] = useState<string[]>([]);
+  const [inputHint, setInputHint] = useState("");
+  const takeSteering = () => {
+    const messages = queuedRef.current;
+    queuedRef.current = [];
+    setQueued([]);
+    return messages;
+  };
+  useEffect(
+    () => () => {
+      turnRef.current?.abort();
+    },
+    [],
+  );
   const [waitingForKey, setWaitingForKey] = useState(false);
   const [apiKeyStatus, setApiKeyStatus] = useState<string>("");
 
@@ -684,7 +706,7 @@ export function Splash(): ReactNode {
   }, [tui.processing]);
 
   // ── Run a slash command ────────────────────────────────────────
-  const runCommand = async (cmd: string) => {
+  const runCommand = async (cmd: string, clearInput = true) => {
     if (/^\/permissions\s*$/i.test(cmd.trim())) {
       setPermissionsOpen(true);
       setVariantPicker(undefined);
@@ -727,7 +749,11 @@ export function Splash(): ReactNode {
     submittingRef.current = true;
     dispatch({ type: "USER_SUBMIT", text: redactCommand(cmd) });
     lastCmdRef.current = cmd;
-    setQuery("");
+    if (clearInput) setQuery("");
+    setInputHint("");
+    const isAgent = !cmd.trim().startsWith("/") || /^\/agent\s/i.test(cmd);
+    const controller = isAgent ? new AbortController() : undefined;
+    turnRef.current = controller;
     setActiveTool(undefined);
     setProviderPickerOpen(false);
 
@@ -739,10 +765,14 @@ export function Splash(): ReactNode {
           conversationHistoryRef.current = updated;
         },
         permissions,
+        { signal: controller?.signal, takeSteering },
       );
 
       for await (const chunk of gen) {
         switch (chunk.type) {
+          case "steering":
+            dispatch({ type: "STEERING_RECEIVED", messages: chunk.messages });
+            break;
           case "variants":
             setVariantPicker({ modelId: chunk.modelId });
             break;
@@ -795,7 +825,7 @@ export function Splash(): ReactNode {
               toolCallId: chunk.id,
               status: chunk.ok ? "ok" : "error",
               result: chunk.result,
-              error: chunk.ok ? undefined : String(chunk.result),
+              error: chunk.ok ? undefined : summarizeToolError(chunk.result),
             });
             break;
         }
@@ -820,12 +850,37 @@ export function Splash(): ReactNode {
       setActiveTool(undefined);
       submittingRef.current = false;
       lastCmdRef.current = "";
+      turnRef.current = undefined;
+    }
+    // Input can arrive after the last inference boundary, while accounting settles.
+    // Start it only after the previous turn has fully stopped.
+    if (queuedRef.current.length && !controller?.signal.aborted) {
+      const followup = takeSteering().join("\n\n");
+      await runCommand(followup, false);
     }
   };
 
   // ── Submit handler ────────────────────────────────────
   const handleSubmit = async (value: string) => {
-    if (submittingRef.current || tui.processing) return;
+    if (submittingRef.current || tui.processing) {
+      const text = value.trim();
+      if (!text || !turnRef.current || turnRef.current.signal.aborted) return;
+      if (text.startsWith("/")) {
+        setInputHint("Send a message to steer; run slash commands after this turn finishes.");
+        return;
+      }
+      if (queuedRef.current.length >= 32 || text.length > 100_000) {
+        setInputHint(
+          "Instruction queue is full or this message is too long. Keep it in the input and retry after the next step.",
+        );
+        return;
+      }
+      queuedRef.current = [...queuedRef.current, text];
+      setQueued(queuedRef.current);
+      setQuery("");
+      setInputHint("");
+      return;
+    }
 
     // Private input never enters the conversation history or command transcript.
     if (waitingForKey) {
@@ -901,6 +956,15 @@ export function Splash(): ReactNode {
       return;
     }
 
+    if (tui.processing && key.escape && turnRef.current) {
+      turnRef.current.abort();
+      const unsent = takeSteering();
+      if (unsent.length) setQuery([...unsent, query].filter(Boolean).join("\n\n"));
+      setInputHint(
+        "Stopping after the current operation; unsent instructions remain in the input.",
+      );
+      return;
+    }
     const suggestions = getSuggestions(query);
     if (suggestions.length > 0 && !tui.processing) {
       if (key.upArrow) {
@@ -939,7 +1003,13 @@ export function Splash(): ReactNode {
   return (
     <>
       {/* Committed message history (logo + info + user/assistant) */}
-      <MessageList messages={tui.messages} intro={<OperatorWelcome />} resetKey={transcriptKey} />
+      <MessageList
+        messages={tui.messages}
+        intro={<OperatorWelcome />}
+        resetKey={transcriptKey}
+        assistantDraft={tui.assistantDraft}
+        assistantDraftId={tui.assistantDraftId}
+      />
 
       {/* Status bar + prompt — stable container */}
       <Box flexDirection="column" paddingX={1} width={columns}>
@@ -948,10 +1018,10 @@ export function Splash(): ReactNode {
           processing={tui.processing}
           spinnerFrame={spinnerFrame}
           activeTool={activeTool}
-          assistantDraft={tui.assistantDraft}
+          queued={queued}
         />
 
-        {/* Prompt input — hidden while processing */}
+        {/* Keep composition available while the agent works. */}
         <PromptInput
           value={query}
           onChange={(v) => {
@@ -960,13 +1030,14 @@ export function Splash(): ReactNode {
           }}
           onSubmit={handleSubmit}
           disabled={
-            tui.processing ||
+            (tui.processing && !turnRef.current) ||
             providerPickerOpen ||
             modelPickerOpen ||
             !!variantPicker ||
             permissionsOpen ||
             !!approval
           }
+          processing={tui.processing}
           secret={waitingForKey}
         />
 
@@ -1106,8 +1177,7 @@ export function Splash(): ReactNode {
               </Box>
             ) : null;
           })()}
-        {!tui.processing &&
-          !providerPickerOpen &&
+        {!providerPickerOpen &&
           !modelPickerOpen &&
           !variantPicker &&
           !permissionsOpen &&
@@ -1115,7 +1185,10 @@ export function Splash(): ReactNode {
             <Text color={palette.dim} wrap="truncate-end">
               {waitingForKey
                 ? "Enter saves locally · Esc cancels private entry"
-                : "Enter send · Tab / ↑↓ suggestions · /help commands · Esc exit when empty"}
+                : inputHint ||
+                  (tui.processing
+                    ? "Enter steer at next step · Esc stop · Current tools finish before steering"
+                    : "Enter send · Tab / ↑↓ suggestions · /help commands · Esc exit when empty")}
             </Text>
           )}
       </Box>

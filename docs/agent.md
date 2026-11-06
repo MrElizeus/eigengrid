@@ -26,12 +26,42 @@ Each interface has a distinct system prompt that describes its actual tools. Sci
 language distinguishes an execution template from a reviewed protocol and an observed
 quantity from an interpretation. Tool output and retrieved knowledge are data, not authority.
 
+## Streaming conversation and steering
+
+The TUI prints assistant output into the transcript as it arrives. Completed rows move into
+terminal scrollback; the current row remains live above the composer. The composer stays
+available while the operator works and preserves an unsent draft when the response finishes.
+Press Enter during a turn to queue another user instruction. It is applied at the next
+inference/tool boundary: a running tool settles once, unstarted proposals are superseded,
+and the next inference uses the new instruction plus the observations already collected.
+Steering stays inside the current step/token/cost limits and never grants permission. Input
+arriving after the final boundary starts a follow-up turn after the current turn settles.
+Slash commands remain available between turns. Esc stops further agent work; it does not
+cancel a calculation already submitted. Queued, unapplied text is returned to the composer.
+
+Steering is currently exposed by process-owned chat only. Its `steering_received` event is
+recorded in that turn's in-memory journal for deterministic replay. Existing persistent
+mission sessions do not enable this inbox; their approval and recovery interface is unchanged.
+
+`doctor`, `list-nodes` and `inspect-node` share the live Slurm inventory when configured,
+otherwise the local node registry. `get-job-status` explicitly reports a database snapshot.
+It returns `eigengrid status <job-id>` as the canonical reconciliation command; running it
+may update lifecycle state and remains subject to action permissions. A stored `running`
+status alone does not establish process liveness.
+
 ## Model configuration
 
 The TUI `/models` selects an optional provider/model. `/models set` accepts `baseUrl`, `model`,
 `apiKey`, `temperature`, `maxTokens`, `costPerInputToken` and `costPerOutputToken`. Explicit
 free local inference uses both per-token costs set to zero. Provider, endpoint or model
 changes clear inherited explicit pricing. `/key --forget` removes only the saved key.
+
+Conversational model requests allow 300 seconds per inference by default, including reasoning
+and streamed output. Set `timeoutMilliseconds` in the private model configuration to a positive
+integer to override it. There is no additional five-minute cutoff for the entire TUI turn;
+step/token/cost bounds and individual tool timeouts still apply. Timeout and cancellation
+messages retain partial output and explicitly report unconfirmed usage; they never turn an
+incomplete response into a successful result or automatically retry an uncertain operation.
 
 Saved `.eigengrid/llm.json` must be a regular file owned by the current user with mode 0600,
 in a directory that other users cannot write. Symlinks, named pipes, oversized, unsafe or

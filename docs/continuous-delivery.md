@@ -11,7 +11,7 @@ To release a version in the `1.0.0-rc.x` series:
 
 1. Update the JavaScript and Python versions together and merge the change into
    `main` using a Conventional Commit.
-2. Push the corresponding tag, for example `v1.0.0-rc.2`.
+2. Push the corresponding tag, for example `v1.0.0-rc.3`.
 3. The software workflow checks publication scope, commit policy, static quality,
    native binaries, reproducibility, TypeScript tests and Python tests. Only after
    all checks pass does its publication job upload and publish the release.

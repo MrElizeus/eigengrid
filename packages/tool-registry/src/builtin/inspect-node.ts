@@ -21,7 +21,11 @@ export const inspectNodeTool: Tool<
   outputSchema: inspectNodeOutput,
   async execute(ctx, input) {
     try {
-      const node = await ctx.db.getNode(input.nodeId);
+      const node = ctx.listComputeNodes
+        ? (await ctx.listComputeNodes()).find(
+            (node) => node.id === input.nodeId || node.name === input.nodeId,
+          )
+        : await ctx.db.getNode(input.nodeId);
       if (!node) {
         return {
           ok: false,

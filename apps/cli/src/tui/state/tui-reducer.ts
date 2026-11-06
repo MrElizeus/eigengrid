@@ -8,6 +8,7 @@ export interface TuiState {
   messages: TuiMessage[];
   /** Current assistant text delta being streamed. Not committed yet. */
   assistantDraft: string;
+  assistantDraftId?: string;
   /** True while an agent turn is in flight */
   processing: boolean;
 }
@@ -23,6 +24,7 @@ export const initialTuiState: TuiState = {
 export type TuiAction =
   | { type: "USER_SUBMIT"; text: string }
   | { type: "TEXT_DELTA"; text: string }
+  | { type: "STEERING_RECEIVED"; messages: readonly string[] }
   | { type: "TOOL_CALL_START"; toolCallId: string; toolName: string; args?: unknown }
   | {
       type: "TOOL_CALL_UPDATE";
@@ -58,6 +60,7 @@ export function tuiReducer(state: TuiState, action: TuiAction): TuiState {
         ...state,
         messages: [...state.messages, msg],
         assistantDraft: "",
+        assistantDraftId: undefined,
         processing: true,
       };
     }
@@ -67,18 +70,39 @@ export function tuiReducer(state: TuiState, action: TuiAction): TuiState {
       return {
         ...state,
         assistantDraft: state.assistantDraft + action.text,
+        assistantDraftId: state.assistantDraftId ?? nextMessageId("assistant"),
       };
+    }
+
+    case "STEERING_RECEIVED": {
+      const messages = [...state.messages];
+      if (state.assistantDraft)
+        messages.push({
+          id: state.assistantDraftId ?? nextMessageId("assistant"),
+          kind: "assistant",
+          text: state.assistantDraft,
+          createdAt: Date.now(),
+        });
+      messages.push(
+        ...action.messages.map((text) => ({
+          id: nextMessageId("user"),
+          kind: "user" as const,
+          text,
+          createdAt: Date.now(),
+        })),
+      );
+      return { ...state, messages, assistantDraft: "", assistantDraftId: undefined };
     }
 
     // ── Tool call started ───────────────────────────────
     case "TOOL_CALL_START": {
       // Flush any pending draft as an assistant message before tool call
       const newMessages = [...state.messages];
-      if (state.assistantDraft.trim()) {
+      if (state.assistantDraft) {
         newMessages.push({
-          id: nextMessageId("assistant"),
+          id: state.assistantDraftId ?? nextMessageId("assistant"),
           kind: "assistant",
-          text: state.assistantDraft.trim(),
+          text: state.assistantDraft,
           createdAt: Date.now(),
         });
       }
@@ -95,6 +119,7 @@ export function tuiReducer(state: TuiState, action: TuiAction): TuiState {
         ...state,
         messages: newMessages,
         assistantDraft: "",
+        assistantDraftId: undefined,
       };
     }
 
@@ -120,11 +145,11 @@ export function tuiReducer(state: TuiState, action: TuiAction): TuiState {
     case "STREAM_FINISH": {
       const newMessages = settleUnfinishedTools(state.messages);
       // Commit draft only once, only if non-empty
-      if (state.assistantDraft.trim()) {
+      if (state.assistantDraft) {
         newMessages.push({
-          id: nextMessageId("assistant"),
+          id: state.assistantDraftId ?? nextMessageId("assistant"),
           kind: "assistant",
-          text: state.assistantDraft.trim(),
+          text: state.assistantDraft,
           createdAt: Date.now(),
         });
       }
@@ -132,6 +157,7 @@ export function tuiReducer(state: TuiState, action: TuiAction): TuiState {
         ...state,
         messages: newMessages,
         assistantDraft: "",
+        assistantDraftId: undefined,
         processing: false,
       };
     }
@@ -139,11 +165,11 @@ export function tuiReducer(state: TuiState, action: TuiAction): TuiState {
     // ── Stream errored ──────────────────────────────────
     case "STREAM_ERROR": {
       const newMessages = settleUnfinishedTools(state.messages);
-      if (state.assistantDraft.trim()) {
+      if (state.assistantDraft) {
         newMessages.push({
-          id: nextMessageId("assistant"),
+          id: state.assistantDraftId ?? nextMessageId("assistant"),
           kind: "assistant",
-          text: state.assistantDraft.trim(),
+          text: state.assistantDraft,
           createdAt: Date.now(),
         });
       }
@@ -158,6 +184,7 @@ export function tuiReducer(state: TuiState, action: TuiAction): TuiState {
         ...state,
         messages: newMessages,
         assistantDraft: "",
+        assistantDraftId: undefined,
         processing: false,
       };
     }
@@ -174,7 +201,22 @@ export function tuiReducer(state: TuiState, action: TuiAction): TuiState {
       };
       return {
         ...state,
-        messages: [...state.messages, msg],
+        messages: [
+          ...state.messages,
+          ...(state.assistantDraft
+            ? [
+                {
+                  id: state.assistantDraftId ?? nextMessageId("assistant"),
+                  kind: "assistant" as const,
+                  text: state.assistantDraft,
+                  createdAt: Date.now(),
+                },
+              ]
+            : []),
+          msg,
+        ],
+        assistantDraft: "",
+        assistantDraftId: undefined,
       };
     }
 
@@ -184,6 +226,7 @@ export function tuiReducer(state: TuiState, action: TuiAction): TuiState {
         ...state,
         messages: [],
         assistantDraft: "",
+        assistantDraftId: undefined,
         processing: false,
       };
     }

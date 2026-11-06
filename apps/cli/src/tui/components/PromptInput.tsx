@@ -9,6 +9,7 @@ interface PromptInputProps {
   onSubmit: (v: string) => void;
   disabled?: boolean;
   secret?: boolean;
+  processing?: boolean;
 }
 
 export function PromptInput({
@@ -17,6 +18,7 @@ export function PromptInput({
   onSubmit,
   disabled,
   secret,
+  processing,
 }: PromptInputProps): ReactNode {
   if (disabled) return null;
   return (
@@ -28,9 +30,13 @@ export function PromptInput({
       flexDirection="column"
     >
       <Text color={secret ? t.warn : t.dim}>
-        {secret ? "PRIVATE INPUT · API key · Esc cancels" : "COMMAND / CONVERSATION"}
+        {secret
+          ? "PRIVATE INPUT · API key · Esc cancels"
+          : processing
+            ? "CONVERSATION · STEER"
+            : "COMMAND / CONVERSATION"}
       </Text>
-      <Box>
+      <Box flexShrink={0}>
         <Text color={t.accent}>{secret ? "key › " : "› "}</Text>
         <TextInput
           value={value}
@@ -42,7 +48,11 @@ export function PromptInput({
               : undefined
           }
           placeholder={
-            secret ? "Paste your key; input is hidden" : "Ask the operator, or type / for commands"
+            secret
+              ? "Paste your key; input is hidden"
+              : processing
+                ? "Add instructions for the next step"
+                : "Ask the operator, or type / for commands"
           }
         />
       </Box>

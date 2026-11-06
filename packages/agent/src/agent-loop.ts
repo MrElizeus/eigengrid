@@ -52,6 +52,8 @@ export interface AgentInput {
     decide?(call: AgentToolCall, sessionId: string): Promise<"allow" | "ask" | "deny">;
   };
   /** Presentation only; neither callback contributes to effect authorization. */
+  takeSteering?: () => readonly string[];
+  onSteering?: (messages: readonly string[]) => Promise<void>;
   onTextDelta?: (text: string) => Promise<void>;
   onToolEvent?: (event: Extract<AgentEvent, { type: "tool-call" | "tool-result" }>) => void;
 }
@@ -92,12 +94,14 @@ export interface AgentStep {
 
 export type AgentEvent =
   | { type: "text"; text: string }
+  | { type: "steering"; messages: readonly string[] }
   | { type: "tool-call"; name: string; args: unknown }
   | { type: "tool-result"; name: string; result: unknown; ok: boolean }
   | { type: "error"; message: string }
   | {
       type: "done";
       fullText: string;
+      messages: ModelMessage[];
       toolCalls: { tool: string; input: unknown; result: unknown }[];
     };
 
@@ -227,10 +231,18 @@ export async function runAgent(input: AgentInput): Promise<AgentOutput> {
       }
     };
     const journal = new InMemoryAgentJournal();
+    const inference = new AiSdkInferencePort(
+      model,
+      buildSystemPrompt(),
+      prior,
+      input.onTextDelta,
+      input.onSteering,
+    );
     const engine = new NativeAgentEngine({
       journal,
       reserveFinalResponse: input.reserveFinalResponse,
-      inference: new AiSdkInferencePort(model, buildSystemPrompt(), prior, input.onTextDelta),
+      takeSteering: input.takeSteering,
+      inference,
       authority: {
         describe: () => {
           const snapshot = tools.materialize(input.permissionRules);
@@ -328,7 +340,9 @@ export async function runAgent(input: AgentInput): Promise<AgentOutput> {
         history,
         prompt,
         journal.load(initial.sessionId).map((r) => r.event),
-        response,
+        !ok && inference.partialText
+          ? `Incomplete response (interrupted):\n${inference.partialText}\n${response}`
+          : response,
       ),
     };
   } catch (error) {
@@ -372,6 +386,9 @@ export async function* runAgentStream(
       for (let offset = 0; offset < text.length; offset += 4096)
         await push({ type: "text", text: text.slice(offset, offset + 4096) });
     },
+    onSteering: async (messages) => {
+      await push({ type: "steering", messages });
+    },
     onToolEvent: offer,
   })
     .then(async (output) => {
@@ -381,6 +398,7 @@ export async function* runAgentStream(
       await push({
         type: "done",
         fullText: output.ok ? output.response : "",
+        messages: output.messages,
         toolCalls: output.toolCalls ?? [],
       });
     })

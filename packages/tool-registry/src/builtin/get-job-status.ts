@@ -11,6 +11,13 @@ const getJobStatusOutput = z.object({
   attempts: z.array(z.record(z.unknown())).optional(),
   artifacts: z.array(z.record(z.unknown())).optional(),
   message: z.string().optional(),
+  statusSource: z.literal("database"),
+  liveVerified: z.literal(false),
+  reconciliation: z.object({
+    command: z.string(),
+    args: z.array(z.string()),
+    mutatesState: z.literal(true),
+  }),
 });
 
 export const getJobStatusTool: Tool<
@@ -18,7 +25,8 @@ export const getJobStatusTool: Tool<
   z.infer<typeof getJobStatusOutput>
 > = {
   name: "get-job-status",
-  description: "Get detailed status of a specific job, including attempts and artifacts",
+  description:
+    "Read persisted job status, attempts and artifacts. This is a database snapshot, not a live process check. Returns the canonical command for authorized reconciliation.",
   inputSchema: getJobStatusInput,
   outputSchema: getJobStatusOutput,
   async execute(ctx, input) {
@@ -42,10 +50,17 @@ export const getJobStatusTool: Tool<
         ok: true,
         data: {
           ok: true,
+          statusSource: "database",
+          liveVerified: false,
+          reconciliation: {
+            command: "eigengrid",
+            args: ["status", input.jobId],
+            mutatesState: true,
+          },
           job: job as any,
           attempts: attempts as any[],
           artifacts: artifacts as any[],
-          message: `Job ${input.jobId}: ${(job as any).status ?? "unknown"} (${(job as any).software ?? "?"})`,
+          message: `Stored status: ${job.status} (${job.software}). This may be stale. Reconciliation checks canonical runner evidence and can update persisted lifecycle state; use the returned command only under the active action permissions.`,
         },
       };
     } catch (err) {

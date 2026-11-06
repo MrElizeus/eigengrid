@@ -144,6 +144,23 @@ export function replayAgentSession(
         next.phase = "ready";
         break;
       }
+      case "steering_received":
+        if (
+          state.phase !== "ready" ||
+          !state.prompt ||
+          !Array.isArray(event.messages) ||
+          event.messages.length === 0 ||
+          event.messages.length > 32 ||
+          event.messages.some(
+            (text) => typeof text !== "string" || !text.trim() || text.length > 100_000,
+          )
+        )
+          throw Error("Invalid steering boundary");
+        // Supersede only proposals that have not started. Observed effects and
+        // usage remain canonical, and the next inference uses the same budget.
+        next.reply = undefined;
+        next.call = undefined;
+        break;
       case "approval_pending":
         if (state.phase !== "ready" || !isPendingProposal(state, event.call))
           throw Error("Unexpected approval barrier");
@@ -207,6 +224,8 @@ export interface NativeAgentOptions {
   readonly beforeEffect?: (call: AgentToolCall, sessionId: string) => Promise<void>;
   /** Reserve the last configured inference round for an answer, within all existing budgets. */
   readonly reserveFinalResponse?: boolean;
+  /** Host-owned inbox, consumed only between inference/tool operations. */
+  readonly takeSteering?: () => readonly string[];
 }
 /** Strictly sequential, recorded, bounded agent lifecycle. No shell, SDK or scheduler. */
 export class NativeAgentEngine {
@@ -296,6 +315,16 @@ export class NativeAgentEngine {
           reason: "aborted",
           detail: "Agent operation aborted",
         });
+      if (
+        s.phase === "ready" &&
+        s.steps < s.limits.maximumSteps &&
+        s.inputTokens < s.limits.maximumInputTokens &&
+        s.outputTokens < s.limits.maximumOutputTokens &&
+        s.cost < s.limits.maximumCost
+      ) {
+        const messages = this.options.takeSteering?.() ?? [];
+        if (messages.length) s = this.append(s, { type: "steering_received", messages });
+      }
       if (s.phase === "awaiting_approval") {
         const call = s.call;
         if (!call) throw Error("Missing approved call");
@@ -358,6 +387,13 @@ export class NativeAgentEngine {
             reason: "aborted",
             detail: "Agent operation aborted before tool effect",
           });
+        // Approval checks can yield while the operator changes the request.
+        const messages =
+          s.steps < s.limits.maximumSteps ? (this.options.takeSteering?.() ?? []) : [];
+        if (messages.length) {
+          s = this.append(s, { type: "steering_received", messages });
+          continue;
+        }
         s = this.append(s, { type: "effect_intent", call: pending });
         try {
           // External policy checks and an idempotent service are mandatory for effects.
@@ -441,7 +477,17 @@ export class NativeAgentEngine {
             detail: "Model usage exceeds session budget",
           });
         // Prevent provider from endlessly calling the same ID across steps.
-        const ids = new Set(s.observations.map((o) => o.id));
+        const ids = new Set(
+          this.options.journal
+            .load(sessionId)
+            .filter((record) => record.event.type === "inference_observed")
+            .slice(0, -1)
+            .flatMap((record) =>
+              record.event.type === "inference_observed"
+                ? record.event.reply.calls.map((call) => call.id)
+                : [],
+            ),
+        );
         if (reply.calls.some((c) => ids.has(c.id)))
           return this.append(s, {
             type: "terminated",

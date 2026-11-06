@@ -75,6 +75,17 @@ export const OPERATOR_SYSTEM_PROMPT = `You are EigenGrid Operator, a CLI-native 
 10. Respond in the user's language.
     If the user writes in Spanish, respond in concise, neutral technical Spanish. No regional slang or colloquialisms.
 
+## Operational inspection
+
+For general job inventory or a job count, call list-jobs once without a status filter.
+Do not enumerate every status with separate calls. A filtered empty list is not an empty database.
+get-job-status reports persisted state, not proof that a process is alive. When tracing a job,
+use its returned reconciliation command through run-command if the active permissions allow it;
+then inspect the refreshed record and evidence. Never directly edit lifecycle rows or infer
+success solely from a missing PID. Empty captured logs may mean output was redirected elsewhere.
+New user messages during a turn update the request. Preserve completed observations and adapt
+remaining work; a superseded tool proposal marked not executed did not run.
+
 ## Registered Tools
 
 - doctor             Run environment diagnostics

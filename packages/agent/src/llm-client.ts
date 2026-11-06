@@ -61,7 +61,7 @@ const DEFAULT_CONFIG: LlmConfig = {
   systemPrompt: OPERATOR_SYSTEM_PROMPT,
   temperature: 0.7,
   maxTokens: 2048,
-  timeoutMilliseconds: 30_000,
+  timeoutMilliseconds: 300_000,
   maximumRawResponseBytes: 1_000_000,
   maximumInputTokens: 1_000_000,
   maximumOutputTokens: 10_240,

@@ -11,53 +11,25 @@ import type { AgentModelResolution } from "./agent-loop";
 
 /** The AI SDK is a single-inference adapter. It NEVER receives executable tools. */
 export class AiSdkInferencePort implements AgentInferencePort {
+  private presentedEvents = 0;
+  /** Presentation context only; incomplete text is never a verified inference reply. */
+  partialText = "";
   constructor(
     readonly resolution: AgentModelResolution,
     readonly system: string,
     readonly prior: readonly ModelMessage[] = [],
     readonly onTextDelta?: (text: string) => Promise<void>,
+    readonly onSteering?: (messages: readonly string[]) => Promise<void>,
   ) {}
 
   async infer(request: AgentInferenceRequest): Promise<AgentInferenceReply> {
-    const modelMessages: ModelMessage[] = [
-      ...this.prior,
-      { role: "user", content: request.prompt },
-    ];
-    for (const event of request.transcript) {
-      if (event.type === "inference_observed") {
-        const reply = event.reply;
-        if (reply.calls.length > 0) {
-          modelMessages.push({
-            role: "assistant",
-            content: [
-              ...(reply.text ? [{ type: "text" as const, text: reply.text }] : []),
-              ...reply.calls.map((c) => ({
-                type: "tool-call" as const,
-                toolCallId: c.id,
-                toolName: c.name,
-                input: c.input,
-              })),
-            ],
-          });
-        } else if (reply.text) modelMessages.push({ role: "assistant", content: reply.text });
-      } else if (event.type === "effect_observed" || event.type === "effect_reconciled") {
-        const o = event.observation;
-        modelMessages.push({
-          role: "tool",
-          content: [
-            {
-              type: "tool-result",
-              toolCallId: o.id,
-              toolName: o.tool,
-              output: {
-                type: "json",
-                value: JSON.parse(canonicalAgentJson({ ok: o.ok, result: o.result })),
-              },
-            },
-          ],
-        });
-      }
+    this.partialText = "";
+    const modelMessages = conversationMessages(this.prior, request.prompt, request.transcript);
+    // Publish accepted user input in transcript order before the next response.
+    for (const event of request.transcript.slice(this.presentedEvents)) {
+      if (event.type === "steering_received") await this.onSteering?.(event.messages);
     }
+    this.presentedEvents = request.transcript.length;
     const descriptions: Record<string, ReturnType<typeof aiTool>> = {};
     for (const descriptor of request.tools) {
       descriptions[descriptor.name] = aiTool({
@@ -89,7 +61,7 @@ export class AiSdkInferencePort implements AgentInferencePort {
       maximumSteps: 1,
       temperature: this.resolution.temperature,
       maxOutputTokens: maximumOutputTokens,
-      timeoutMilliseconds: this.resolution.timeoutMilliseconds ?? 30_000,
+      timeoutMilliseconds: this.resolution.timeoutMilliseconds ?? 300_000,
       maximumRawResponseBytes: this.resolution.maximumRawResponseBytes,
       signal: request.signal,
       budget: {
@@ -122,6 +94,7 @@ export class AiSdkInferencePort implements AgentInferencePort {
             textBytes += Buffer.byteLength(part.text);
             if (textBytes > 1_000_000)
               throw new Error("Native inference text exceeds presentation limit");
+            this.partialText += part.text;
             await this.onTextDelta(part.text);
           }
         }
@@ -135,6 +108,7 @@ export class AiSdkInferencePort implements AgentInferencePort {
         streamingAbort.abort();
       }
     })();
+    this.partialText = "";
     const calls = execution.result.toolCalls.map((c) => ({
       id: c.toolCallId,
       name: c.toolName,
@@ -154,15 +128,114 @@ export class AiSdkInferencePort implements AgentInferencePort {
     };
   }
 }
+/** Reconstruct model context, including superseded proposals with explicit non-execution results. */
+export function conversationMessages(
+  original: readonly ModelMessage[],
+  prompt: string,
+  transcript: readonly AgentEvent[],
+): ModelMessage[] {
+  const messages: ModelMessage[] = [...original, { role: "user", content: prompt }];
+  const started = new Set<string>();
+  const pending = new Map<string, { id: string; name: string }>();
+  for (const event of transcript) {
+    if (event.type === "inference_observed") {
+      const { reply } = event;
+      if (reply.calls.length) {
+        messages.push({
+          role: "assistant",
+          content: [
+            ...(reply.text ? [{ type: "text" as const, text: reply.text }] : []),
+            ...reply.calls.map((call) => {
+              pending.set(call.id, call);
+              return {
+                type: "tool-call" as const,
+                toolCallId: call.id,
+                toolName: call.name,
+                input: call.input,
+              };
+            }),
+          ],
+        });
+      } else if (reply.text) messages.push({ role: "assistant", content: reply.text });
+    } else if (event.type === "effect_observed" || event.type === "effect_reconciled") {
+      const o = event.observation;
+      pending.delete(o.id);
+      messages.push({
+        role: "tool",
+        content: [
+          {
+            type: "tool-result",
+            toolCallId: o.id,
+            toolName: o.tool,
+            output: {
+              type: "json",
+              value: JSON.parse(canonicalAgentJson({ ok: o.ok, result: o.result })),
+            },
+          },
+        ],
+      });
+    } else if (event.type === "effect_intent") {
+      started.add(event.call.id);
+    } else if (event.type === "terminated") {
+      for (const call of pending.values()) {
+        messages.push({
+          role: "tool",
+          content: [
+            {
+              type: "tool-result",
+              toolCallId: call.id,
+              toolName: call.name,
+              output: {
+                type: "error-text",
+                value: started.has(call.id)
+                  ? "Outcome unconfirmed. Inspect canonical evidence before retrying this operation."
+                  : "Not executed: the agent stopped before dispatch.",
+              },
+            },
+          ],
+        });
+      }
+      pending.clear();
+    } else if (event.type === "steering_received") {
+      // This is model context, never an execution receipt or a successful result.
+      for (const call of pending.values()) {
+        messages.push({
+          role: "tool",
+          content: [
+            {
+              type: "tool-result",
+              toolCallId: call.id,
+              toolName: call.name,
+              output: {
+                type: "error-text",
+                value: "Not executed: superseded by new user instructions.",
+              },
+            },
+          ],
+        });
+      }
+      pending.clear();
+      messages.push(...event.messages.map((content) => ({ role: "user" as const, content })));
+    }
+  }
+  return messages;
+}
+
 export function completedConversationHistory(
   original: readonly ModelMessage[],
   prompt: string,
   transcript: readonly AgentEvent[],
   finalText: string,
 ): ModelMessage[] {
-  // Historical TUI API returns messages for the next conversational turn. We keep
-  // the model-visible user prompt and final text, not privileged internal events.
-  void transcript;
+  if (
+    transcript.some((event) => event.type === "steering_received" || event.type === "terminated")
+  ) {
+    const messages = conversationMessages(original, prompt, transcript);
+    const last = messages.at(-1);
+    if (last?.role !== "assistant" || last.content !== finalText)
+      messages.push({ role: "assistant", content: finalText });
+    return messages;
+  }
   return [
     ...original,
     { role: "user", content: prompt },

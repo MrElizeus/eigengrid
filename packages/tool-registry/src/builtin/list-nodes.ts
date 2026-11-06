@@ -18,7 +18,7 @@ export const listNodesTool: Tool<
   outputSchema: listNodesOutput,
   async execute(ctx, _input) {
     try {
-      const nodes = await ctx.db.listNodes();
+      const nodes = await (ctx.listComputeNodes ? ctx.listComputeNodes() : ctx.db.listNodes());
 
       return {
         ok: true,

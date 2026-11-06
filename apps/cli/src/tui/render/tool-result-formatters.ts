@@ -66,7 +66,7 @@ function summarizeListNodes(result: unknown): string {
 function summarizeGetJobStatus(result: unknown): string {
   return safe(() => {
     const data = asRecord(result).data ?? result;
-    const rec = asRecord(data);
+    const rec = asRecord(asRecord(data).job ?? data);
     const id = asStr(rec.id) || asStr(rec.jobId) || "unknown";
     const status = asStr(rec.status) || "unknown";
     return `${id} · ${status}`;
@@ -84,7 +84,7 @@ function summarizeDoctor(result: unknown): string {
     }).length;
     const errors = items.filter((c) => {
       const r = asRecord(c);
-      return asStr(r.status) === "error" || asStr(r.level) === "error";
+      return ["error", "fail"].includes(asStr(r.status)) || asStr(r.level) === "error";
     }).length;
 
     if (errors > 0)
@@ -99,6 +99,12 @@ function summarizeReadLog(result: unknown): string {
   return safe(() => {
     const data = asRecord(result).data ?? result;
     const rec = asRecord(data);
+    if (rec.ok === false) return asStr(rec.error) || "Log unavailable";
+    if (typeof rec.content === "string") {
+      const lines = rec.content.split("\n").filter(Boolean).length;
+      const label = asStr(rec.path).endsWith("stderr.log") ? "stderr" : "stdout";
+      return `${label} ${lines} line${lines === 1 ? "" : "s"}${rec.truncated ? " · truncated" : ""}`;
+    }
     const stdout = asStr(rec.stdout);
     const stderr = asStr(rec.stderr);
     const stdoutLines = stdout ? stdout.split("\n").filter(Boolean).length : 0;
@@ -140,7 +146,7 @@ function summarizeCancelJob(result: unknown): string {
 function summarizeInspectNode(result: unknown): string {
   return safe(() => {
     const data = asRecord(result).data ?? result;
-    const rec = asRecord(data);
+    const rec = asRecord(asRecord(data).node ?? data);
     const name = asStr(rec.name) || asStr(rec.id) || "unknown";
     const status = asStr(rec.status) || "";
     return status ? `${name} · ${status}` : name;
@@ -229,4 +235,18 @@ export function summarizeToolResult(toolName: string, result: unknown): string {
     default:
       return "completed";
   }
+}
+
+/** Preserve structured tool diagnostics instead of displaying [object Object]. */
+export function summarizeToolError(result: unknown): string {
+  if (result instanceof Error) return result.message;
+  if (typeof result === "string") return result;
+  const rec = asRecord(result);
+  const error = rec.error ?? result;
+  if (typeof error === "string") return error;
+  const detail = asRecord(error);
+  return (
+    [asStr(detail.code), asStr(detail.message), asStr(detail.hint)].filter(Boolean).join(" · ") ||
+    "Tool failed without a diagnostic"
+  );
 }
