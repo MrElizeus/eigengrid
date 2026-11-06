@@ -2,16 +2,7 @@
 export function browserBundle(): string {
   // A subprocess avoids re-entering Bun's bundler from its own macro worker.
   const result = Bun.spawnSync(
-    [
-      process.execPath,
-      "build",
-      new URL("./src/main.tsx", import.meta.url).pathname,
-      "--target=browser",
-      "--minify",
-      "--env=disable",
-      "--define",
-      'process.env.NODE_ENV="production"',
-    ],
+    [process.execPath, new URL("./build-browser.ts", import.meta.url).pathname],
     { cwd: new URL("../..", import.meta.url).pathname },
   );
   if (!result.success)
