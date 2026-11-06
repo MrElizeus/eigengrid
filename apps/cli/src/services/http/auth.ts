@@ -38,14 +38,7 @@ export class PostgresHttpAuth {
     readonly now = () => Date.now(),
   ) {}
 
-  async login(credential: string, remoteAddress: string) {
-    const window = Math.floor(this.now() / 600_000);
-    const rate = await this.sql.query(
-      `INSERT INTO eigengrid_a5_http_login_limits(bucket,window_id,attempts) VALUES($1,$2,1)
-       ON CONFLICT(bucket,window_id) DO UPDATE SET attempts=eigengrid_a5_http_login_limits.attempts+1 RETURNING attempts`,
-      [httpSecretDigest(remoteAddress), window],
-    );
-    if (Number(rate.rows[0]?.attempts) > 10) throw new MissionHttpError("QUOTA_EXCEEDED");
+  async login(credential: string, _remoteAddress: string) {
     let context: MissionLocalContext;
     try {
       context = await this.authority.authenticateHttp(credential);
@@ -54,6 +47,17 @@ export class PostgresHttpAuth {
     }
     if (!context.http) throw new MissionHttpError("UNAUTHENTICATED");
     await this.active(context);
+    // Loopback identifies the shared reverse proxy, not the client. Only a
+    // provisioned credential can reserve a bucket; arbitrary rejected secrets
+    // cannot exhaust another user's quota or create unbounded database rows.
+    // The TLS proxy must separately throttle unauthenticated clients.
+    const window = Math.floor(this.now() / 600_000);
+    const rate = await this.sql.query(
+      `INSERT INTO eigengrid_a5_http_login_limits(bucket,window_id,attempts) VALUES($1,$2,1)
+       ON CONFLICT(bucket,window_id) DO UPDATE SET attempts=eigengrid_a5_http_login_limits.attempts+1 RETURNING attempts`,
+      [httpSecretDigest(`eigengrid.http.login/v1\0${credential}`), window],
+    );
+    if (Number(rate.rows[0]?.attempts) > 10) throw new MissionHttpError("QUOTA_EXCEEDED");
     const token = randomBytes(32).toString("base64url");
     const csrf = sessionCsrfToken(token);
     const expiresAt = new Date(this.now() + context.http.sessionSeconds * 1000).toISOString();

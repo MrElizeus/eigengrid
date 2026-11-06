@@ -46,6 +46,13 @@ only the digest in protected configuration. `eigengrid serve --help` describes e
 schema setup. Session revocation, CSRF, project access and idempotency are enforced in
 the application; a reverse proxy is not an authorization substitute.
 
+Configure the proxy to rate-limit unauthenticated login requests by the actual
+client address before forwarding them to loopback. The application limits session
+issuance to ten logins per provisioned credential per ten-minute window. Invalid
+credentials never reserve database quota, and users sharing a proxy do not share
+a login bucket. Forwarded headers are not trusted as client identity by the API;
+the proxy must overwrite them and derive its own rate-limit key from a trusted peer.
+
 Version 1.0.0 serves the `/api/v1` backend API only. The web interface is deferred;
 there are no embedded browser assets or `eigengrid web` command in this release.
 
