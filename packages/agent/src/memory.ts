@@ -379,8 +379,10 @@ export class AgentMemory {
     const skill = canonical
       ? canonicalMemorySkill(canonical)
       : this.allowLegacySkills
-        ? this.legacySkills().find((entry) =>
-            prompt.toLowerCase().includes(entry.trigger.toLowerCase()),
+        ? this.legacySkills().find(
+            (entry) =>
+              prompt.toLowerCase().includes(entry.trigger.toLowerCase()) ||
+              prompt.toLowerCase().includes(entry.name.toLowerCase()),
           )
         : undefined;
     if (skill) {
