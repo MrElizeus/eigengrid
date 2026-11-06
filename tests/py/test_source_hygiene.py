@@ -1,7 +1,8 @@
 """The source guard covers uncommitted additions and safe source renames."""
+
 import importlib.util
-from pathlib import Path
 import subprocess
+from pathlib import Path
 
 SOURCE = Path(__file__).resolve().parents[2]
 spec = importlib.util.spec_from_file_location("release_scan", SOURCE / "scripts/release/scan.py")
@@ -44,8 +45,13 @@ def test_public_distribution_requires_explicit_valid_policy(tmp_path):
 
     assert scanner.publication_errors(tmp_path)
     policy = tmp_path / "publication.json"
-    for value in (None, [], {}, {"visibility": "public"},
-                  {"schemaVersion": "eigengrid.publication-policy/v1", "visibility": "private"}):
+    for value in (
+        None,
+        [],
+        {},
+        {"visibility": "public"},
+        {"schemaVersion": "eigengrid.publication-policy/v1", "visibility": "private"},
+    ):
         policy.write_text(json.dumps(value))
         assert scanner.publication_errors(tmp_path)
     policy.write_text('{"schemaVersion":"eigengrid.publication-policy/v1","visibility":"public"}')
@@ -59,8 +65,14 @@ def test_public_scan_exits_unsuccessfully_for_private_source(tmp_path):
         '{"schemaVersion":"eigengrid.publication-policy/v1","visibility":"private"}'
     )
     result = subprocess.run(
-        [__import__("sys").executable, str(SOURCE / "scripts/release/scan.py"), "--public", str(tmp_path)],
-        capture_output=True, text=True,
+        [
+            __import__("sys").executable,
+            str(SOURCE / "scripts/release/scan.py"),
+            "--public",
+            str(tmp_path),
+        ],
+        capture_output=True,
+        text=True,
     )
     assert result.returncode == 1
     assert "Public distribution blocked" in result.stderr
@@ -69,17 +81,31 @@ def test_public_scan_exits_unsuccessfully_for_private_source(tmp_path):
 def _public_catalog(root):
     import hashlib
     import json
+
     source = root / "scientific-skills/basic/skill.yaml"
     source.parent.mkdir(parents=True, exist_ok=True)
     source.write_text("fixture: public\n")
-    (root / "publication.json").write_text(json.dumps({
-        "schemaVersion": "eigengrid.publication-policy/v1", "visibility": "public",
-        "catalogSkillIds": ["basic"],
-    }))
-    (root / "publication-catalog.json").write_text(json.dumps({
-        "schemaVersion": "eigengrid.public-catalog/v1",
-        "files": {"scientific-skills/basic/skill.yaml": hashlib.sha256(source.read_bytes()).hexdigest()},
-    }))
+    (root / "publication.json").write_text(
+        json.dumps(
+            {
+                "schemaVersion": "eigengrid.publication-policy/v1",
+                "visibility": "public",
+                "catalogSkillIds": ["basic"],
+            }
+        )
+    )
+    (root / "publication-catalog.json").write_text(
+        json.dumps(
+            {
+                "schemaVersion": "eigengrid.public-catalog/v1",
+                "files": {
+                    "scientific-skills/basic/skill.yaml": hashlib.sha256(
+                        source.read_bytes()
+                    ).hexdigest()
+                },
+            }
+        )
+    )
     return source
 
 
