@@ -63,6 +63,12 @@ jobs:
         run: |
           node --test scripts/check-commits.test.mjs
           node scripts/check-commits.mjs
+      - name: Dependency security regressions and advisory review
+        run: |
+          bun test tests/ts/dependency-security.test.ts
+          # A tracked Bun patch backports collection size gates without changing
+          # v3 scientific schema/digest contracts; the regression above is required.
+          bun audit --ignore GHSA-mrhx-c7xc-m3w5
       - name: Static quality
         run: |
           bun run typecheck

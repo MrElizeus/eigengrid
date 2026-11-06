@@ -11,7 +11,7 @@
     "properties": [
       {
         "name": "eigengrid:bun-lock-sha256",
-        "value": "4480a56691c2d4266cc51b3d8e83f858c41e16db9bfba81785ba3860f66da401"
+        "value": "ed677ded29b03ee292b669fa580351909e5c7ff11a28cc3570d2694ef97fb398"
       }
     ]
   },
@@ -120,8 +120,8 @@
     {
       "type": "library",
       "name": "@ai-sdk/provider-utils",
-      "version": "4.0.30",
-      "purl": "pkg:npm/%40ai-sdk/provider-utils@4.0.30",
+      "version": "4.0.33",
+      "purl": "pkg:npm/%40ai-sdk/provider-utils@4.0.33",
       "licenses": [
         {
           "license": {
@@ -152,6 +152,25 @@
         {
           "name": "eigengrid:license-files",
           "value": "@ai-sdk_provider@3.0.10/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@ai-sdk/provider",
+      "version": "3.0.12",
+      "purl": "pkg:npm/%40ai-sdk/provider@3.0.12",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "@ai-sdk_provider@3.0.12/LICENSE"
         }
       ]
     },
@@ -1127,8 +1146,8 @@
     {
       "type": "library",
       "name": "fast-uri",
-      "version": "3.1.6",
-      "purl": "pkg:npm/fast-uri@3.1.6",
+      "version": "3.1.9",
+      "purl": "pkg:npm/fast-uri@3.1.9",
       "licenses": [
         {
           "license": {
@@ -1139,7 +1158,7 @@
       "properties": [
         {
           "name": "eigengrid:license-files",
-          "value": "fast-uri@3.1.6/LICENSE"
+          "value": "fast-uri@3.1.9/LICENSE"
         }
       ]
     },
@@ -1963,8 +1982,8 @@
     {
       "type": "library",
       "name": "shell-quote",
-      "version": "1.10.0",
-      "purl": "pkg:npm/shell-quote@1.10.0",
+      "version": "1.11.0",
+      "purl": "pkg:npm/shell-quote@1.11.0",
       "licenses": [
         {
           "license": {
@@ -1975,7 +1994,7 @@
       "properties": [
         {
           "name": "eigengrid:license-files",
-          "value": "shell-quote@1.10.0/LICENSE"
+          "value": "shell-quote@1.11.0/LICENSE"
         }
       ]
     },
@@ -2780,12 +2799,12 @@
     {
       "type": "library",
       "name": "setuptools",
-      "version": "84.0.0",
-      "purl": "pkg:pypi/setuptools@84.0.0",
+      "version": "84.1.0",
+      "purl": "pkg:pypi/setuptools@84.1.0",
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "51a52592b3b99e102b609654876bd65f19f999935166d1352678931132b0c670"
+          "content": "5231689c6ac8156cd155cfb98c3fd6fb252c3e7e9bd3d78b64d3c55f132624c9"
         }
       ],
       "licenses": [

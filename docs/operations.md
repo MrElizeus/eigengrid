@@ -69,6 +69,16 @@ installation is not a backup, restore, high-availability or production-site cert
 
 ## Distribution layout
 
+The locked Zod 3.25.76 dependency carries a tracked Bun patch for
+CVE-2023-54404: constrained collections reject oversized input before walking
+elements. This retains the v3 schema and digest contracts while backporting the
+size gate from the upstream correction. `bun install --frozen-lockfile` applies
+the patch; CI runs its synchronous/asynchronous ESM/CommonJS regressions before
+allowing this specific advisory exception. Do not install dependencies using a
+tool that ignores Bun patches. A future Zod major upgrade still requires schema
+and digest compatibility validation; unconstrained collections still require
+caller-imposed input bounds.
+
 Keep `bin/` beside `share/eigengrid/scientific-skills`. The executable resolves the corpus
 relative to itself, independent of the working directory. A deliberately configured
 `EIGENGRID_SCIENTIFIC_SKILLS_ROOT` overrides that location and is validated when loaded.

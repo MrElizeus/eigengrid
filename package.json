@@ -59,10 +59,15 @@
   },
   "overrides": {
     "esbuild": "0.28.2",
-    "shell-quote": "1.10.0"
+    "shell-quote": "1.11.0",
+    "fast-uri": "3.1.9",
+    "@ai-sdk/provider-utils": "4.0.33"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/MrElizeus/eigengrid.git"
+  },
+  "patchedDependencies": {
+    "zod@3.25.76": "patches/zod@3.25.76.patch"
   }
 }
