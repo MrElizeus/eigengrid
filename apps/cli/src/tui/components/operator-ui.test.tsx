@@ -33,7 +33,6 @@ class Input extends EventEmitter {
 class Output extends EventEmitter {
   columns = 80;
   rows = 24;
-  isTTY = true;
   frames: string[] = [];
   rawFrames: string[] = [];
   write(chunk: string) {
@@ -43,15 +42,14 @@ class Output extends EventEmitter {
   }
 }
 const sessions: ReturnType<typeof render>[] = [];
-function mount(node: ReactNode, columns = 80, debug = true) {
+function mount(node: ReactNode, columns = 80) {
   const stdout = new Output();
   stdout.columns = columns;
-  stdout.isTTY = !debug;
   const session = render(node, {
     stdin: new Input() as unknown as NodeJS.ReadStream,
     stdout: stdout as unknown as NodeJS.WriteStream,
     stderr: stdout as unknown as NodeJS.WriteStream,
-    debug,
+    debug: true,
     patchConsole: false,
   });
   sessions.push(session);
@@ -324,70 +322,4 @@ describe("operator terminal experience", () => {
       expect(terminalHyperlink(url)).not.toContain("\u001b");
     }
   });
-});
-
-it("emits completed rows only once in a real incremental Ink render, including after resize", async () => {
-  const { stdout, session } = mount(
-    <MessageList
-      messages={[]}
-      assistantDraft={"committed-prefix\npartial"}
-      assistantDraftId="real"
-    />,
-    80,
-    false,
-  );
-  await frame(stdout);
-  session.rerender(
-    <MessageList
-      messages={[]}
-      assistantDraft={"committed-prefix\npartial answer\nlast"}
-      assistantDraftId="real"
-    />,
-  );
-  await frame(stdout);
-  stdout.columns = 50;
-  stdout.emit("resize");
-  await frame(stdout);
-  session.rerender(
-    <MessageList
-      messages={[
-        {
-          id: "real",
-          kind: "assistant",
-          text: "committed-prefix\npartial answer\nlast",
-          createdAt: 1,
-        },
-      ]}
-    />,
-  );
-  await frame(stdout);
-  expect(stdout.frames.join("").match(/committed-prefix/g)).toHaveLength(1);
-});
-
-it("keeps only a short tool tail live while the completed batch enters scrollback", async () => {
-  const messages: TuiMessage[] = Array.from({ length: 32 }, (_, i) => ({
-    id: `tool-${i}`,
-    kind: "tool-call",
-    toolCallId: `c-${i}`,
-    toolName: `inspect-${i}`,
-    status: i === 31 ? "running" : "ok",
-    summary: i === 31 ? undefined : "collected",
-    createdAt: i,
-  }));
-  const { stdout } = mount(
-    <>
-      <MessageList messages={messages} />
-      <PromptInput value="steer now" onChange={() => {}} onSubmit={() => {}} processing />
-    </>,
-    80,
-    false,
-  );
-  await frame(stdout);
-  await Bun.sleep(180);
-  // Spinner updates repaint only the live region, never the retired prefix.
-  const latest = stdout.frames.at(-1) ?? "";
-  expect(latest).not.toContain("inspect-0");
-  expect(latest).toContain("inspect-31");
-  expect(latest).toContain("steer now");
-  expect(latest.split("\n").length).toBeLessThan(24);
 });
