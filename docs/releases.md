@@ -3,13 +3,23 @@
 Source and release artifacts follow [the publication policy](publication.md).
 Run `bun run verify:publication` before building and publishing any release.
 
-On the 1.0.0 development branch, the English [web console](web-console.md) is embedded
-in `eigengrid serve`. It adds project/mission discovery, guided mission creation,
-exact candidate review, work/evidence inspection and durable agent session controls.
-No frontend runtime or external assets are added to the installation. HTTP discovery
-and request-result lookup preserve current authority checks; published database and
-HTTP migration bytes remain unchanged. This does not promote the existing release
-candidate or establish installation-specific scientific qualification.
+Version **1.0.0** prepares the stable software release, subject to PR review and
+passing CI. It includes:
+
+- Domain modules extracted from the database, migrations, scientific schemas,
+  model gateway, runners and execution coordinator, preserving their public contracts.
+- The English [mission console](web-console.md) embedded in `eigengrid serve`:
+  discovery, guided creation, exact candidate review, evidence and durable agent controls.
+- The [assistant workspace](web.md) in `eigengrid web`: authenticated private chat,
+  streaming, steering and read-only tools. Network use requires PostgreSQL and HTTPS.
+  This command has its own account/session service; it is separate from mission control.
+- Agent catalog pagination, provider compatibility, permission diagnostics and
+  runtime fixes integrated with the web interfaces.
+
+Both browser interfaces are embedded in the native executables; no frontend runtime
+is required at the installation. Existing database migration bytes remain unchanged.
+Software stability does not certify scientific correctness or an installation's
+AMBER/Slurm configuration. Site qualification remains pending per installation.
 
 Version **1.0.0-rc.3** improves interactive operator conversations and diagnostics:
 
@@ -49,7 +59,7 @@ Commit the source and build the Linux x64 distribution before packaging it:
 ```bash
 bun run build:native
 node scripts/release/package.mjs
-node scripts/release/verify-package.mjs dist/packages/eigengrid-1.0.0-rc.3-linux-x64.tar.gz --source dist/native
+node scripts/release/verify-package.mjs dist/packages/eigengrid-1.0.0-linux-x64.tar.gz --source dist/native
 ```
 
 Packaging requires a clean checkout and a distribution built from its exact commit and
@@ -66,8 +76,10 @@ sizes and SHA-256 digests. Verification checks every archived file without extra
 Checksums detect corruption and changes relative to the manifest. They do not authenticate
 a publisher; obtain packages and their commit identities through a trusted channel.
 
-These packages have qualification `software-candidate`. A release candidate does not
-certify a Slurm installation, engine tuple, scientific system, recovery objective or
-production campaign. Stable promotion requires the corresponding installation and
-scientific acceptance evidence. See [capabilities](scientific-capabilities.md) and
-[operations](operations.md).
+The distribution schema retains qualification `software-candidate` to describe its
+installation qualification status, including for stable software version 1.0.0.
+This field is independent of the release's SemVer stability. Neither an RC nor a
+stable software package certifies a Slurm installation, engine tuple, scientific
+system, recovery objective or production campaign. Scientific use still requires
+the corresponding installation and acceptance evidence. See
+[capabilities](scientific-capabilities.md) and [operations](operations.md).

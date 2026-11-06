@@ -126,7 +126,8 @@ export function validatePayload(distribution, files) {
     distribution.name !== "eigengrid" ||
     distribution.platform !== "linux-x64" ||
     distribution.qualification !== "software-candidate" ||
-    !/^\d+\.\d+\.\d+-rc\.\d+$/u.test(distribution.version) ||
+    !/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-rc\.[1-9]\d*)?$/u.test(distribution.version) ||
+    distribution.version !== distribution.version.trim() ||
     !/^[a-f0-9]{40}$/u.test(distribution.sourceCommit) ||
     !Number.isSafeInteger(distribution.sourceDateEpoch) ||
     distribution.sourceDateEpoch <= 0 ||

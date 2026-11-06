@@ -11,7 +11,7 @@ afterEach(() => {
   for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
 });
 
-function fixture() {
+function fixture(version = "1.0.0-rc.2") {
   const root = mkdtempSync(join(tmpdir(), "release-validation-"));
   roots.push(root);
   const git = (...args: string[]) =>
@@ -39,15 +39,15 @@ function fixture() {
   mkdirSync(join(root, "dist/packages"), { recursive: true });
   writeFileSync(
     join(root, "dist/packages/release.json"),
-    JSON.stringify({ version: "1.0.0-rc.2", sourceCommit: commit }),
+    JSON.stringify({ version, sourceCommit: commit }),
   );
   writeFileSync(
-    join(root, "dist/packages/eigengrid-1.0.0-rc.2-linux-x64.tar.gz"),
+    join(root, `dist/packages/eigengrid-${version}-linux-x64.tar.gz`),
     "synthetic package",
   );
   const env = {
     ...process.env,
-    GITHUB_REF_NAME: "v1.0.0-rc.2",
+    GITHUB_REF_NAME: `v${version}`,
     GITHUB_SHA: commit,
     GITHUB_RUN_ID: "123",
     GITHUB_REPOSITORY_ID: "456",
@@ -61,22 +61,33 @@ function fixture() {
 }
 
 describe("release validation manifest", () => {
-  test("binds package bytes, source and migrations to the CI run", () => {
-    const item = fixture();
-    const result = item.execute();
-    expect(result.status).toBe(0);
-    const validation = JSON.parse(
-      readFileSync(join(item.root, "dist/packages/validation.json"), "utf8"),
-    );
-    expect(validation.sourceCommit).toBe(item.env.GITHUB_SHA);
-    expect(validation.repositoryId).toBe(456);
-    expect(validation.runId).toBe(123);
-    expect(validation.archiveSha256).toBe(
-      createHash("sha256").update("synthetic package").digest("hex"),
-    );
-    expect(validation.migrations).toHaveLength(22);
-    expect(validation.migrations[21].version).toBe(22);
-  });
+  test.each(["1.0.0-rc.2", "1.0.0"])(
+    "binds %s package bytes, source and migrations to the CI run",
+    (version) => {
+      const item = fixture(version);
+      const result = item.execute();
+      expect(result.status).toBe(0);
+      const validation = JSON.parse(
+        readFileSync(join(item.root, "dist/packages/validation.json"), "utf8"),
+      );
+      expect(validation.sourceCommit).toBe(item.env.GITHUB_SHA);
+      expect(validation.repositoryId).toBe(456);
+      expect(validation.runId).toBe(123);
+      expect(validation.archiveSha256).toBe(
+        createHash("sha256").update("synthetic package").digest("hex"),
+      );
+      expect(validation.migrations).toHaveLength(22);
+      expect(validation.migrations[21].version).toBe(22);
+    },
+  );
+
+  test.each(["1.0.1", "1.0.0-rc.0", "1.0.0-rc.01", "1.0.0\n"])(
+    "rejects unsupported version %j even with matching metadata",
+    (version) => {
+      const item = fixture(version);
+      expect(item.execute().status).not.toBe(0);
+    },
+  );
 
   test.each([
     ["GITHUB_REF_NAME", "v1.0.0-rc.3"],
