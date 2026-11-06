@@ -1,0 +1,249 @@
+.wordmark {
+  font-size: 21px;
+  font-weight: 650;
+  letter-spacing: -0.04em;
+  text-decoration: none;
+  color: #26313d;
+}
+.app-shell {
+  height: 100%;
+  display: grid;
+  grid-template-rows: 60px 48px minmax(0, 1fr);
+}
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 0 24px;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+}
+.header-spacer {
+  flex: 1;
+}
+.account-label {
+  font-size: 12px;
+  color: var(--muted);
+  max-width: 220px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.project-picker select {
+  max-width: 320px;
+  background: #f8f9fb;
+  border-color: transparent;
+}
+.workspace-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--border);
+  background: #fff;
+}
+.workspace-bar nav {
+  display: flex;
+  align-items: stretch;
+  gap: 24px;
+  height: 100%;
+}
+.workspace-bar nav a {
+  display: flex;
+  align-items: center;
+  color: var(--muted);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+}
+.workspace-bar a[aria-current="page"] {
+  color: #283749;
+  border-color: var(--accent);
+}
+.workspace-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
+}
+.workspace-grid.with-agent {
+  grid-template-columns: minmax(0, 1fr) 400px;
+}
+.mission-workspace.with-agent {
+  grid-template-columns: minmax(0, 1fr) 7px var(--agent-width, 400px);
+}
+.agent-width-320 {
+  --agent-width: 320px;
+}
+.agent-width-360 {
+  --agent-width: 360px;
+}
+.agent-width-400 {
+  --agent-width: 400px;
+}
+.agent-width-440 {
+  --agent-width: 440px;
+}
+.agent-width-480 {
+  --agent-width: 480px;
+}
+.agent-width-520 {
+  --agent-width: 520px;
+}
+.agent-width-560 {
+  --agent-width: 560px;
+}
+.agent-width-600 {
+  --agent-width: 600px;
+}
+.agent-width-640 {
+  --agent-width: 640px;
+}
+main {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+.page {
+  padding: 28px 32px 48px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+.page-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+.page-heading > div {
+  min-width: 0;
+}
+.page-heading > .button,
+.page-heading > button {
+  flex-shrink: 0;
+}
+.eyebrow {
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.heading-meta {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  color: var(--muted);
+  font-size: 12px;
+}
+.back-link {
+  display: inline-block;
+  font-size: 12px;
+  margin-bottom: 20px;
+  text-decoration: none;
+}
+.catalog-toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.catalog-toolbar input {
+  flex: 1;
+}
+.catalog-count {
+  font-size: 12px;
+  margin: 14px 0;
+}
+.mission-list {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fff;
+}
+.mission-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px;
+  text-decoration: none;
+  color: inherit;
+  border-bottom: 1px solid var(--border);
+}
+.mission-row:last-child {
+  border: 0;
+}
+.mission-row:hover {
+  background: #f8fafc;
+}
+.mission-row h2 {
+  margin-bottom: 5px;
+}
+.mission-row p {
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+.mission-row > div {
+  min-width: 0;
+}
+.mission-row > div:last-child {
+  text-align: right;
+  flex-shrink: 0;
+}
+.mission-row time {
+  display: block;
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.empty {
+  padding: 36px 20px;
+  text-align: center;
+  max-width: 600px;
+  margin: 20px auto;
+}
+.empty h2 {
+  font-size: 18px;
+}
+.empty p {
+  margin: 12px 0;
+}
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #edf0f4;
+  color: #4c596b;
+  font-size: 11px;
+  font-weight: 550;
+  white-space: nowrap;
+}
+.badge.good {
+  background: #e8f1eb;
+  color: #366449;
+}
+.badge.warn {
+  background: #f8f0df;
+  color: #84631f;
+}
+.badge.bad {
+  background: #f8e9e9;
+  color: #963d42;
+}
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+.tabs a {
+  color: var(--muted);
+  text-decoration: none;
+  padding: 10px 0;
+  border-bottom: 2px solid transparent;
+  font-size: 13px;
+}
+.tabs a[aria-current="page"] {
+  color: #263b50;
+  border-color: var(--accent);
+  font-weight: 600;
+}

@@ -3,6 +3,16 @@
 Source and release artifacts follow [the publication policy](publication.md).
 Run `bun run verify:publication` before building and publishing any release.
 
+## Deferred web development
+
+The React workspace is developed on `feat/web-after-1.0`, separately from the
+1.0.0 release. It adds an English interface with a light default, mission tabs and
+a persistent agent panel on the right, using the backend API. Integration and
+real-browser review are still pending; no release version is assigned to it.
+See the [workspace guide](web-console.md) for this development branch.
+
+## Version 1.0.0
+
 Version **1.0.0** prepares the stable software release, subject to PR review and
 passing CI. It includes:
 
