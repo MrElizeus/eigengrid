@@ -17,6 +17,7 @@
     "@eigengrid/core": "workspace:*",
     "@eigengrid/db": "workspace:*",
     "@eigengrid/events": "workspace:*",
+    "@eigengrid/experience-memory": "workspace:*",
     "@eigengrid/mission-runtime": "workspace:*",
     "@eigengrid/protocol": "workspace:*",
     "@eigengrid/python-bridge": "workspace:*",
@@ -34,12 +35,12 @@
     "ink": "^5.0.0",
     "ink-text-input": "^6.0.0",
     "react": "^18.3.0",
-    "wrap-ansi": "9.0.2",
-    "yargs": "^17.7.0",
-    "zod": "^3.24.0",
     "react-dom": "^18.3.1",
     "react-markdown": "^9.1.0",
-    "remark-gfm": "^4.0.1"
+    "remark-gfm": "^4.0.1",
+    "wrap-ansi": "9.0.2",
+    "yargs": "^17.7.0",
+    "zod": "^3.24.0"
   },
   "devDependencies": {
     "@types/react": "^18.3.0",

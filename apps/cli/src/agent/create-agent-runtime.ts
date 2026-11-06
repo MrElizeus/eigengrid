@@ -31,6 +31,7 @@ import { createOperatorInfoTool } from "./operator-info-tool";
 import { clusterNodeRecords } from "../services/cluster-inventory";
 import { OperatorPermissions } from "../services/operator-permissions";
 import { readFileTool, writeFileTool, runCommandTool } from "./operator-file-tools";
+import { registerExperienceTools } from "./experience-tools";
 
 // ────────────────────────────────────────────────────────────
 // Options
@@ -40,6 +41,8 @@ export interface AgentRuntimeOptions {
   /** Unavailable in process-owned chat; use a durable mission session. */
   allowActions?: boolean;
   permissions?: OperatorPermissions;
+  /** Disable local OS-user memory and its tools in multi-user hosts such as the web. */
+  memory?: false;
 }
 
 // ────────────────────────────────────────────────────────────
@@ -151,9 +154,11 @@ export async function createAgentRuntime(options?: AgentRuntimeOptions): Promise
   };
 
   // ── 4. Create agent memory ─────────────────────────────
-  const memory = new AgentMemory();
+  const memory = options?.memory === false ? undefined : new AgentMemory();
   try {
-    await memory.connect();
+    await memory?.connect();
+    if (memory?.experience)
+      registerExperienceTools(registry, memory.experience, memory.experienceContext);
   } catch (error) {
     await app.close();
     throw error;
@@ -172,7 +177,7 @@ export async function createAgentRuntime(options?: AgentRuntimeOptions): Promise
     async close() {
       if (closed) return;
       closed = true;
-      await memory.disconnect();
+      await memory?.disconnect();
       await app.close();
     },
   };

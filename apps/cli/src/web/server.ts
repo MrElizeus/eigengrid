@@ -105,7 +105,10 @@ export async function startWebServer(options: WebOptions = {}) {
   const run =
     options.run ??
     (async (input) => {
-      const runtime = await createAgentRuntime({ permissions: new WebPermissions() });
+      const runtime = await createAgentRuntime({
+        permissions: new WebPermissions(),
+        memory: false,
+      });
       try {
         return await runAgent({
           ...input,

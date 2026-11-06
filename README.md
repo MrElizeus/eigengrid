@@ -60,6 +60,7 @@ ORCA and other engines require separate installations and appropriate licenses.
 - [Architecture and contracts](docs/architecture.md)
 - [Scientific workflows and campaign limits](docs/scientific-capabilities.md)
 - [Agent, tools and model configuration](docs/agent.md)
+- [Experiential memory and lesson review](docs/experiential-memory.md)
 - [Operation, identity and recovery](docs/operations.md)
 - [Web console and browser workflows](docs/web-console.md)
 - [Development and verification](CONTRIBUTING.md)
