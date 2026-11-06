@@ -1,0 +1,3 @@
+{"id": "workflows.solution-redox.positive", "kind": "positive", "query": "Estimate a reduction potential versus a reference electrode in solution", "expected_included": ["workflows.solution-redox"], "expected_excluded": [], "expected_top": "workflows.solution-redox"}
+{"id": "workflows.solution-redox.negative", "kind": "negative", "query": "calculate dimer interaction energy with ghost atoms", "expected_included": [], "expected_excluded": ["workflows.solution-redox"]}
+{"id": "workflows.solution-redox.planning", "kind": "planning", "query": "Plan a quinone redox potential relative to ferrocene in the same solvent", "expected_included": ["workflows.solution-redox"], "expected_excluded": [], "expected_top": "workflows.solution-redox"}

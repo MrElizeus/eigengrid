@@ -50,9 +50,8 @@ Version **1.0.0-rc.2** fixes two provider connection issues:
 - The ChatGPT sign-in URL uses OSC 8 hyperlinks so every wrapped row opens the
   complete authorization URL in supported terminals, preserving the visible layout.
 
-The package includes the core runtime, CLI, generic engine adapters and a reviewed
-publication selection of 15 basic knowledge entries. Catalog content remains
-scientifically unreviewed; advanced catalogs are not bundled.
+The package includes the core runtime, CLI, generic engine adapters and the
+versioned knowledge entries listed in the [scientific catalog](scientific-capabilities.md).
 
 Commit the source and build the Linux x64 distribution before packaging it:
 

@@ -1,0 +1,1 @@
+{"id":"dft-cluster-preflight.periodic","requested":["workflows.dft-cluster-preflight","methods.cp2k-gpw-convergence"],"engine":{"id":"cp2k","version":"2025.1.0"},"domains":["periodic-electronic-structure"],"expected_nodes":["workflows.dft-cluster-preflight","methods.cp2k-gpw-convergence","methods.periodic-boundaries"],"expected_absent":["methods.molecular-dft"]}

@@ -1,8 +1,8 @@
 # Public distribution scope
 
 This repository contains reusable source,
-synthetic tests, minimal parser fixtures, generic documentation and 15 explicitly
-selected basic knowledge entries. Advanced catalogs, study-specific implementations,
+synthetic tests, minimal parser fixtures, generic documentation and the explicitly selected
+foundational and DFT knowledge entries. Private catalogs, study-specific implementations,
 private deployment configuration and historical research artifacts are excluded.
 
 Run `bun run verify:publication` before a release. The gate checks source hygiene,

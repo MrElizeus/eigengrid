@@ -1,0 +1,1 @@
+{"id": "workflows.counterpoise-interaction.composition", "requested": ["workflows.counterpoise-interaction"], "include_optional": false, "expected_nodes": ["workflows.counterpoise-interaction", "methods.molecular-dft", "methods.dispersion"], "expected_absent": [], "engine": {"id": "orca", "version": "6.1.1"}, "domains": ["molecular-electronic-structure"]}

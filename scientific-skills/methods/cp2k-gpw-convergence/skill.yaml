@@ -1,0 +1,40 @@
+schema: eigengrid.scientific-skill/v1
+id: methods.cp2k-gpw-convergence
+version: 1.0.0
+title: CP2K Quickstep GPW basis, pseudopotential and grid convergence
+status: active
+summary: Plan a CP2K GPW convergence study for CUTOFF, REL_CUTOFF, Gaussian orbitals and GTH pseudopotentials using the target energy difference, force or stress.
+knowledge_level: draft
+capability_levels:
+  reference: true
+  advisory: true
+  plannable: true
+  renderable: {}
+  executable: {}
+  validated: {}
+domains:
+  - periodic-electronic-structure
+domain_maturity:
+  periodic-electronic-structure: plannable
+engine_compatibility:
+  cp2k: ">=2025.1.0 <2027.0.0"
+requires:
+  - id: methods.periodic-boundaries
+    range: ^1.0.0
+    reason: Convergence comparisons require a fixed cell and electrostatic boundary model.
+required_inputs:
+  - structure and cell models for each comparison state
+  - functional, spin state, dispersion treatment and reciprocal-space sampling
+  - per-kind Gaussian basis and pseudopotential entries including valence electron counts
+  - target quantities, units, tolerances and available resource budget
+missing_input_behavior: Request missing basis or potential file identities and target tolerances. Keep any untested parameter set provisional.
+assets:
+  protocols: protocols/
+  references: references/
+  evals: evals/
+review:
+  status: unreviewed
+  owner_role: computational-chemist
+  notes: Planning guidance awaiting independent review and system-specific numerical evidence.
+provenance:
+  created_by: model

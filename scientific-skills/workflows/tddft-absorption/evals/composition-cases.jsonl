@@ -1,0 +1,1 @@
+{"id": "workflows.tddft-absorption.composition", "requested": ["workflows.tddft-absorption"], "include_optional": false, "expected_nodes": ["workflows.tddft-absorption", "methods.molecular-dft", "foundations.basis-ecp-relativity"], "expected_absent": [], "engine": {"id": "orca", "version": "6.1.1"}, "domains": ["molecular-electronic-structure"]}

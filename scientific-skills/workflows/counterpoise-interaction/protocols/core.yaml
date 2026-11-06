@@ -1,0 +1,54 @@
+{
+  "schema": "eigengrid.protocol-fragment/v1",
+  "id": "workflows.counterpoise-interaction.plan",
+  "version": "1.0.0",
+  "capability": "workflows.counterpoise-interaction",
+  "required_inputs": [
+    "Exact dimer coordinates, atom-to-fragment map, and fragment charge and spin states",
+    "Dimer charge and spin coupling compatible with both fragments",
+    "Method, orbital/auxiliary basis, dispersion treatment, numerical thresholds and basis-sensitivity criterion"
+  ],
+  "missing_input_behavior": "block",
+  "steps": [
+    {
+      "id": "partition-dimer",
+      "kind": "validation",
+      "reason": "Pin one coordinate digest, fragment masks, real nuclei, electron counts and spin coupling for AB, A and B. Check that the fragment charges sum to the dimer charge."
+    },
+    {
+      "id": "plan-five-energies",
+      "kind": "planning",
+      "reason": "Define one dimer term, two frozen monomer own-basis terms and two frozen monomer dimer-basis terms. For each ghost leg, retain the full basis centers while removing the partner nuclei and electrons. Verify treatment of auxiliary functions, ECPs and dispersion for real versus ghost centers."
+    },
+    {
+      "id": "join-fragments",
+      "kind": "validation",
+      "reason": "Schedule independent terms with separate work directories and role labels, then join by coordinate, atom map and model identity. Require converged energies for all five roles. Reject swapped masks, reoptimized monomers in a frozen leg or a missing ghost term."
+    },
+    {
+      "id": "evaluate-cp",
+      "kind": "planning",
+      "reason": "Subtract frozen monomer own-basis energies from the full dimer for raw interaction. Repeat with dimer-basis monomer energies for CP. Emit both in the same units and convention plus CP minus raw. Retain unrounded terms."
+    },
+    {
+      "id": "check-basis",
+      "kind": "validation",
+      "reason": "Repeat the complete difference with an enlarged compatible basis against a predeclared tolerance. Compare against a reference dimer of comparable interaction class when a quantitative claim is required."
+    },
+    {
+      "id": "record-distortion",
+      "kind": "provenance",
+      "reason": "If a relaxed-fragment binding energy is requested, append deformation costs under the stated geometry and basis convention as separate terms. Keep the frozen electronic interaction and its five parent digests in the report."
+    }
+  ],
+  "acceptance": [
+    "Five role-labeled converged terms refer to one mapped geometry and consistent method.",
+    "Raw and counterpoise energies can be reconstructed from archived values; direction, units and fragment states are explicit.",
+    "Basis sensitivity is reported separately from the counterpoise shift and from deformation or thermal contributions."
+  ],
+  "retry_policy": {
+    "maximum_attempts": 1,
+    "material_change": "new_decision_and_exact_approval"
+  },
+  "effect_authority": "none"
+}

@@ -1,0 +1,46 @@
+{
+  "schema": "eigengrid.decision-rule/v1",
+  "id": "workflows.transition-state-irc.core",
+  "version": "1.0.0",
+  "question": "Do both branches support the proposed elementary step?",
+  "when": {
+    "all": [
+      {
+        "fact": "inputs.complete",
+        "operator": "equals",
+        "value": true
+      },
+      {
+        "fact": "path.both_endpoints_verified",
+        "operator": "equals",
+        "value": true
+      }
+    ]
+  },
+  "recommendation": {
+    "action": "Report the mapped elementary step with the actual barrier reference and surviving limitations.",
+    "strength": "conditional"
+  },
+  "rationale": "A first-order saddle alone does not identify its connected minima.",
+  "risk_class": 2,
+  "approval": "required_if_material_field_changes",
+  "immutable_fields": [
+    "objective",
+    "atom_map",
+    "surface",
+    "charge",
+    "multiplicity",
+    "method",
+    "basis",
+    "constraints",
+    "reactant_reference"
+  ],
+  "evidence": {
+    "level": "draft",
+    "references": [
+      "IRC",
+      "ORCA-IRC"
+    ]
+  },
+  "limitations": "A wrong mode calls for a new guess or path. Short or stalled trajectories leave connectivity unresolved. Distinct pathways or bifurcations require independent investigation before interpreting selectivity or rate constants."
+}

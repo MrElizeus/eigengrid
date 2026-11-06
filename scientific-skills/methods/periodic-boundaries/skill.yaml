@@ -1,0 +1,36 @@
+schema: eigengrid.scientific-skill/v1
+id: methods.periodic-boundaries
+version: 1.0.0
+title: Periodic DFT boundaries for crystals, slabs and isolated cells
+status: active
+summary: Choose periodic axes, electrostatic boundary conditions and image-size checks for bulk crystals, slabs, isolated molecules in cells and charged defects.
+knowledge_level: draft
+capability_levels:
+  reference: true
+  advisory: true
+  plannable: true
+  renderable: {}
+  executable: {}
+  validated: {}
+domains:
+  - periodic-electronic-structure
+domain_maturity:
+  periodic-electronic-structure: plannable
+engine_compatibility: {}
+requires: []
+required_inputs:
+  - cell vectors, units, atomic coordinates and their Cartesian or fractional convention
+  - physical dimensionality, repeated directions and composition
+  - net charge, electronic state or magnetic order, and compensation model if charged
+  - observable, comparison states and target precision with units
+missing_input_behavior: Ask for the physical geometry and charge model before choosing periodicity. Withhold energy comparisons until the electrostatic reference and finite-size controls are defined.
+assets:
+  protocols: protocols/
+  references: references/
+  evals: evals/
+review:
+  status: unreviewed
+  owner_role: computational-chemist
+  notes: Planning guidance awaiting independent review and system-specific numerical evidence.
+provenance:
+  created_by: model

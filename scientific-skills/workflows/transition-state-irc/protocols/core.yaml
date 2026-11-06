@@ -1,0 +1,55 @@
+{
+  "schema": "eigengrid.protocol-fragment/v1",
+  "id": "workflows.transition-state-irc.plan",
+  "version": "1.0.0",
+  "capability": "workflows.transition-state-irc",
+  "required_inputs": [
+    "Atom-mapped reactant and product structures and proposed bond or proton transfers",
+    "Charge, multiplicity, electronic surface, method, basis, dispersion, solvent and constraints",
+    "Saddle search starting geometry or a justified path between mapped endpoints",
+    "Gradient, Hessian and path-convergence criteria and the claimed barrier reference"
+  ],
+  "missing_input_behavior": "block",
+  "steps": [
+    {
+      "id": "map-endpoints",
+      "kind": "validation",
+      "reason": "Compare atom identity, stoichiometry and electronic surface across both endpoints. Define the intended forming and breaking coordinates and the energy reference."
+    },
+    {
+      "id": "refine-saddle",
+      "kind": "planning",
+      "reason": "Optimize the saddle candidate with curvature along the proposed mode. A path maximum can seed a search. Save gradient and step residuals and release artificial search constraints before an unconstrained saddle claim."
+    },
+    {
+      "id": "inspect-curvature",
+      "kind": "validation",
+      "reason": "At the saddle, require exactly one negative internal Hessian eigenvalue after verifying convergence and removing rigid-body modes. Its eigenvector must trace the proposed reaction. Visualize both signs and record moving atoms. Resolve extra negative modes by refinement before accepting a first-order saddle."
+    },
+    {
+      "id": "trace-both-branches",
+      "kind": "planning",
+      "reason": "Start two independent branches from the same converged saddle, masses and Hessian. Keep method, basis and surface fixed. Save trajectory images, gradients, exit reasons and restart identities for each branch."
+    },
+    {
+      "id": "classify-endpoints",
+      "kind": "validation",
+      "reason": "Assign each downhill branch end its own work unit and reoptimize it. Only these endpoint candidates use a minimum gate: a converged unconstrained gradient and zero negative internal Hessian eigenvalues after resolving numerical artifacts. Match endpoint chemistry to the proposed minima, allowing equivalent atom permutations."
+    },
+    {
+      "id": "report-barrier",
+      "kind": "provenance",
+      "reason": "Once both endpoints match, subtract the named reactant reference from the saddle energy in common units. For a free-energy barrier retain real vibrational modes for the saddle thermal correction and omit its reaction-coordinate mode. Report stationary-point roles, standard states, thermal model, and both path and endpoint digests."
+    }
+  ],
+  "acceptance": [
+    "The unconstrained saddle has one negative internal Hessian eigenvalue with the intended chemical displacement.",
+    "Two downhill branches connect the intended verified minima, or the mismatch is reported and the mechanism claim is held.",
+    "A reported barrier identifies the surface, stationary points, sign, units and reference state."
+  ],
+  "retry_policy": {
+    "maximum_attempts": 1,
+    "material_change": "new_decision_and_exact_approval"
+  },
+  "effect_authority": "none"
+}

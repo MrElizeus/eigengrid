@@ -1,0 +1,31 @@
+schema: eigengrid.decision-rule/v1
+id: workflows.molecular-basis-convergence.hold
+version: 1.0.0
+question: Is part of the basis ladder evaluated with a different ECP core size?
+when:
+  all:
+  - fact: basis.core_electrons_changed
+    operator: equals
+    value: true
+recommendation:
+  action: Split the Hamiltonians into separate comparisons and rebuild a matched ladder before interpreting
+    a basis-size trend.
+  strength: conditional
+rationale: If the last basis change, augmentation sensitivity or unresolved BSSE could reverse the
+  conclusion, report the range and keep the ranking provisional.
+risk_class: 2
+approval: required_if_material_field_changes
+immutable_fields:
+- objective
+- charge
+- multiplicity
+- method
+- basis
+- physical_model
+evidence:
+  level: draft
+  references:
+  - https://doi.org/10.1039/B508541A
+  - https://pubmed.ncbi.nlm.nih.gov/20942521/
+  - https://doi.org/10.1080/00268977000101561
+  - https://orca-manual.mpi-muelheim.mpg.de/contents/essentialelements/basisset.html

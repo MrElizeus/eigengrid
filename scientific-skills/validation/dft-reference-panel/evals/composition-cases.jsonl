@@ -1,0 +1,1 @@
+{"id":"dft-reference-panel.shared","requested":["validation.dft-reference-panel","workflows.dft-cluster-preflight"],"domains":["periodic-electronic-structure"],"expected_nodes":["validation.dft-reference-panel","workflows.dft-cluster-preflight"],"expected_absent":["workflows.geometry-optimization"]}

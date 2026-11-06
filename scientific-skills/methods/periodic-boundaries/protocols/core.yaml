@@ -1,0 +1,42 @@
+schema: eigengrid.protocol-fragment/v1
+id: methods.periodic-boundaries.plan
+version: 1.0.0
+capability: methods.periodic-boundaries
+required_inputs:
+  - cell vectors, units, atomic coordinates and their Cartesian or fractional convention
+  - physical dimensionality, repeated directions and composition
+  - net charge, electronic state or magnetic order, and compensation model if charged
+  - observable, comparison states and target precision with units
+missing_input_behavior: block
+steps:
+  - id: classify-cell
+    kind: validation
+    reason: Read vectors, angles, unit convention and atom positions. Record physical axes, charge, magnetic order, and the cell origin before interpreting geometry or energy.
+  - id: choose-electrostatics
+    kind: planning
+    reason: For 3D bulk, choose a periodic Green function. For an open direction, select a solver supporting that exact dimensionality and axis orientation, or document a supercell approximation. In CP2K, CELL/PERIODIC sets geometric images while DFT/POISSON/PERIODIC sets electrostatic images. Verify the chosen POISSON_SOLVER restrictions for the installed version.
+  - id: test-images
+    kind: planning
+    reason: For isolated objects center the density and enlarge all open directions. For a slab series independently vary vacuum and thickness. Vary lateral area only with the intended coverage or dilute-limit interpretation. Inspect charge leakage and the vacuum potential, and compare the target observable against its stated tolerance.
+  - id: resolve-charge
+    kind: validation
+    reason: For charged defects record the pristine reference, charge state, electron reservoir, dielectric model and alignment convention, then compare corrected results across cells. Report the model-specific correction once. A homogeneous background alone leaves image interactions. Withhold acceptance if a bulk correction is proposed for a charged slab without a suitable derivation.
+  - id: match-reference-states
+    kind: provenance
+    reason: Record all cell, solver and compensation inputs. For slab adsorption compare slab+adsorbate and clean slab with matched cells, periodicity, slab relaxation constraints and sampling. Treat a gas-phase fragment as its stated physical reference. Keep compatible electronic structure settings and document energy units and normalization.
+acceptance:
+  - Each physical state has a reproducible geometry and electrostatic model.
+  - Reference terms have balanced compositions and documented charge and energy conventions.
+  - Changes in the observable under relevant size or boundary tests fall within a predeclared tolerance.
+stop_conditions:
+  - Unknown charge, missing slab normal or a Poisson solver incompatible with the requested boundary.
+  - Apparent finite-size convergence changes under a larger vacuum, thicker slab or a different lateral image separation beyond the tolerance.
+references:
+  - references/README.md#cp2k-cell
+  - references/README.md#cp2k-poisson
+  - references/README.md#surface-dipole
+  - references/README.md#bulk-defect
+retry_policy:
+  maximum_attempts: 1
+  material_change: new_decision_and_exact_approval
+effect_authority: none

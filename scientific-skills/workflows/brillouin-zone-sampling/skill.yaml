@@ -1,0 +1,39 @@
+schema: eigengrid.scientific-skill/v1
+id: workflows.brillouin-zone-sampling
+version: 1.0.0
+title: Brillouin zone sampling, k-points and metallic occupations
+status: active
+summary: Converge a weighted k-point integration mesh and metallic smearing for periodic DFT. Separate the SCF mesh, a band path and DOS broadening.
+knowledge_level: draft
+capability_levels:
+  reference: true
+  advisory: true
+  plannable: true
+  renderable: {}
+  executable: {}
+  validated: {}
+domains:
+  - periodic-electronic-structure
+domain_maturity:
+  periodic-electronic-structure: plannable
+engine_compatibility: {}
+requires:
+  - id: methods.periodic-boundaries
+    range: ^1.0.0
+    reason: The physical periodic axes and supercell determine reciprocal-space sampling.
+required_inputs:
+  - lattice vectors, periodic axes and identified comparison cells
+  - observable with units and numerical tolerance
+  - electronic regime or a plan to inspect occupations and magnetic solutions
+  - mesh scheme and shift, occupation model and energy convention
+missing_input_behavior: Ask for the cell, periodic directions and target observable. If the gap or occupations are unknown, defer the metallic versus insulating branch until pilot evidence exists.
+assets:
+  protocols: protocols/
+  references: references/
+  evals: evals/
+review:
+  status: unreviewed
+  owner_role: computational-chemist
+  notes: Planning guidance awaiting independent review and system-specific numerical evidence.
+provenance:
+  created_by: model

@@ -1,0 +1,64 @@
+schema: eigengrid.protocol-fragment/v1
+id: methods.dft-functional-selection.core
+version: 1.0.0
+capability: methods.dft-functional-selection
+required_inputs:
+- Reaction or comparison with balanced species, structures, charges and multiplicities
+- Observable, phase, temperature if applicable, target tolerance and units
+- Computational resource ceiling and any imposed method restrictions
+missing_input_behavior: block
+steps:
+- id: specify-comparison
+  kind: planning
+  reason: Define the signed observable and reference geometry convention before choosing a method.
+    Keep electronic energies, activation barriers at fixed electronic level, enthalpies and solution
+    free energies in separate columns.
+- id: match-chemical-domain
+  kind: validation
+  reason: Find a reference subset with analogous elements, charge, bonding change and observable.
+    GMTKN55 covers main-group ground-state energy differences. Report the subset, reference level
+    and error metric. An overall WTMAD-2 is a dataset statistic, not a prediction interval for this
+    target.
+- id: propose-candidates
+  kind: planning
+  reason: If the functional is unchosen, use the matched reference, interaction class, solver availability
+    and budget to propose a shortlist, each with its expected applicability and known failure modes.
+    Mark the screening decision provisional and identify the smallest discriminating comparison. Defer
+    the calculation plan until one full scientific model is agreed.
+- id: assemble-method-identity
+  kind: planning
+  reason: Specify XC variant, basis/ECP, dispersion model and damping parameters, integration grid,
+    auxiliary basis and solvation. Read back the method actually selected by the engine. For example
+    r2SCAN-3c contains a specific basis, refitted D4 and gCP. Adding D4 again or enlarging its basis
+    yields a different method.
+- id: separate-cost-tiers
+  kind: planning
+  reason: For flexible molecules, plan broad inexpensive geometry screening, then comparable final
+    single points on retained geometries. Document any mixed geometry/energy levels. Pilot the slowest
+    representative system in an allocation before estimating the full set.
+- id: test-ranking
+  kind: validation
+  reason: Compare target differences against a representative held-out reference at matched conditions
+    where possible. For a close ranking, repeat with an independently justified model with different
+    exchange/correlation behavior on identical geometries. Record signed errors, sensitivity and cost
+    by case. Agreement alone cannot estimate systematic bias.
+- id: record-decision
+  kind: provenance
+  reason: Archive reference identifiers, per-species model/geometry identities and units, calibration
+    table, resource estimate, discarded options and why the selected accuracy is defensible or remains
+    unquantified.
+acceptance:
+- For an unchosen functional, a shortlist naming the evidence and next comparison is a complete advisory
+  result. Record that the production model remains undecided.
+- A comparison or production plan specifies an unambiguous method identity and correction ledger for
+  every species.
+- The reference domain and level match the proposed inference, or extrapolation is explicit.
+- Hold any definitive ordering if method sensitivity reaches the decision margin or the relevant reference
+  chemistry is missing.
+references:
+- https://doi.org/10.1039/C7CP04913G
+- https://doi.org/10.1063/5.0040021
+retry_policy:
+  maximum_attempts: 1
+  material_change: new_decision_and_exact_approval
+effect_authority: none

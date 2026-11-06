@@ -1,0 +1,2 @@
+{"id":"methods.dft-functional-selection.planning","kind":"planning","query":"Which functional selection benchmark supports r2SCAN-3c with extra D4 for a barrier?","expected_included":["methods.dft-functional-selection"],"expected_top":"methods.dft-functional-selection"}
+{"id":"methods.dft-functional-selection.negative","kind":"negative","query":"Specify an electronic temperature for smearing and a metallic k-point mesh.","expected_excluded":["methods.dft-functional-selection"]}

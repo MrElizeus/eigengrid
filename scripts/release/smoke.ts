@@ -104,7 +104,11 @@ try {
   assert.ok(observation);
   const result = JSON.parse(observation.content);
   assert.equal(result.result.ok, true);
-  assert.equal(result.result.data.totalCapabilities, 15);
+  const policy = JSON.parse(
+    readFileSync(new URL("../../publication.json", import.meta.url), "utf8"),
+  );
+  assert.equal(result.result.data.totalCapabilities, policy.catalogSkillIds.length);
+  assert.ok(result.result.data.availableDomains.includes("periodic-electronic-structure"));
   assert.equal(result.result.data.returned, 2);
   const wheels = readdirSync(join(distribution, "python")).filter((name) => name.endsWith(".whl"));
   assert.equal(wheels.length, 1, "The distribution must contain exactly one Python wheel");

@@ -1,0 +1,43 @@
+schema: eigengrid.protocol-fragment/v1
+id: methods.cp2k-gpw-convergence.plan
+version: 1.0.0
+capability: methods.cp2k-gpw-convergence
+required_inputs:
+  - structure and cell models for each comparison state
+  - functional, spin state, dispersion treatment and reciprocal-space sampling
+  - per-kind Gaussian basis and pseudopotential entries including valence electron counts
+  - target quantities, units, tolerances and available resource budget
+missing_input_behavior: block
+steps:
+  - id: audit-kinds
+    kind: validation
+    reason: Match every kind to an explicit orbital basis and potential file entry. Reconcile the pseudopotential valence charges with the requested net charge (sum of valence charges minus charge equals electron count). Record semicore treatment and the functional used to generate the potential. Changing valence space defines a different model.
+  - id: define-reference
+    kind: planning
+    reason: Freeze geometries and use the same functional, spin solution, cell, k mesh and occupations across like-for-like comparisons. Choose a representative strained or distorted structure when stress or gradients matter. Require converged SCF solutions with noise below the target error budget.
+  - id: sweep-two-grid-controls
+    kind: planning
+    reason: At fixed basis and NGRIDS, refine CUTOFF at a conservatively fine REL_CUTOFF. Refine REL_CUTOFF at the selected CUTOFF, then refine both together as a cross-check. Store actual mesh sizes, energy differences and force errors. One-SCF-iteration mapping tests in grid tutorials cannot establish a self-consistent force or energy difference.
+  - id: refine-orbital-basis
+    kind: planning
+    reason: At converged grid settings increase orbital-basis quality within a compatible family for each element. Recheck both grid controls for the larger basis. For energy differences evaluate all terms at each level. For force or stress use component-wise deviations at the same geometry and units.
+  - id: check-budget
+    kind: validation
+    reason: In a pilot under the intended allocation record CP2K version, data file hashes, rank/thread layout, peak memory when available and elapsed time. Use distinct work directories and checkpoint identities. Mark an unaffordable tighter reference as unresolved. Retain the stated precision target.
+acceptance:
+  - A convergence table contains at least one joint tighter reference and the residuals for each target quantity, with units.
+  - Electronic states and electron counts agree across numerical refinements, and relevant energy differences, forces or stress stay within declared tolerances.
+  - Selected settings identify an exact build, parameter entries and matching files. Recheck transferability on changed elements, cells or environments.
+stop_conditions:
+  - An SCF failure, different electronic state or incomplete potential/basis coverage invalidates that row.
+  - A converged total energy alone cannot qualify stress, force or an energy difference whose numerical drift exceeds its budget.
+references:
+  - references/README.md#quickstep
+  - references/README.md#molopt
+  - references/README.md#gth
+  - references/README.md#grid-tutorial
+  - references/README.md#grid-keywords
+retry_policy:
+  maximum_attempts: 1
+  material_change: new_decision_and_exact_approval
+effect_authority: none

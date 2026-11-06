@@ -1,0 +1,2 @@
+{"id":"dft-cluster-preflight.batch","kind":"planning","query":"Slurm GPU allocation preflight for a batch job with node-local scratch","expected_included":["workflows.dft-cluster-preflight"],"expected_top":"workflows.dft-cluster-preflight"}
+{"id":"dft-cluster-preflight.unrelated","kind":"negative","query":"continuum solvation cavity dielectric constant","expected_excluded":["workflows.dft-cluster-preflight"]}

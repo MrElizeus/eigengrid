@@ -35,6 +35,13 @@ const SCIENTIFIC_QUERY_ALIASES: Readonly<Record<string, string>> = Object.freeze
   especializado: "specialized", especializados: "specialized", planificar: "planning",
   topologia: "topology", trayectoria: "trajectory", trayectorias: "trajectory",
   replicas: "replica", incertidumbre: "uncertainty",
+  absorcion: "absorption", espectro: "spectrum", transicion: "transition",
+  reduccion: "reduction", electrodo: "electrode", ferroceno: "ferrocene",
+  dimero: "dimer", fantasma: "ghost", superposicion: "superposition", interaccion: "interaction",
+  funcional: "functional", funcionales: "functional", convergencia: "convergence",
+  poblaciones: "populations", conformeros: "conformer", espin: "spin",
+  contaminado: "contamination", contaminacion: "contamination", multiplicidad: "multiplicity",
+  periodico: "periodic", periodica: "periodic", celda: "cell", malla: "mesh",
 });
 
 export function scientificQueryTerms(query: string): string[] {

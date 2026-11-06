@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { createHash } from "node:crypto";
+import publication from "../../../../publication.json";
 import type { ToolContext } from "@eigengrid/tool-registry";
 import {
   inspectProtocolTool,
@@ -10,17 +11,18 @@ import {
 import { makeInput } from "../../../../packages/protocol-core/src/md-fixtures";
 
 const context = {} as ToolContext;
+const catalogSize = publication.catalogSkillIds.length;
 
 describe("scientific catalog tools", () => {
   it("reports the validated repository protocol inventory", async () => {
     const result = await listProtocolsTool.execute(context, { limit: 100 });
     expect(result.ok).toBe(true);
     expect(result.data).toMatchObject({
-      totalCapabilities: 15,
-      totalProtocolCapabilities: 15,
-      totalProtocolAssets: 15,
-      matched: 15,
-      returned: 15,
+      totalCapabilities: catalogSize,
+      totalProtocolCapabilities: catalogSize,
+      totalProtocolAssets: catalogSize,
+      matched: catalogSize,
+      returned: catalogSize,
     });
   });
 
@@ -34,6 +36,65 @@ describe("scientific catalog tools", () => {
     expect(exact.data?.protocols[0]?.id).toBe("workflows.geometry-optimization");
   });
 
+  it("retrieves DFT decisions in Spanish and exposes their pinned evidence", async () => {
+    const cases = [
+      [
+        "Falta una energía del dímero con centros fantasma. ¿Puedo reportar la interacción?",
+        "workflows.counterpoise-interaction",
+      ],
+      [
+        "¿Cómo combino las poblaciones de varios confórmeros a 1 M?",
+        "workflows.solution-conformer-free-energy",
+      ],
+      [
+        "¿Cómo identifico qué mínimos conecta el estado de transición?",
+        "workflows.transition-state-irc",
+      ],
+      [
+        "¿Cómo reviso la segunda reducción frente al electrodo de referencia?",
+        "workflows.solution-redox",
+      ],
+      [
+        "¿Puedo asignar la banda de absorción a partir del espectro calculado?",
+        "workflows.tddft-absorption",
+      ],
+    ] as const;
+    for (const [query, expected] of cases) {
+      const listed = await listProtocolsTool.execute(context, { query, limit: 3 });
+      expect(listed.data?.protocols.map((protocol) => protocol.id)).toContain(expected);
+    }
+    const listed = await listProtocolsTool.execute(context, {
+      engine: "cp2k",
+      query: "REL_CUTOFF",
+      limit: 1,
+    });
+    const protocol = listed.data?.protocols[0];
+    expect(protocol?.id).toBe("methods.cp2k-gpw-convergence");
+    const inspected = await inspectProtocolTool.execute(context, {
+      id: protocol!.id,
+      version: protocol!.version,
+      corpusDigest: listed.data!.corpusDigest,
+      includeDependencies: true,
+      assetKinds: ["protocols", "references"],
+    });
+    expect(inspected.data?.resolvedSkills.map((s) => s.id)).toContain(
+      "methods.periodic-boundaries",
+    );
+    expect(inspected.data?.protocol.capabilityLevels.executable).toEqual({});
+    expect(inspected.data?.fragments.some((f) => f.content.includes("REL_CUTOFF"))).toBe(true);
+    expect(inspected.data?.fragments.some((f) => f.content.includes("10.1063/5.0007045"))).toBe(
+      true,
+    );
+    const missing = await inspectProtocolTool.execute(context, {
+      id: "workflows.counterpoise-interaction",
+      version: "1.0.0",
+      assetKinds: ["protocols"],
+    });
+    expect(missing.data?.fragments.some((f) => f.content.includes("missing ghost term"))).toBe(
+      true,
+    );
+  });
+
   it("explains empty filtered results without claiming that the installed catalog is empty", async () => {
     const result = await listProtocolsTool.execute(context, {
       query: "zzqxvnevermatcheszz",
@@ -43,7 +104,7 @@ describe("scientific catalog tools", () => {
       matched: 0,
       returned: 0,
       protocols: [],
-      totalProtocolCapabilities: 15,
+      totalProtocolCapabilities: catalogSize,
     });
     expect(result.data?.availableEngines).toContain("orca");
     expect(result.data?.availableDomains.length).toBeGreaterThan(0);

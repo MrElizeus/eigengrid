@@ -1,0 +1,1 @@
+{"id": "methods.periodic-boundaries.composition", "requested": ["methods.periodic-boundaries"], "include_optional": false, "expected_nodes": ["methods.periodic-boundaries"], "expected_absent": ["methods.molecular-dft"], "engine": {"id": "cp2k", "version": "2025.2.0"}, "domains": ["periodic-electronic-structure"]}
