@@ -3,6 +3,9 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
+import publication from "../../../../publication.json";
+
+const catalogSize = publication.catalogSkillIds.length;
 const cli = resolve(import.meta.dir, "../../bin/eigengrid.ts");
 const agentModule = resolve(import.meta.dir, "../../../../packages/agent/src/index.ts");
 const runtimeModule = resolve(import.meta.dir, "../agent/create-agent-runtime.ts");
@@ -42,7 +45,7 @@ for (const streamed of [false, true]) {
           const data = JSON.parse(previous!.content).result.data;
           emptyHadRecoveryHint =
             data.matched === 0 &&
-            data.totalProtocolCapabilities === 15 &&
+            data.totalProtocolCapabilities === catalogSize &&
             data.availableEngines.includes("orca") &&
             typeof data.searchHint === "string";
         }
@@ -64,8 +67,7 @@ for (const streamed of [false, true]) {
               function: { name: action.name, arguments: JSON.stringify(action.input) },
             }
           : undefined;
-        const text =
-          "There are 15 installed protocols. Explore the catalog and choose one for your scientific objective.";
+        const text = `There are ${catalogSize} installed protocols. Explore the catalog and choose one for your scientific objective.`;
         if (!body.stream)
           return Response.json({
             choices: [
@@ -165,7 +167,7 @@ try {
         expect(stdout).not.toContain("fixture-secret");
         const output = JSON.parse(stdout);
         expect(output.ok).toBe(true);
-        expect(output.response).toContain("15 installed protocols");
+        expect(output.response).toContain(`${catalogSize} installed protocols`);
         expect(output.toolCalls).toHaveLength(7);
         expect(requests).toBe(8);
         expect(finalHadNoTools).toBe(true);
