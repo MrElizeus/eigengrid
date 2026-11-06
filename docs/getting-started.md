@@ -59,6 +59,10 @@ limitation instead of presenting cached entries as available.
 OpenCode Go uses its shared `https://opencode.ai/inference/go/v1/models` listing,
 even when the saved inference endpoint uses `/openai/v1`, `/anthropic/v1` or the
 older `/zen/go/v1` route. Explicit proxy endpoints keep their own `/models` route.
+For official Go connections, this live response also supplies the model's API
+route, capabilities and pricing. Selecting and invoking a model does not require
+downloading the separate models.dev directory. Models without an implemented API
+route are omitted, and inference still requires known or explicitly configured prices.
 
 Live catalogs supply availability. Directory metadata can supply names and capabilities.
 Shutdown dates and lifecycle flags exclude retired or deprecated entries; image,
@@ -70,10 +74,12 @@ is saved together with the model. `/variants high` selects an explicitly support
 effort and `/variants default` clears the override. Escape from the variant menu
 returns to models without changing the saved model or effort.
 
-ChatGPT variants use that account's `supported_reasoning_levels`. API connections use
-advertised levels where available, with a documented native OpenAI capability fallback
+ChatGPT variants use that account's `supported_reasoning_levels`. API connections also
+read live `capabilities.reasoning.effort` and models.dev `reasoning_options` effort
+controls, with a documented native OpenAI capability fallback
 for the GPT-6 family. Unknown capabilities offer only **Provider default**, which sends
-no reasoning override. Client orchestration modes are not passed as model API efforts.
+no reasoning override. Toggle and token-budget controls alone do not advertise effort
+levels. Client orchestration modes are not passed as model API efforts.
 Changing model, account or access method clears the previous effort unless a new one
 is selected explicitly. Effort uses the existing output-token and cost budgets.
 See [OpenAI reasoning efforts](https://developers.openai.com/api/docs/guides/reasoning).

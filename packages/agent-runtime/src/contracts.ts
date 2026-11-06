@@ -73,6 +73,8 @@ export interface AgentToolAuthority {
   describe(): readonly AgentToolDescriptor[];
   /** The result is a host-controlled current policy decision, never model content. */
   decide(call: AgentToolCall, sessionId: string): Promise<ToolDecision>;
+  /** Host-owned diagnostic only; it cannot authorize an effect. */
+  explainDenial?(call: AgentToolCall, sessionId: string): Promise<string>;
   /** The authoritative adapter validates the effect just before invoking it. */
   execute(call: AgentToolCall, sessionId: string): Promise<AgentObservation>;
   /** Must check host-authenticated decision bound to session/call/input and expiry. */

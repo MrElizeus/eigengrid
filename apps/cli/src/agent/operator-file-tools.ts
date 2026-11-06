@@ -3,6 +3,7 @@ import {
   closeSync,
   constants,
   fstatSync,
+  mkdirSync,
   openSync,
   readFileSync,
   renameSync,
@@ -42,11 +43,14 @@ const writeOutput = z.object({ path: z.string(), bytes: z.number() });
 export const writeFileTool: Tool<z.infer<typeof writeInput>, z.infer<typeof writeOutput>> = {
   name: "write-file",
   description:
-    "Create or replace a text input file after host authorization. Cannot modify credentials, permission settings or repository metadata. Parent directory must exist.",
+    "Create or replace a text file (including scientific inputs and Slurm scripts) after host authorization, creating missing parent directories. Cannot modify credentials, permission settings or repository metadata.",
   inputSchema: writeInput,
   outputSchema: writeOutput,
   async execute(_ctx, input) {
     const path = resolveOperatorFile(input.path, process.cwd());
+    mkdirSync(dirname(path), { recursive: true, mode: 0o700 });
+    if (resolveOperatorFile(input.path, process.cwd()) !== path)
+      throw new Error("Operator file path changed before writing; retry with the current path");
     const temporary = `${dirname(path)}/.eigengrid-edit-${randomUUID()}`;
     const fd = openSync(
       temporary,
@@ -84,7 +88,7 @@ const commandOutput = z.object({
 export const runCommandTool: Tool<z.infer<typeof commandInput>, z.infer<typeof commandOutput>> = {
   name: "run-command",
   description:
-    "Run an arbitrary program with argument boundaries under the current OS user. Ask and Auto Review require human approval. Unavailable in Read Only and Autonomous (Sandboxed).",
+    "Run an arbitrary program with separate arguments under the current OS user, including installed sbatch, srun, ssh or scp clients. Execution starts on the local host; these clients can reach configured remote systems. Shell syntax requires an explicit shell program. Ask and Auto Review require human approval; Full Access does not. Unavailable in Read Only and Autonomous (Sandboxed).",
   inputSchema: commandInput,
   outputSchema: commandOutput,
   async execute(_ctx, input) {

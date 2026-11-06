@@ -26,9 +26,18 @@ const SCIENTIFIC_QUERY_ALIASES: Readonly<Record<string, string>> = Object.freeze
   minimizacion: "minimization", cuantica: "quantum", cuantico: "quantum",
   ligando: "ligand", ligandos: "ligand", proteina: "protein", proteinas: "protein",
   membrana: "membrane", membranas: "membrane",
+  preparar: "preparation", preparacion: "preparation", armar: "assembly", ensamblar: "assembly",
+  sistema: "system", sistemas: "system", calentamiento: "heating", calentar: "heating",
+  minimizar: "minimization", reinicio: "restart", reiniciar: "restart",
+  parametros: "parameters", parametrizacion: "parameterization", cargas: "charges",
+  validar: "validation", validacion: "validation", corregir: "repair", correccion: "repair",
+  diagnostico: "diagnostics", fallo: "failure", fallos: "failure", errores: "failure",
+  especializado: "specialized", especializados: "specialized", planificar: "planning",
+  topologia: "topology", trayectoria: "trajectory", trayectorias: "trajectory",
+  replicas: "replica", incertidumbre: "uncertainty",
 });
 
-function queryTerms(query: string): string[] {
+export function scientificQueryTerms(query: string): string[] {
   const normalized = query.toLowerCase().normalize("NFKD").replace(/\p{M}/gu, "");
   return [...new Set(normalized.split(/[^a-z0-9]+/u).map((term) => Object.hasOwn(SCIENTIFIC_QUERY_ALIASES, term) ? SCIENTIFIC_QUERY_ALIASES[term] : term))]
     .filter((term) => term.length > 2 && !STOP_WORDS.has(term))
@@ -100,7 +109,7 @@ export function searchScientificSkills(
   query: string,
   options: SkillSearchOptions = {},
 ): SkillSearchResult {
-  const terms = queryTerms(query);
+  const terms = scientificQueryTerms(query);
   const candidateIds = options.candidateIds ? new Set(options.candidateIds) : undefined;
   const hits = registry
     .all()

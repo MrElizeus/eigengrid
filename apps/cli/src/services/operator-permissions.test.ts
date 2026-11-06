@@ -19,7 +19,11 @@ import {
   permissionPreset,
   type OperationKind,
 } from "@eigengrid/agent/execution-permissions";
-import { OperatorPermissions, slashOperationKind } from "./operator-permissions";
+import {
+  OperatorPermissions,
+  resolveOperatorFile,
+  slashOperationKind,
+} from "./operator-permissions";
 import {
   loadOperatorPermissions,
   operatorPermissionPath,
@@ -219,6 +223,53 @@ describe("host approval and independent review", () => {
     expect(readFileSync(`${operatorPermissionPath(workspace)}.audit.jsonl`, "utf8")).toContain(
       '"source":"preset"',
     );
+  });
+  test("new nested files are authorized without creating directories during review", async () => {
+    saveOperatorPermissions("full-access", workspace);
+    const policy = new OperatorPermissions(workspace);
+    const action = call({ path: "water/dft/submit.sbatch", content: "#!/bin/bash\ntrue\n" });
+    expect(resolveOperatorFile("water/dft/submit.sbatch", workspace)).toBe(
+      join(workspace, "water/dft/submit.sbatch"),
+    );
+    expect(await policy.decide(action, "session")).toBe("allow");
+    expect(await policy.verify(action, "session")).toBe(true);
+    expect((await policy.authorize(action, "session")).allow).toBe(true);
+    expect(existsSync(join(workspace, "water"))).toBe(false);
+    saveOperatorPermissions("read-only", workspace);
+    expect(await policy.decide(action, "session")).toBe("deny");
+    expect(await policy.explainDenial(action, "session")).toContain("Read Only");
+  });
+  test("new nested paths still resolve existing parent symlinks before scope checks", async () => {
+    const outside = join(root, "outside");
+    mkdirSync(outside);
+    symlinkSync(outside, join(workspace, "linked"));
+    const path = "linked/new/input.gjf";
+    expect(resolveOperatorFile(path, workspace)).toBe(join(outside, "new/input.gjf"));
+    saveOperatorPermissions("read-only", workspace);
+    const policy = new OperatorPermissions(workspace);
+    expect(await policy.decide({ id: "read", name: "read-file", input: { path } }, "session")).toBe(
+      "deny",
+    );
+    symlinkSync(join(root, "missing"), join(workspace, "dangling"));
+    expect(() => resolveOperatorFile("dangling/new/input.gjf", workspace)).toThrow();
+    symlinkSync(join(workspace, ".git"), join(workspace, "metadata"));
+    mkdirSync(join(workspace, ".git"));
+    saveOperatorPermissions("full-access", workspace);
+    expect(
+      await policy.decide(call({ path: "metadata/new/config", content: "x" }), "session"),
+    ).toBe("deny");
+  });
+  test("approval for an absent file is invalidated when a parent becomes a symlink", async () => {
+    const outside = join(root, "outside");
+    mkdirSync(outside);
+    const policy = new OperatorPermissions(workspace, async () => {
+      symlinkSync(outside, join(workspace, "water"));
+      return true;
+    });
+    expect(
+      await policy.verify(call({ path: "water/new/input.gjf", content: "x" }), "session"),
+    ).toBe(false);
+    expect(existsSync(join(outside, "new"))).toBe(false);
   });
   test("symlink and out-of-workspace paths cannot escape Read Only", async () => {
     saveOperatorPermissions("read-only", workspace);

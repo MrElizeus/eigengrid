@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test";
+import { createHash } from "node:crypto";
 import type { ToolContext } from "@eigengrid/tool-registry";
 import {
   inspectProtocolTool,
@@ -71,6 +72,53 @@ describe("scientific catalog tools", () => {
 });
 
 describe("scientific protocol review tools", () => {
+  it("loads required dependencies and reconstructs every paginated fragment with its exact digest", async () => {
+    const chunks = new Map<string, { content: string; digest: string }>();
+    let cursor: { fragment: number; character: number } | undefined;
+    let corpusDigest: string | undefined;
+    let pages = 0;
+    do {
+      const result = await inspectProtocolTool.execute(context, {
+        id: "workflows.geometry-optimization",
+        includeDependencies: true,
+        assetKinds: ["summary", "protocols", "validation"],
+        maxCharacters: 1000,
+        cursor,
+        corpusDigest,
+      });
+      expect(result.ok).toBe(true);
+      const data = result.data!;
+      expect(data.resolvedSkills.map((s) => s.id)).toContain("methods.molecular-dft");
+      expect(data.fragments.reduce((n, f) => n + f.content.length, 0)).toBeLessThanOrEqual(1000);
+      corpusDigest ??= data.corpusDigest;
+      expect(data.corpusDigest).toBe(corpusDigest);
+      for (const fragment of data.fragments) {
+        const previous = chunks.get(fragment.fragmentId) ?? {
+          content: "",
+          digest: fragment.digest,
+        };
+        expect(previous.content.length).toBe(fragment.characterOffset);
+        expect(previous.digest).toBe(fragment.digest);
+        previous.content += fragment.content;
+        chunks.set(fragment.fragmentId, previous);
+      }
+      cursor = data.nextCursor ?? undefined;
+      expect(++pages).toBeLessThan(100);
+    } while (cursor);
+    expect(pages).toBeGreaterThan(1);
+    for (const chunk of chunks.values())
+      expect(createHash("sha256").update(chunk.content).digest("hex")).toBe(chunk.digest);
+    const stale = await inspectProtocolTool.execute(context, {
+      id: "workflows.geometry-optimization",
+      corpusDigest: "stale",
+    });
+    expect(stale.ok).toBe(false);
+    const invalid = await inspectProtocolTool.execute(context, {
+      id: "workflows.geometry-optimization",
+      cursor: { fragment: 99999, character: 0 },
+    });
+    expect(invalid.ok).toBe(false);
+  });
   it("exposes decision and validation evidence without execution authority", async () => {
     const result = await inspectProtocolTool.execute(context, {
       id: "validation.minimum-validation",

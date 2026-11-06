@@ -45,6 +45,7 @@ function setup(
     reserveFinalResponse?: boolean;
     inspectRequest?: (request: AgentInferenceRequest) => void;
     takeSteering?: () => readonly string[];
+    explainDenial?: AgentToolAuthority["explainDenial"];
   } = {},
 ): Fixture {
   const journal = new InMemoryAgentJournal();
@@ -67,6 +68,7 @@ function setup(
       },
     ],
     decide: async () => policy,
+    explainDenial: options.explainDenial,
     verifyApproval: async (call) => approvals.has(call.id),
     execute: async (call) => {
       calls.push(call.id);
@@ -101,6 +103,29 @@ const limits = {
 };
 
 describe("native agent native engine: replay, budgets, effects and approval", () => {
+  test.each([false, true])(
+    "denial diagnostics cannot execute a tool, even if they throw (%s)",
+    async (throws) => {
+      const f = setup([response("", [{ id: "denied", name: "inspect", input: {} }])], {
+        policy: "deny",
+        explainDenial: async () => {
+          if (throws) throw new Error("Diagnostic unavailable");
+          return "This file is outside the selected execution scope";
+        },
+      });
+      f.engine.start({ sessionId: "denial", prompt: "Inspect", limits });
+      const result = await f.engine.run("denial");
+      expect(result.phase).toBe("failed");
+      expect(result.detail).toBe(
+        throws
+          ? "inspect: Tool policy denied effect"
+          : "inspect: This file is outside the selected execution scope",
+      );
+      expect(f.calls).toEqual([]);
+      expect(f.journal.load("denial").some((r) => r.event.type === "effect_intent")).toBe(false);
+      expect(f.engine.state("denial")).toEqual(result);
+    },
+  );
   test("recovery rejects reused call IDs before executing any fresh calls in that reply", async () => {
     const f = setup([response("", [{ id: "used", name: "inspect", input: {} }])]);
     f.engine.start({ sessionId: "duplicate-recovery", prompt: "Inspect", limits });

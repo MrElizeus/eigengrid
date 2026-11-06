@@ -1,5 +1,11 @@
 import { expect, test, describe, beforeEach, afterEach, mock } from "bun:test";
-import { configureLlm, chatCompletion, getLlmConfig } from "../../packages/agent/src/llm-client";
+import {
+  configureLlm,
+  chatCompletion,
+  getLlmConfig,
+  resolveConfiguredModel,
+} from "../../packages/agent/src/llm-client";
+import { openCodeGoModels } from "../fixtures/opencode-go";
 import { fetchCatalog } from "../../packages/agent/src/model-catalog";
 
 import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
@@ -26,6 +32,77 @@ describe("LLM Client & Catalog Integration", () => {
     configureLlm(originalConfig);
     process.chdir(originalCwd);
     rmSync(directory, { recursive: true, force: true });
+  });
+
+  test("Go completes a Luna response with the selected effort while models.dev is unavailable", async () => {
+    const urls: string[] = [];
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      urls.push(url);
+      if (url === "https://models.dev/api.json") throw new Error("Directory timeout");
+      if (url === "https://opencode.ai/inference/go/v1/models")
+        return Response.json({ data: openCodeGoModels });
+      expect(url).toBe("https://opencode.ai/inference/go/openai/v1/responses");
+      expect(new Headers(init?.headers).get("authorization")).toBe("Bearer fixture-key");
+      const body = JSON.parse(String(init?.body));
+      expect(body.model).toBe("gpt-6-luna");
+      expect(body.reasoning.effort).toBe("high");
+      expect(body).not.toHaveProperty("temperature");
+      return Response.json({
+        id: "resp_fixture",
+        created_at: 0,
+        model: "gpt-6-luna",
+        status: "completed",
+        output: [
+          {
+            type: "message",
+            id: "msg_fixture",
+            role: "assistant",
+            status: "completed",
+            content: [{ type: "output_text", text: "Go works", annotations: [] }],
+          },
+        ],
+        usage: { input_tokens: 10, output_tokens: 2, total_tokens: 12 },
+      });
+    });
+    configureLlm({
+      authMode: "api-key",
+      providerName: "opencode-go",
+      baseUrl: "https://opencode.ai/zen/go/v1",
+      model: "gpt-6-luna",
+      apiKey: "fixture-key",
+      reasoningEffort: "high",
+    });
+    expect(await chatCompletion([{ role: "user", content: "hello" }])).toBe("Go works");
+    expect(urls).toEqual([
+      "https://opencode.ai/inference/go/v1/models",
+      "https://opencode.ai/inference/go/openai/v1/responses",
+    ]);
+  });
+
+  test("Go rejects missing routing and missing pricing before sending an inference request", async () => {
+    for (const data of [
+      [{ id: "gpt-6-luna", name: "Luna" }],
+      [{ ...openCodeGoModels[0], cost: undefined }],
+    ]) {
+      const urls: string[] = [];
+      globalThis.fetch = mock(async (input: RequestInfo | URL) => {
+        urls.push(String(input));
+        return Response.json({ data });
+      });
+      configureLlm({
+        authMode: "api-key",
+        providerName: "opencode-go",
+        baseUrl: "https://opencode.ai/zen/go/v1",
+        model: "gpt-6-luna",
+        apiKey: "fixture-key",
+        reasoningEffort: undefined,
+        costPerInputToken: undefined,
+        costPerOutputToken: undefined,
+      });
+      await expect(resolveConfiguredModel()).rejects.toThrow();
+      expect(urls).toEqual(["https://opencode.ai/inference/go/v1/models"]);
+    }
   });
 
   test("fetchCatalog parses provider and model level npm/api fields", async () => {
@@ -130,6 +207,8 @@ describe("LLM Client & Catalog Integration", () => {
 
     globalThis.fetch = mock((url: string | Request | URL, init?: RequestInit) => {
       const urlStr = String(url);
+      if (urlStr === "https://opencode.ai/inference/go/v1/models")
+        return Promise.resolve(Response.json({ data: openCodeGoModels }));
       if (urlStr.includes("models.dev/api.json")) {
         return Promise.resolve(
           new Response(
@@ -182,7 +261,7 @@ describe("LLM Client & Catalog Integration", () => {
 
     const response = await chatCompletion([{ role: "user", content: "Hello" }]);
     expect(response).toBe("Test response from DeepSeek");
-    expect(lastUrl).toBe("https://opencode.ai/zen/go/v1/chat/completions");
+    expect(lastUrl).toBe("https://opencode.ai/inference/go/openai/v1/chat/completions");
     expect(lastHeaders["authorization"]).toBe("Bearer sk-mock-key");
     expect(lastBody.model).toBe("deepseek-v4-flash");
   });
@@ -194,6 +273,8 @@ describe("LLM Client & Catalog Integration", () => {
 
     globalThis.fetch = mock((url: string | Request | URL, init?: RequestInit) => {
       const urlStr = String(url);
+      if (urlStr === "https://opencode.ai/inference/go/v1/models")
+        return Promise.resolve(Response.json({ data: openCodeGoModels }));
       if (urlStr.includes("models.dev/api.json")) {
         return Promise.resolve(
           new Response(
@@ -254,7 +335,7 @@ describe("LLM Client & Catalog Integration", () => {
 
     const response = await chatCompletion([{ role: "user", content: "Hello" }]);
     expect(response).toBe("Test response from MiniMax");
-    expect(lastUrl).toBe("https://opencode.ai/zen/go/v1/messages");
+    expect(lastUrl).toBe("https://opencode.ai/inference/go/anthropic/v1/messages");
     expect(lastHeaders["x-api-key"]).toBe("sk-mock-key");
     expect(lastBody.model).toBe("minimax-m2.7");
   });
@@ -262,6 +343,8 @@ describe("LLM Client & Catalog Integration", () => {
   test("OpenCode Go sends one stable session and an EigenGrid user agent", async () => {
     const providerHeaders: Headers[] = [];
     globalThis.fetch = mock((url: string | Request | URL, init?: RequestInit) => {
+      if (String(url) === "https://opencode.ai/inference/go/v1/models")
+        return Promise.resolve(Response.json({ data: openCodeGoModels }));
       if (String(url).includes("models.dev/api.json")) {
         return Promise.resolve(
           new Response(
@@ -333,6 +416,8 @@ describe("LLM Client & Catalog Integration", () => {
   test("Haiku 5.5 uses catalog capabilities instead of sending unsupported temperature", async () => {
     let body: Record<string, unknown> | undefined;
     globalThis.fetch = mock((input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input) === "https://opencode.ai/inference/go/v1/models")
+        return Promise.resolve(Response.json({ data: openCodeGoModels }));
       if (String(input) === "https://models.dev/api.json")
         return Promise.resolve(
           Response.json({

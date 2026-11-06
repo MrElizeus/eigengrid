@@ -11,7 +11,7 @@ import {
   realpathSync,
   statSync,
 } from "node:fs";
-import { dirname, isAbsolute, relative, resolve } from "node:path";
+import { basename, dirname, isAbsolute, relative, resolve } from "node:path";
 import { homedir } from "node:os";
 import { agentDigest, type AgentToolCall } from "@eigengrid/agent-runtime";
 import {
@@ -56,7 +56,25 @@ export function resolveOperatorFile(path: string, workspace: string): string {
     return realpathSync(target);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
-    return resolve(realpathSync(dirname(target)), target.slice(target.lastIndexOf("/") + 1));
+    // New calculations may need several parent directories. Resolve the nearest
+    // existing ancestor before checking scope, without creating anything here.
+    let parent = dirname(target);
+    const missing = [basename(target)];
+    for (;;) {
+      try {
+        lstatSync(parent); // Do not treat a dangling symlink as a missing directory.
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "ENOENT" || dirname(parent) === parent)
+          throw error;
+        missing.unshift(basename(parent));
+        parent = dirname(parent);
+        continue;
+      }
+      const canonical = realpathSync(parent);
+      if (!statSync(canonical).isDirectory())
+        throw new Error("Operator file parent must be a directory");
+      return resolve(canonical, ...missing);
+    }
   }
 }
 
@@ -128,6 +146,9 @@ export class OperatorPermissions {
           : undefined);
     if (typeof rawPath === "string") {
       file = resolveOperatorFile(rawPath, this.workspace);
+      // Bind absent targets too: a parent symlink changing during approval must
+      // not redirect the authorized write to a different canonical path.
+      fileState = { path: file, exists: false };
       try {
         const stat = statSync(file);
         if (stat.size > 64 * 1024 ** 2)
@@ -308,6 +329,14 @@ export class OperatorPermissions {
       return (await this.binding(call, sessionId)).decision;
     } catch {
       return "deny";
+    }
+  }
+  async explainDenial(call: AgentToolCall, sessionId: string): Promise<string> {
+    try {
+      const binding = await this.binding(call, sessionId);
+      return `The ${permissionPreset(binding.settings.preset).name} preset denies this operation. Use /permissions to review it.`;
+    } catch (error) {
+      return error instanceof Error ? error.message : "Operator permission verification failed";
     }
   }
   async authorize(

@@ -3,6 +3,8 @@ import { discoverConfiguredModels, ModelConnectionRequiredError } from "./model-
 import type { LlmConfig } from "./llm-client";
 import type { ChatGptAuth } from "./chatgpt-auth";
 import type { CatalogProvider } from "./model-catalog";
+import { openCodeGoModels } from "../../../tests/fixtures/opencode-go";
+import { modelVariants } from "./model-variants";
 
 const config: LlmConfig = {
   authMode: "api-key",
@@ -30,6 +32,60 @@ const fakeFetch = (fn: (input: RequestInfo | URL, init?: RequestInit) => Promise
   fn as unknown as typeof fetch;
 
 describe("live credential-scoped model discovery", () => {
+  test("Go discovery and variants work from live metadata without contacting models.dev", async () => {
+    const result = await discoverConfiguredModels(
+      {
+        ...config,
+        providerName: "opencode-go",
+        baseUrl: "https://opencode.ai/zen/go/v1",
+      },
+      {
+        fetch: fakeFetch(async (input, init) => {
+          expect(String(input)).toBe("https://opencode.ai/inference/go/v1/models");
+          expect(new Headers(init?.headers).get("authorization")).toBe(
+            "Bearer fixture-api-credential",
+          );
+          return Response.json({
+            data: [
+              ...openCodeGoModels,
+              { id: "unknown-route" },
+              {
+                id: "unsupported",
+                api: {
+                  "generate-content": {
+                    base_url: "https://opencode.ai/inference/go/google/v1beta",
+                    sdk: { aisdk: "@ai-sdk/google" },
+                  },
+                },
+              },
+              {
+                ...openCodeGoModels[0],
+                id: "redirected",
+                api: {
+                  responses: {
+                    base_url: "https://untrusted.example/v1",
+                    sdk: { aisdk: "@ai-sdk/openai" },
+                  },
+                },
+              },
+            ],
+          });
+        }),
+      },
+    );
+    expect(result.provider).toBe("OpenCode Go");
+    expect(result.excluded).toBe(3);
+    expect(result.models.map((model) => model.reasoningProtocol)).toEqual([
+      "openai",
+      "anthropic",
+      "openai-compatible",
+      "anthropic",
+    ]);
+    expect(
+      modelVariants(result.models[0], { providerName: "opencode-go" }).map((v) => v.id),
+    ).toEqual(["default", "none", "low", "medium", "high", "xhigh", "max"]);
+  });
+
   const names = ["LLM_API_KEY", "OPENAI_API_KEY", "OPENCODE_API_KEY", "ANTHROPIC_API_KEY"];
   let saved: (string | undefined)[];
   beforeEach(() => {

@@ -5,6 +5,8 @@ import {
   loadScientificSkillCorpus,
   ScientificSkillRegistry,
   searchScientificSkills,
+  resolveScientificSkillGraph,
+  selectProgressiveSkillContext,
   type LoadedScientificSkill,
 } from "@eigengrid/scientific-skills";
 import { AgentAuthorityLevel, type AgentContextBlock } from "./authority";
@@ -310,6 +312,23 @@ export class AgentMemory {
         name: skill.name,
         content: sanitizeMemoryText(skill.content, 2_000),
       });
+      if (skill.source === "canonical") {
+        const registry = this.canonicalRegistry();
+        const resolved = resolveScientificSkillGraph(registry, { requested: [skill.name] });
+        const context = selectProgressiveSkillContext(resolved, {
+          query: prompt,
+          reason: "operator procedural knowledge retrieval",
+          assetKinds: ["protocols", "decision_rules", "validation", "diagnostics"],
+          maxFragments: 10,
+          maxCharacters: 12000,
+        });
+        blocks.push({
+          authority: AgentAuthorityLevel.CANONICAL_SKILL,
+          source: "canonical-skill",
+          name: `${skill.name}:procedures`,
+          content: `Corpus: ${registry.corpusDigest}\nSelection: ${context.selectionDigest}\nResolved knowledge: ${JSON.stringify(resolved.graph.nodes)}\nThis is a bounded selection, not the complete procedure. Use inspect-protocol with includeDependencies=true and follow nextCursor with the returned corpusDigest before finalizing a specialized plan. Optional recommendations are selected by system context, not automatically imposed.\n\n${context.fragments.map((fragment) => `${fragment.reference.fragmentId}\nSHA256: ${fragment.reference.fragmentDigest}\n${fragment.content}`).join("\n\n")}`,
+        });
+      }
     }
     const recent = await this.search(prompt, { limit: 3 });
     for (const observation of recent) {
@@ -329,7 +348,7 @@ function canonicalMemorySkill(skill: LoadedScientificSkill): Skill {
     name: skill.manifest.id,
     trigger: skill.manifest.id,
     path: join(skill.directory, "SKILL.md"),
-    content: `Scientific skill ${skill.manifest.id}@${skill.manifest.version}\nKnowledge level: ${skill.manifest.knowledge_level}; review: ${skill.manifest.review.status}\n\n${skill.markdownBody}`,
+    content: `Scientific skill ${skill.manifest.id}@${skill.manifest.version}\nContent digest: ${skill.contentDigest}\nKnowledge level: ${skill.manifest.knowledge_level}; review: ${skill.manifest.review.status}\n\n${skill.markdownBody}`,
     source: "canonical",
   };
 }

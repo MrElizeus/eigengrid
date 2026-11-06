@@ -5,11 +5,9 @@
  * Each provider has models with metadata, API URLs, and configuration.
  */
 
-import {
-  parseReasoningLevels,
-  type ReasoningLevel,
-  type ModelCatalogCost,
-} from "@eigengrid/model-gateway";
+import { type ReasoningLevel, type ModelCatalogCost } from "@eigengrid/model-gateway";
+
+import { catalogModel } from "./catalog-model";
 
 const CATALOG_URL = "https://models.dev/api.json";
 const CACHE_TTL_MS = 5 * 60 * 1_000;
@@ -102,36 +100,10 @@ export async function fetchCatalog(opts?: {
       if (!mval || typeof mval !== "object") continue;
       const m = mval as Record<string, unknown>;
 
-      const mProvider =
-        m.provider && typeof m.provider === "object"
-          ? (m.provider as Record<string, unknown>)
-          : null;
-      const modelNpm = mProvider?.npm ? String(mProvider.npm) : providerNpm;
-      const modelApi = mProvider?.api ? String(mProvider.api) : providerApi;
-
-      providers[id].models[mid] = {
-        id: mid,
-        name: m.name ? String(m.name) : mid,
-        family: m.family ? String(m.family) : undefined,
-        description: m.description ? String(m.description) : undefined,
-        context: typeof m.context === "number" ? m.context : undefined,
-        maxOutput: typeof m.maxOutput === "number" ? m.maxOutput : undefined,
-        npm: modelNpm,
-        api: modelApi,
-        temperature: typeof m.temperature === "boolean" ? m.temperature : undefined,
-        status: typeof m.status === "string" ? m.status : undefined,
-        toolCall: typeof m.tool_call === "boolean" ? m.tool_call : undefined,
-        reasoningLevels: parseReasoningLevels(m.supported_reasoning_levels),
-        outputModalities:
-          m.modalities &&
-          typeof m.modalities === "object" &&
-          Array.isArray((m.modalities as { output?: unknown }).output)
-            ? (m.modalities as { output: unknown[] }).output.filter(
-                (value): value is string => typeof value === "string",
-              )
-            : undefined,
-        cost: m.cost === undefined ? undefined : (m.cost as ModelCatalogCost),
-      };
+      providers[id].models[mid] = catalogModel(mid, m, {
+        npm: providerNpm,
+        api: providerApi,
+      });
     }
   }
 

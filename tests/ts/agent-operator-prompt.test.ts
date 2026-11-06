@@ -20,6 +20,18 @@ describe("OPERATOR_SYSTEM_PROMPT", () => {
     expect(OPERATOR_SYSTEM_PROMPT).toContain("No registered tool currently supports that action");
   });
 
+  it("recognizes Slurm and SSH through general-purpose tools without claiming remote submit-job support", () => {
+    expect(OPERATOR_SYSTEM_PROMPT).toContain("including SSH and Slurm clients");
+    expect(OPERATOR_SYSTEM_PROMPT).toContain(
+      "A separate tool per executable or remote host is not required",
+    );
+    expect(OPERATOR_SYSTEM_PROMPT).toContain("submit-job currently supports local execution only");
+    expect(OPERATOR_SYSTEM_PROMPT).toContain(
+      "do not ask again merely because an action changes files",
+    );
+    expect(OPERATOR_SYSTEM_PROMPT).not.toContain("Do not invent shell commands or CLI invocations");
+  });
+
   it("forbids decorative emojis (rule is stated)", () => {
     expect(OPERATOR_SYSTEM_PROMPT).toContain("No decorative emojis");
   });
