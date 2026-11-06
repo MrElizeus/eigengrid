@@ -9,6 +9,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readdirSync,
+  readFileSync,
   rmSync,
   writeFileSync,
 } from "fs";
@@ -22,6 +23,50 @@ describe("SQLite WAL backup snapshots", () => {
   afterEach(() => {
     for (const directory of directories.splice(0)) {
       rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("derives all metadata from frozen bytes even when the live database changes", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "backup-consistent-"));
+    directories.push(directory);
+    const dbPath = join(directory, "head.sqlite");
+    const db = createDatabase(dbPath);
+    await db.init();
+    const source = new Database(dbPath);
+    const originalDeserialize = Database.deserialize;
+    let changed = false;
+    Database.deserialize = function (...args: Parameters<typeof Database.deserialize>) {
+      if (!changed) {
+        changed = true;
+        source
+          .query(
+            `INSERT INTO jobs(id,name,software,input_path,workdir,status,created_at,updated_at)
+          VALUES('later','later','orca','input','/tmp','created',1,1)`,
+          )
+          .run();
+      }
+      return originalDeserialize.apply(Database, args);
+    };
+    const archive = join(directory, "snapshot.tar.gz");
+    try {
+      await createBackup(db, { dbPath, outputPath: archive, version: "test" });
+    } finally {
+      Database.deserialize = originalDeserialize;
+      source.close();
+    }
+    expect(changed).toBe(true);
+    expect(await db.listJobs()).toHaveLength(1);
+    const extracted = join(directory, "extracted");
+    mkdirSync(extracted);
+    await tar.extract({ file: archive, cwd: extracted });
+    const archived = new Database(join(extracted, "head.sqlite"), { readonly: true });
+    try {
+      expect(archived.query("SELECT COUNT(*) AS n FROM jobs").get()).toEqual({ n: 0 });
+      expect(readFileSync(join(extracted, "jobs.ndjson"), "utf8")).toBe("");
+      expect((await inspectBackup(archive)).manifest.counts.jobs).toBe(0);
+      expect((await verifyBackup(archive)).checksumValid).toBe(true);
+    } finally {
+      archived.close();
     }
   });
 

@@ -4,6 +4,7 @@
 
 import type { BackupManifest, BackupInfo, RestoreValidation } from "./types";
 import {
+  SqliteDatabase,
   listJobs as dbListJobs,
   listResults,
   type DatabaseLike,
@@ -75,13 +76,30 @@ export async function createBackup(
     );
   }
 
+  const dbContent = await readVerifiedSqliteSnapshot(options.dbPath);
+  const { Database } = await import("bun:sqlite");
+  const connection = Database.deserialize(dbContent, true);
+  const frozenDb = new SqliteDatabase(":memory:");
+  // Use the existing connection seam without init(): migrations must never
+  // alter the exact database bytes selected for this archive.
+  Reflect.set(frozenDb, "db", connection);
+  try {
+    return await createFrozenBackup(frozenDb, options, dbContent);
+  } finally {
+    connection.close();
+  }
+}
+
+async function createFrozenBackup(
+  db: DatabaseLike,
+  options: Parameters<typeof createBackup>[1],
+  dbContent: Buffer,
+): Promise<{ backupPath: string; fileCount: number; totalSizeBytes: number }> {
   const outputPath = options.outputPath ?? `eigengrid-backup-${Date.now()}${BACKUP_EXTENSION}`;
   const version = options.version;
   const includeArtifacts = options.includeArtifacts ?? false;
-
-  // Freeze the authoritative database first. CAS selection is derived from
-  // this immutable snapshot, never from a later view of the mutable source DB.
-  const dbContent = await readVerifiedSqliteSnapshot(options.dbPath);
+  // Every database read below uses the same read-only snapshot, including
+  // schema, logs, metadata and artifact selection.
   const scientificCasReferences = await readScientificCasReferencesFromBytes(dbContent);
   const scientificCasObjects = groupScientificCasReferences(scientificCasReferences);
   if (scientificCasObjects.length > 0 && !options.contentAddressedStore) {
