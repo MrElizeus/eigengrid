@@ -29,6 +29,15 @@ These commands inspect interfaces without a model or scientific engine. For a lo
 project, run `bun run eigengrid init --role head --no-gen-key`. Mission execution requires
 [protected site configuration](docs/operations.md), reviewed inputs and explicit authority.
 
+## Web workspace
+
+Run `bun run eigengrid web` (or the installed `eigengrid web`) for streaming chat,
+private history, account login and tool activity. For network access, use PostgreSQL,
+an HTTPS reverse proxy and administrator-issued invitations. Configure the connection in the CLI with `/connect`
+and `/models`; the web interface reuses it, including ChatGPT account access. Use
+`--connection-dir ~` to reuse a connection configured from your home directory.
+See [web workspace](docs/web.md) for details.
+
 ## Native distribution
 
 ```bash
