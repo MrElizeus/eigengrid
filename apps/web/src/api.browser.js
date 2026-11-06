@@ -8,7 +8,7 @@ export class Api {
   /** @type {PendingRequest[]} */ pending = [];
   /** @param {typeof fetch} [transport] @param {Storage | null} [storage] */
   constructor(transport = fetch, storage) {
-    this.transport = transport;
+    this.transport = transport.bind(globalThis);
     /** @type {Storage | null | undefined} */
     this.storage = null;
     try {
@@ -79,7 +79,13 @@ export class Api {
   }
   /** @param {AbortSignal} [signal] */
   async bootstrap(signal) {
-    this.session = await this.request("/auth/session", { signal });
+    const next = await this.request("/auth/session", { signal });
+    if (
+      this.session &&
+      (this.session.actor.id !== next.actor.id || this.session.csrfToken !== next.csrfToken)
+    )
+      this.generation++;
+    this.session = next;
     return this.session;
   }
   /** @param {string} credential */

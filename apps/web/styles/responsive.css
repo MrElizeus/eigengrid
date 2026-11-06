@@ -1,208 +1,157 @@
-@layer responsive {
-  @media (min-width: 1600px) {
-    .main {
-      padding: 48px 60px;
-    }
+@media (max-width: 1300px) {
+  .record-grid {
+    grid-template-columns: 1fr;
   }
-  @media (max-width: 1100px) {
-    .workspace {
-      grid-template-columns: 210px minmax(0, 1fr);
-    }
-    .main {
-      padding: 30px 24px;
-    }
-    .topbar {
-      padding: 0 24px;
-    }
-    .metrics {
-      gap: 10px;
-    }
-    .metric {
-      padding: 18px;
-    }
-    .detail-grid {
-      grid-template-columns: 1fr;
-    }
-    .detail-grid > aside {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-    .login-story {
-      padding: 32px 10%;
-    }
+  .page {
+    padding: 24px;
   }
-  @media (max-width: 780px) {
-    .workspace {
-      display: block;
-    }
-    .sidebar {
-      position: static;
-      height: auto;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      padding: 16px 20px;
-      gap: 18px;
-      overflow: visible;
-    }
-    .brand {
-      font-size: 1.1rem;
-    }
-    .brand small {
-      font-size: 0.46rem;
-    }
-    .project-switch {
-      margin: 0;
-    }
-    .project-switch .eyebrow {
-      display: none;
-    }
-    .primary-nav {
-      display: flex;
-      grid-column: 1;
-      gap: 4px;
-    }
-    .primary-nav a {
-      padding: 7px 10px;
-      font-size: 0.74rem;
-    }
-    .sidebar-note {
-      display: none;
-    }
-    .account {
-      border: 0;
-      padding: 0;
-      display: flex;
-      justify-content: flex-end;
-      font-size: 0.68rem;
-    }
-    .account .avatar,
-    .account small {
-      display: none;
-    }
-    .account .button {
-      flex-shrink: 0;
-    }
-    .account > div {
-      max-width: 130px;
-    }
-    .topbar {
-      min-height: 48px;
-    }
-    .topbar-label {
-      display: none;
-    }
-    .main {
-      padding: 24px 20px;
-    }
-    .metrics {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      margin-bottom: 28px;
-    }
-    .page-heading {
-      align-items: flex-start;
-      margin-bottom: 26px;
-    }
-    .mission-row {
-      flex-wrap: wrap;
-      padding: 18px;
-      gap: 12px;
-    }
-    .mission-symbol {
-      display: none;
-    }
-    .mission-title {
-      flex-basis: 70%;
-    }
-    .mission-state {
-      align-items: flex-start;
-      flex-direction: row;
-      justify-content: space-between;
-      width: 100%;
-    }
-    .row-arrow {
-      display: none;
-    }
-    .detail-grid > aside {
-      grid-template-columns: 1fr;
-    }
-    .tabs {
-      gap: 22px;
-    }
-    .login-layout {
-      grid-template-columns: 1fr;
-    }
-    .login-story {
-      padding: 24px;
-    }
-    .story-content {
-      display: none;
-    }
-    .login-main {
-      padding: 60px 24px 30px;
-      min-height: calc(100vh - 84px);
-    }
-    .login-form {
-      margin: auto;
-    }
+  .mission-workspace.with-agent {
+    grid-template-columns: minmax(0, 1fr) 7px min(var(--agent-width, 400px), 45vw);
   }
-  @media (max-width: 480px) {
-    .main {
-      padding: 22px 14px;
-    }
-    .page-heading {
-      flex-direction: column;
-      gap: 16px;
-    }
-    .page-heading h1 {
-      font-size: 1.85rem;
-    }
-    .panel {
-      padding: 18px;
-    }
-    .metric {
-      padding: 16px;
-    }
-    .filters {
-      flex-direction: column;
-    }
-    .filters select {
-      max-width: none;
-    }
-    .primary-nav {
-      grid-column: 1 / -1;
-    }
-    .account {
-      grid-column: 1 / -1;
-      justify-content: flex-start;
-    }
-    .sidebar {
-      gap: 12px;
-    }
-    .sidebar .brand img {
-      width: 30px;
-      height: 30px;
-    }
-    .inline-form {
-      flex-direction: column;
-      align-items: stretch;
-    }
-    .mission-state {
-      align-items: flex-start;
-      flex-direction: column;
-    }
-    .split {
-      flex-wrap: wrap;
-    }
-    .facts {
-      grid-template-columns: 1fr;
-    }
+  .tabs {
+    gap: 16px;
   }
-  @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-      transition: none !important;
-      scroll-behavior: auto !important;
-    }
+}
+@media (max-width: 850px) {
+  .app-header {
+    padding: 0 16px;
+    gap: 14px;
+  }
+  .account-label {
+    display: none;
+  }
+  .workspace-bar {
+    padding: 0 16px;
+  }
+  .project-picker {
+    min-width: 0;
+  }
+  .project-picker select {
+    max-width: 220px;
+    width: 100%;
+  }
+  .workspace-grid.with-agent {
+    grid-template-columns: minmax(0, 1fr) 320px;
+  }
+  .mission-workspace.with-agent {
+    grid-template-columns: minmax(0, 1fr) 5px 320px;
+  }
+  .page {
+    padding: 20px 16px;
+  }
+  .page-heading {
+    flex-wrap: wrap;
+  }
+  .catalog-toolbar {
+    flex-wrap: wrap;
+  }
+  .catalog-toolbar input {
+    flex-basis: 100%;
+  }
+  .mission-row {
+    flex-direction: column;
+    padding: 16px;
+  }
+  .mission-row > div:last-child {
+    display: flex;
+    justify-content: space-between;
+    text-align: left;
+    align-items: center;
+  }
+  .mission-row time {
+    margin: 0;
+  }
+  .panel {
+    padding: 16px;
+  }
+}
+@media (max-width: 640px) {
+  html,
+  body,
+  #app {
+    height: auto;
+    min-height: 100%;
+  }
+  .app-shell {
+    min-height: 100vh;
+    height: auto;
+    grid-template-rows: 60px 48px auto;
+  }
+  .app-header {
+    gap: 12px;
+  }
+  .wordmark {
+    font-size: 19px;
+  }
+  .app-header button {
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+  .project-picker select {
+    max-width: 165px;
+    font-size: 12px;
+  }
+  .header-spacer {
+    display: none;
+  }
+  .app-header > :last-child {
+    margin-left: auto;
+  }
+  .workspace-grid,
+  .workspace-grid.with-agent,
+  .mission-workspace.with-agent {
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
+  }
+  .resize-handle {
+    display: none;
+  }
+  .agent-panel {
+    height: auto;
+    min-height: 480px;
+    border: 0;
+    border-top: 1px solid var(--border);
+  }
+  .agent-body {
+    max-height: 65vh;
+    min-height: 230px;
+  }
+  .agent-slot {
+    height: auto;
+  }
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .tabs {
+    gap: 14px;
+  }
+  .tabs a {
+    font-size: 12px;
+  }
+  .heading-meta {
+    gap: 8px;
+  }
+  .updates {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .login {
+    min-height: 100vh;
+  }
+  .notice {
+    bottom: 12px;
+    left: 12px;
+    max-width: calc(100vw - 24px);
+  }
+  .facts > div {
+    gap: 10px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
   }
 }

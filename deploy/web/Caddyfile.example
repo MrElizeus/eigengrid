@@ -1,4 +1,5 @@
 # Replace the hostname with the DNS name pointing to this host.
+# Match 4317 to the port in protected mission-client.json.
 # Keep Bun on loopback. Caddy terminates TLS and forwards the original Host.
 grid.example.org {
     encode zstd gzip

@@ -76,7 +76,8 @@
       "@eigengrid/md-analysis/*": ["./packages/md-analysis/src/*"],
       "@eigengrid/protocol-core": ["./packages/protocol-core/src"],
       "@eigengrid/protocol-core/*": ["./packages/protocol-core/src/*"]
-    }
+    },
+    "allowJs": true
   },
   "include": [
     "apps/*/src/**/*.ts",

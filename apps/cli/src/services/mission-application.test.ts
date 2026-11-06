@@ -653,6 +653,24 @@ describe.skipIf(!canRunPostgres)("human mission application through real Postgre
           )
         ).status,
       ).toBe(400);
+      const agentBase = `/api/v1/projects/${address.projectId}/missions/${mission.id}/agent-sessions`;
+      const opened = await http.request(
+        agentBase,
+        "POST",
+        { expectedRevision: 0, request: { prompt: "Inspect the mission" } },
+        "agent.open",
+      );
+      expect(opened.status).toBe(201);
+      const openedId = (await opened.json()).result.sessionId;
+      const history = await http.request(`${agentBase}?limit=1`);
+      expect(history.status).toBe(200);
+      expect(
+        (await history.json()).result.items.map((item: { sessionId: string }) => item.sessionId),
+      ).toEqual([openedId]);
+      expect(http.inferences()).toBe(0);
+      expect((await http.request(`${agentBase}?limit=101`)).status).toBe(400);
+      expect((await http.request(`${agentBase}?limit=1&limit=2`)).status).toBe(400);
+      expect((await http.request(`${agentBase}?__proto__=unexpected`)).status).toBe(400);
       await database.removeProjectMember(address.projectId, actor.id);
       expect((await (await http.request("/api/v1/projects")).json()).result.items).toEqual([]);
       expect(
@@ -665,6 +683,7 @@ describe.skipIf(!canRunPostgres)("human mission application through real Postgre
           )
         ).status,
       ).not.toBe(200);
+      expect((await http.request(agentBase)).status).not.toBe(200);
       await http.pool.query("UPDATE eigengrid_a5_http_sessions SET revoked=TRUE");
       expect((await http.request("/api/v1/auth/session")).status).toBe(401);
     } finally {

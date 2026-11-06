@@ -15,6 +15,12 @@ export type {
 };
 export type Review = Awaited<ReturnType<MissionApplication["review"]>>;
 export type CreateRequest = Parameters<MissionApplication["create"]>[0];
+export interface AgentSummary {
+  sessionId: string;
+  phase: AgentSession["phase"];
+  prompt: string;
+  createdAt: string;
+}
 export interface Session {
   actor: { id: string; kind: string; displayName?: string };
   roles: string[];

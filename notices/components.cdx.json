@@ -11,7 +11,7 @@
     "properties": [
       {
         "name": "eigengrid:bun-lock-sha256",
-        "value": "0691eb112de1ff43d0b50d49a1081bd1763ff0c30c18d8e89ba9b7d11a04bc93"
+        "value": "f7d7fb1584b9da6b5b0cb9bdc68b011eb678c7bc249e6f938c8fde55f6f14aa6"
       }
     ]
   },
@@ -632,6 +632,44 @@
     },
     {
       "type": "library",
+      "name": "@types/whatwg-mimetype",
+      "version": "3.0.2",
+      "purl": "pkg:npm/%40types/whatwg-mimetype@3.0.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "@types_whatwg-mimetype@3.0.2/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "@types/ws",
+      "version": "8.18.2",
+      "purl": "pkg:npm/%40types/ws@8.18.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "@types_ws@8.18.2/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "name": "@types/yargs-parser",
       "version": "21.0.3",
       "purl": "pkg:npm/%40types/yargs-parser@21.0.3",
@@ -893,6 +931,25 @@
         {
           "name": "eigengrid:license-files",
           "value": "buffer-from@1.1.2/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "buffer-image-size",
+      "version": "0.6.4",
+      "purl": "pkg:npm/buffer-image-size@0.6.4",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "buffer-image-size@0.6.4/LICENSE"
         }
       ]
     },
@@ -1392,6 +1449,25 @@
     },
     {
       "type": "library",
+      "name": "entities",
+      "version": "7.0.1",
+      "purl": "pkg:npm/entities@7.0.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-2-Clause"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "entities@7.0.1/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "name": "environment",
       "version": "1.1.0",
       "purl": "pkg:npm/environment@1.1.0",
@@ -1653,6 +1729,25 @@
         {
           "name": "eigengrid:license-files",
           "value": "get-tsconfig@4.14.0/LICENSE"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "happy-dom",
+      "version": "21.0.4",
+      "purl": "pkg:npm/happy-dom@21.0.4",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "happy-dom@21.0.4/LICENSE"
         }
       ]
     },
@@ -4199,6 +4294,25 @@
         {
           "name": "eigengrid:license-files",
           "value": "vfile@6.0.3/license"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "whatwg-mimetype",
+      "version": "3.0.0",
+      "purl": "pkg:npm/whatwg-mimetype@3.0.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "eigengrid:license-files",
+          "value": "whatwg-mimetype@3.0.0/LICENSE.txt"
         }
       ]
     },

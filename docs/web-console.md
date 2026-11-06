@@ -1,121 +1,143 @@
-# Web console
+# React workspace
 
-The English browser console is served at the root of the protected HTTPS origin by
-`eigengrid serve`. It is part of the CLI executable, including native releases; it
-does not require a separate frontend runtime, CDN, build server or asset directory.
-It uses the same mission application, PostgreSQL authority, CAS, approvals and
-durable agent sessions as the CLI.
+EigenGrid 1.0.0 ships one English React application. `eigengrid serve` and its
+`eigengrid web` alias start the same protected HTTP listener. React and CSS are
+embedded in the executable; installation needs no separate frontend runtime,
+asset directory, CDN or Node service.
 
-## Connect
+The interface uses a light background, a text-only EigenGrid wordmark and central
+mission views. The agent is a persistent panel on the right. Hide it without
+losing the in-memory task draft; drag the separator or use its arrow keys to resize
+it. Home/End select the width limits. Small screens place the agent below the
+mission. Only the width preference is stored in localStorage.
+
+## Architecture and connection
+
+React components in `apps/web/src` use the same-origin `/api/v1` HTTP API.
+Scientific contracts are imported as TypeScript types only. Database access,
+model credentials, agent execution and cluster authority stay in the backend.
+The browser cannot choose a provider key, protected configuration path, actor or
+execution identity.
+
+The API composes the same MissionApplication, PostgreSQL state, content-addressed
+artifacts, scientific approvals and durable agent service as the CLI. The
+separately provisioned Head admits and coordinates scientific execution. One web
+application does not combine the Head and browser server into one process.
 
 Provision the installation as described in [operations](operations.md) and
-[getting started](getting-started.md#prepare-a-protected-installation). The server
-still binds only to `127.0.0.1`; terminate TLS at the configured reverse proxy and
-forward both `/` and `/api/v1/` to the same listener. Preserve request bodies,
-cookies, `Origin`, `X-CSRF-Token` and `Idempotency-Key`. Disable caching for this
-origin. The public origin must exactly match protected configuration.
+[getting started](getting-started.md#prepare-a-protected-installation). The listener
+binds only to `127.0.0.1`; terminate TLS at the exact HTTPS origin in protected
+configuration. Forward `/` and `/api/v1/` to this listener, preserving cookies,
+Origin, X-CSRF-Token, Idempotency-Key and request bodies. Disable proxy caching.
+`deploy/web` contains illustrative proxy/service files; replace their account,
+working directory and port with the provisioned installation values.
 
-Run `eigengrid serve credential` to generate an opaque credential and its digest.
-The administrator provisions the digest, actor, roles and allowed project IDs in
-protected configuration; share the credential with that operator through your
-existing secure channel. Do not put it in a URL. Open the configured HTTPS origin
-and enter the credential on the sign-in screen. User and project membership must
-also be active in the canonical database.
+`eigengrid serve credential` generates an opaque credential and its digest. The
+administrator provisions the digest, actor, roles and allowed project IDs in
+protected configuration. Share the credential through your secure channel, never
+in a URL. Sign in with that credential. User and project membership must also be
+active in the canonical database. The former prototype password/invitation login
+is retired; see [migration notes](web.md).
 
-Authentication uses a Secure, HttpOnly, SameSite=Strict host cookie. Reloads and
-independent tabs recover the session-bound CSRF token through authenticated
-bootstrap. Credentials, CSRF tokens, prompts and scientific request bodies are
-never stored in localStorage or sessionStorage. Sign out revokes the server session.
-Current account status and protected authority are rechecked on requests.
-
-Use a current browser with native JavaScript modules, Web Crypto, dialog elements,
-AbortSignal timeout/combination and sessionStorage. Browser storage is needed for
-mutation recovery metadata. Blocking it disables submissions while reads remain
-available. There are no external fonts, scripts, analytics or network dependencies.
+Authentication uses a Secure, HttpOnly, SameSite=Strict cookie. Bootstrap recovers
+the session CSRF token after a reload. Credentials and tokens never enter browser
+storage. Account and authority are rechecked on requests; sign-out revokes the
+server session. Cross-tab sign-in/sign-out clears the current UI and fences old
+responses. Ordinary window focus revalidates access while preserving drafts if the
+same session remains active.
 
 ## Mission workflow
 
-1. Choose an authorized project. The mission list contains your own bound missions;
-   another member's missions and historical unbound local jobs are excluded. Search
-   by question, ID or target property, and filter by lifecycle state.
-2. Select **New mission**. Enter the scientific question, target properties,
-   confidence and explicit acceptance criteria. Upload the structure, select its
-   format, and specify charge/multiplicity only when known. Set allowed engines and
-   explicit budget limits. Review the summary before creating the mission. Creation
-   stores the objective and evidence; it does not launch a calculation.
-3. Under **Plan & review**, import a candidate JSON in the existing
-   `eigengrid.mission-candidate/v1` format. Upload any new evidence files referenced
-   by its digests. The CLI's `eigengrid mission schema import` describes the envelope;
-   the file picker expects its `candidate` object. The server validates the complete
-   candidate and current policy. You can also prepare candidates through the agent.
-4. Inspect the exact protocol, material decisions, risks, limitations and approval
-   bindings. An authorized reviewer supplies a reason and explicitly approves or
-   rejects each applicable revision. Expired approvals cannot be granted. A changed
-   revision or policy requires a fresh review.
-5. **Compile work units**, then **Request execution**. Both use the reviewed
-   candidate digest and mission revision; the backend rechecks admission. Execution
-   belongs to the separately provisioned Head and remains subject to its dispatch
-   controls and installation qualification.
-6. Follow **Work units**, **Evidence**, **Activity** and the separate scientific
-   assessment in **Overview**. Downloads use the exact CAS digest and revalidate
-   mission access. **Cancel mission** records a cancellation request with a reason;
-   completion depends on canonical reconciliation of admitted work.
+1. Select an authorized project. Search/filter your own bound missions; other
+   members' missions and historical unbound local jobs are excluded.
+2. Choose **New mission**. Define the question, properties, acceptance criteria,
+   structure, known charge/multiplicity, allowed engines and explicit budget limits.
+   Review the summary, then **Upload & create**. This records the objective and
+   evidence without launching a calculation.
+3. Use the agent panel to prepare a proposal or import a candidate under
+   **Plan & review**. The JSON file must contain the candidate object in
+   `eigengrid.mission-candidate/v1` format. Upload new referenced evidence files.
+4. Inspect the protocol, decisions, risks, exact content digest and approval
+   bindings. An authorized reviewer supplies a reason and approves or rejects each
+   applicable revision. Expired or changed revisions require a new review.
+5. **Compile work units**, then **Request execution**. Requests identify the exact
+   candidate and revision. The backend rechecks policy, evidence and approvals;
+   Head dispatch controls and installation qualification still apply.
+6. Follow **Work units**, **Results & evidence** and **Activity**. **Overview**
+   separates scientific assessment from execution state. Downloads require current
+   mission access and the exact content digest.
+7. **Mission controls** contains cancellation with a reason. This requests
+   reconciliation of admitted work; it does not claim immediate termination.
 
-The mission page checks status every 15 seconds while visible. It announces updates
-without replacing a review form or silently changing its reviewed revision. Use
-**Refresh view** to load new records. Dashboard counts describe execution lifecycle,
-not scientific acceptance. Large catalogs are paged in requests of at most 100;
-the console bounds its loaded catalog to 10,000 records.
+Mission status is checked every 15 seconds while the document is visible. New
+records are announced without replacing a review form or silently changing the
+reviewed revision. **Refresh view** retrieves the new state. Catalogs are paged
+in batches of 100, with a 10,000-record browser bound.
 
-## Durable agent sessions
+## Agent panel
 
-The **Agent** view can open a task or attach to an existing session UUID. Its URL
-identifies the session, so bookmark it to return later. Opening a session does not
-resume it. Review the task, then explicitly resume. The page exposes the current
-phase, usage, response, tool input, exact journal cursor and paged event history.
-Refresh the view for newer session state.
+The agent always works within the selected mission and its canonical budget.
+**Start task** reviews the prompt, opens a durable session, then explicitly invokes
+resume as part of that user action. The UI uses the returned session ID and journal
+cursor. It does not infer successful execution from a lost response.
 
-Tool approval applies to one call, its canonical input digest and exact cursor,
-expires after five minutes, and requires a separate resume action. Scientific plan
-approval remains independent. Reconcile uncertain sessions against their journal;
-do not repeat an unconfirmed tool effect. Agent cancellation and mission cancellation
-have separate controls and lifecycles.
+The history selector discovers the current actor's sessions for this project,
+mission and policy through `GET /api/v1/projects/:projectId/missions/:missionId/agent-sessions`.
+The endpoint accepts `limit` (1–100) and an optional `after` session UUID; it never
+runs inference. History survives browser and server restarts. Opening a saved task
+or an existing session UUID is read-only. A changed policy can make an old session
+inaccessible; the service does not silently rebind its authority.
+
+A session URL retains the selected central view and `?session=<uuid>` across
+reloads. Switching mission tabs preserves the panel. Session state is checked every
+three seconds while visible. Responses render safe Markdown without raw HTML or
+remote images; copy the response or inspect the journal when needed. These are
+persisted session updates, not a second in-memory conversational runtime.
+
+**Resume task**, **Reconcile task** and **Cancel task** use the existing canonical
+service. Tool approval binds one call, its exact input digest and cursor, expires
+after five minutes, and requires a separate resume. Scientific plan approval is
+independent. Agent cancellation and scientific mission cancellation are separate.
+Missing model configuration or unavailable dependencies are shown as backend
+errors; there are no simulated assistant responses or production demo fallbacks.
 
 ## Interrupted requests
 
-Before sending a mutation, the console saves only the actor/project/mission IDs,
-operation name, random idempotency key and timestamp in sessionStorage. A received
-rejection can additionally record that a response arrived. No scientific payload or
-authentication secret is retained there. A request without a confirmed outcome
-blocks further console mutations for that mission in the tab, including after reload.
-Keep that tab and its request reference until recovery finishes.
+Before a mutation, the client saves only actor/project/mission IDs, operation,
+random idempotency key and timestamp in sessionStorage. A verified application
+rejection can also record that a response arrived. Scientific payloads, prompts,
+credentials and CSRF tokens are never saved there.
 
-Use **Check saved result** in the outstanding-request panel. A completed response is
-read back without re-execution. For a pending operation, **Reconcile with recorded
-state** invokes the existing canonical reconciliation service. An error response
-followed by an authorized absent lookup establishes that the rejected request was
-not reserved. Absence after a disconnected request does not establish failure: it
-may still be in flight. Unresolved requests retain their reference for operator
-investigation; the console never silently retries them with a new key.
+An uncertain outcome blocks further mutations for that mission in the tab, including
+after reload. **Check saved result** retrieves a completed response without repeating
+the operation. **Reconcile with recorded state** observes canonical results for a
+pending operation. An unresolved effect stays blocked for investigation.
 
-These controls supplement backend idempotency and fencing; browser metadata is not
-authority. Clearing browser storage does not clear server reservations, undo an
-effect or justify resubmission.
+Absence after a disconnected request does not establish failure: the request may
+still be in flight. Only a verified rejection followed by an authorized absent lookup
+can clear that rejected request. Do not erase recovery references to justify a retry.
+Browser metadata supplements server idempotency; it is never execution authority.
+Blocking sessionStorage disables mutations while reads remain available.
 
 ## Development and verification
 
-Browser modules are in `apps/web/src`, with JSDoc checked by
-`bun run typecheck:web`; `bun run typecheck` includes it. Shared types are imported
-only for checking and do not ship server code to the browser. The UI is divided
-into navigation, mission creation, review, records, agent and recovery modules.
-Use the existing protected local installation to preview with `bun run eigengrid serve`.
-There is no development authentication bypass or production demo-data fallback.
+`bun install --frozen-lockfile` installs the React workspace dependencies. Run
+`bun run typecheck:web` for the frontend or `bun run typecheck` for both layers.
+The browser entry is `apps/web/src/main.tsx`; UI state and rendering are React.
+The small JavaScript API/request helpers retain their contract and recovery tests.
+The production asset allowlist exposes only HTML, bundled JavaScript and CSS.
+A Bun build-time macro embeds the browser bundle in all native builds with no
+runtime source-tree dependency and no build-time environment-variable inlining.
 
-`tests/ts/web-console.test.ts` exercises exact request shapes, digest parity, CSRF
-headers, recovery across reload, lost responses and unavailable storage.
-`web-assets.test.ts` verifies the closed asset graph, restrictive response headers
-and compilation into an executable that serves assets from an unrelated directory.
-PostgreSQL integration tests cover discovery isolation, revoked membership, session
-bootstrap and the existing create/review/approve/compile/start/recovery workflows.
-Browser layout, keyboard navigation and mobile rendering also need a browser QA
-pass before release promotion; transport and compilation tests do not replace it.
+Use the provisioned local installation with `bun run eigengrid serve` for a real
+preview. No protected authority bypass is part of the application.
+
+Tests cover React navigation, agent persistence across tabs, keyboard resizing,
+task API requests, safe response rendering, lost acknowledgements and sign-out;
+API tests cover actor/project isolation, session discovery, real PostgreSQL workflows,
+CSRF, exact request contracts and recovery. Asset tests compile a native executable
+and serve the application without its checkout or runtime asset files.
+
+Component DOM tests do not establish visual layout or actual browser compatibility.
+A real-browser visual, keyboard and narrow-screen pass remains required before
+release promotion. Scientific installation qualification remains separate.

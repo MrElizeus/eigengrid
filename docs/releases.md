@@ -8,15 +8,17 @@ passing CI. It includes:
 
 - Domain modules extracted from the database, migrations, scientific schemas,
   model gateway, runners and execution coordinator, preserving their public contracts.
-- The English [mission console](web-console.md) embedded in `eigengrid serve`:
-  discovery, guided creation, exact candidate review, evidence and durable agent controls.
-- The [assistant workspace](web.md) in `eigengrid web`: authenticated private chat,
-  streaming, steering and read-only tools. Network use requires PostgreSQL and HTTPS.
-  This command has its own account/session service; it is separate from mission control.
+- One English React [workspace](web-console.md), served by `eigengrid serve`
+  (`web` is an alias): mission discovery and creation, exact candidate review,
+  work units, evidence, activity and a persistent mission agent panel on the right.
+- A single protected account/session boundary and same-origin `/api/v1` HTTP API.
+  The separate experimental chat server, login store and UI are retired.
+- Durable agent task discovery scoped to actor, project, mission and current policy;
+  tool approvals, budget accounting and uncertain-request recovery remain canonical.
 - Agent catalog pagination, provider compatibility, permission diagnostics and
-  runtime fixes integrated with the web interfaces.
+  runtime fixes integrated with the workspace.
 
-Both browser interfaces are embedded in the native executables; no frontend runtime
+React and its styles are embedded in the native executables; no frontend runtime
 is required at the installation. Existing database migration bytes remain unchanged.
 Software stability does not certify scientific correctness or an installation's
 AMBER/Slurm configuration. Site qualification remains pending per installation.

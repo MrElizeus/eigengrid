@@ -1,50 +1,21 @@
-/** Text imports are embedded by Bun in every native target. No cwd or runtime asset directory. */
 import html from "../../../../web/index.page.html" with { type: "text" };
 import css from "../../../../web/styles.css" with { type: "text" };
 import baseCss from "../../../../web/styles/base.css" with { type: "text" };
 import layoutCss from "../../../../web/styles/layout.css" with { type: "text" };
 import componentsCss from "../../../../web/styles/components.css" with { type: "text" };
+import agentCss from "../../../../web/styles/agent.css" with { type: "text" };
 import responsiveCss from "../../../../web/styles/responsive.css" with { type: "text" };
-import mark from "../../../../web/mark.svg" with { type: "text" };
-import app from "../../../../web/src/app.browser.js" with { type: "text" };
-import api from "../../../../web/src/api.browser.js" with { type: "text" };
-import dom from "../../../../web/src/dom.browser.js" with { type: "text" };
-import create from "../../../../web/src/create.browser.js" with { type: "text" };
-import mission from "../../../../web/src/mission.browser.js" with { type: "text" };
-import records from "../../../../web/src/records.browser.js" with { type: "text" };
-import review from "../../../../web/src/review.browser.js" with { type: "text" };
-import agent from "../../../../web/src/agent.browser.js" with { type: "text" };
-import recovery from "../../../../web/src/recovery.browser.js" with { type: "text" };
-import session from "../../../../web/src/session.browser.js" with { type: "text" };
+import { browser } from "../../../../web/embedded-browser";
 
 const assets = new Map<string, { source: string; type: string }>([
   ["/", { source: html, type: "text/html; charset=utf-8" }],
   ["/assets/styles.css", { source: css, type: "text/css; charset=utf-8" }],
-  ...Object.entries({
-    base: baseCss,
-    layout: layoutCss,
-    components: componentsCss,
-    responsive: responsiveCss,
-  }).map(([name, source]): [string, { source: string; type: string }] => [
-    `/assets/${name}.css`,
-    { source, type: "text/css; charset=utf-8" },
-  ]),
-  ["/assets/mark.svg", { source: mark, type: "image/svg+xml" }],
-  ...Object.entries({
-    app,
-    api,
-    dom,
-    create,
-    mission,
-    records,
-    review,
-    agent,
-    recovery,
-    session,
-  }).map(([name, source]): [string, { source: string; type: string }] => [
-    `/assets/${name}.browser.js`,
-    { source, type: "text/javascript; charset=utf-8" },
-  ]),
+  ["/assets/base.css", { source: baseCss, type: "text/css; charset=utf-8" }],
+  ["/assets/layout.css", { source: layoutCss, type: "text/css; charset=utf-8" }],
+  ["/assets/components.css", { source: componentsCss, type: "text/css; charset=utf-8" }],
+  ["/assets/agent.css", { source: agentCss, type: "text/css; charset=utf-8" }],
+  ["/assets/responsive.css", { source: responsiveCss, type: "text/css; charset=utf-8" }],
+  ["/assets/app.browser.js", { source: browser, type: "text/javascript; charset=utf-8" }],
 ]);
 
 /** Only a fixed allowlist is public; API paths never fall through to the SPA. */

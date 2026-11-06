@@ -33,12 +33,15 @@ project, run `bun run eigengrid init --role head --no-gen-key`. Mission executio
 
 ## Web workspace
 
-Run `bun run eigengrid web` (or the installed `eigengrid web`) for streaming chat,
-private history, account login and tool activity. For network access, use PostgreSQL,
-an HTTPS reverse proxy and administrator-issued invitations. Configure the connection in the CLI with `/connect`
-and `/models`; the web interface reuses it, including ChatGPT account access. Use
-`--connection-dir ~` to reuse a connection configured from your home directory.
-See [web workspace](docs/web.md) for details.
+Run `eigengrid serve` (`eigengrid web` is an alias) for the unified English React
+workspace. A light interface combines mission tabs, plan review, evidence and a
+resizable agent panel on the right. It uses the same-origin `/api/v1` HTTP API;
+the browser never connects directly to PostgreSQL, model providers or Slurm.
+
+Provision the protected HTTP configuration, PostgreSQL schema and HTTPS reverse
+proxy described in [operations](docs/operations.md). Sign in with an administrator-issued
+credential. The server checks actor identity, project membership and scientific roles.
+See the [web workspace guide](docs/web-console.md).
 
 ## Native distribution
 

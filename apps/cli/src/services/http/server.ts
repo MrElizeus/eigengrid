@@ -325,6 +325,28 @@ export function createApplicationHttpHandler(options: ApplicationHttpOptions) {
           );
         }
         const service = options.agent(session.context, session.assertCurrent);
+        if (parts.length === 8 && request.method === "GET") {
+          if (
+            [...url.searchParams.keys()].some((name) => !["limit", "after"].includes(name)) ||
+            ["limit", "after"].some((name) => url.searchParams.getAll(name).length > 1)
+          )
+            throw new MissionHttpError("INVALID_REQUEST");
+          const result = await service.list({
+            projectId,
+            missionId: missionId!,
+            limit: z.coerce
+              .number()
+              .int()
+              .min(1)
+              .max(100)
+              .parse(url.searchParams.get("limit") ?? 100),
+            after: url.searchParams.has("after")
+              ? z.string().uuid().parse(url.searchParams.get("after"))
+              : undefined,
+          });
+          await session.assertCurrent();
+          return json({ result });
+        }
         const sessionId = parts[8];
         const action =
           parts.length === 8

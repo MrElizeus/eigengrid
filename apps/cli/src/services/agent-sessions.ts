@@ -16,6 +16,7 @@ import {
   mkdirSync,
   openSync,
   readFileSync,
+  readdirSync,
   renameSync,
   unlinkSync,
   writeSync,
@@ -288,6 +289,57 @@ export class AgentSessionService {
     if (p.policyDigest !== scope.policyDigest) throw new AgentSessionError("POLICY_CHANGED");
     await this.identity.assertCurrent(p);
     return scope;
+  }
+
+  /** Discovery exposes only the authenticated actor's sessions for this exact mission and policy. */
+  async list(input: { projectId: string; missionId: string; after?: string; limit?: number }) {
+    identifier(input.projectId);
+    identifier(input.missionId);
+    if (input.after) expectedSession(input.after);
+    const limit = input.limit ?? 100;
+    if (!Number.isInteger(limit) || limit < 1 || limit > 100)
+      throw new AgentSessionError("INVALID_REQUEST");
+    const principal = await this.identity.current({
+      projectId: input.projectId,
+      missionId: input.missionId,
+    });
+    validScope(principal);
+    await this.identity.assertCurrent(principal);
+    const files = readdirSync(this.scopes)
+      .filter((name) => /^[a-f0-9-]{36}\.json$/u.test(name))
+      .sort();
+    const items: {
+      sessionId: string;
+      phase: AgentSession["phase"];
+      prompt: string;
+      createdAt: string;
+    }[] = [];
+    for (const name of files) {
+      const id = name.slice(0, -5);
+      if (input.after && id <= input.after) continue;
+      const scope = validatedScope(readPrivate(this.scopePath(id)), id);
+      if (
+        scope.actorId !== principal.actorId ||
+        scope.projectId !== input.projectId ||
+        scope.missionId !== input.missionId ||
+        scope.policyDigest !== principal.policyDigest
+      )
+        continue;
+      await this.authorize(id);
+      const state = this.engine.state(id);
+      if (!state.cursor.sequence) continue;
+      items.push({
+        sessionId: id,
+        phase: state.phase,
+        prompt: state.prompt.slice(0, 240),
+        createdAt: lstatSync(this.scopePath(id)).mtime.toISOString(),
+      });
+      if (items.length > limit) break;
+    }
+    await this.identity.assertCurrent(principal);
+    const more = items.length > limit;
+    if (more) items.pop();
+    return { items, nextCursor: more ? items.at(-1)!.sessionId : null };
   }
 
   async open(input: {

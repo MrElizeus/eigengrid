@@ -40,9 +40,20 @@ test("the public asset allowlist is closed, strict and contains every browser im
     for (const match of source.matchAll(/from "\.\/([^"\n]+\.browser\.js)"/gu))
       pending.push(`/assets/${match[1]}`);
   }
-  expect(visited.size).toBe(16);
+  expect(visited).toEqual(
+    new Set([
+      "/assets/app.browser.js",
+      "/assets/styles.css",
+      "/assets/base.css",
+      "/assets/layout.css",
+      "/assets/components.css",
+      "/assets/agent.css",
+      "/assets/responsive.css",
+    ]),
+  );
+  expect(html).not.toContain("mark.svg");
   const browser = await Bun.build({
-    entrypoints: [new URL("../../../../web/src/app.browser.js", import.meta.url).pathname],
+    entrypoints: [new URL("../../../../web/src/main.tsx", import.meta.url).pathname],
     target: "browser",
   });
   expect(browser.success).toBe(true);
@@ -55,7 +66,7 @@ test("compiled binaries serve the entire web application without a source tree o
     const binary = join(directory, "embed");
     await writeFile(
       entry,
-      `import { serveWebAsset } from ${JSON.stringify(new URL("./web-assets.ts", import.meta.url).pathname)};\nfor (const path of ["/", "/assets/styles.css", "/assets/app.browser.js", "/assets/api.browser.js"]) { const r = serveWebAsset(new Request("https://eigengrid.test" + path)); if (!r || r.status !== 200 || (await r.text()).length < 100) process.exit(2); }\nconsole.log("embedded-web-ok");\n`,
+      `import { serveWebAsset } from ${JSON.stringify(new URL("./web-assets.ts", import.meta.url).pathname)};\nfor (const path of ["/", "/assets/styles.css", "/assets/base.css", "/assets/layout.css", "/assets/components.css", "/assets/agent.css", "/assets/responsive.css", "/assets/app.browser.js"]) { const r = serveWebAsset(new Request("https://eigengrid.test" + path)); if (!r || r.status !== 200 || (await r.text()).length < 100) process.exit(2); }\nconsole.log("embedded-web-ok");\n`,
     );
     const built = Bun.spawn(["bun", "build", "--compile", `--outfile=${binary}`, entry], {
       stdout: "pipe",

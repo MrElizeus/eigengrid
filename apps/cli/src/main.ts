@@ -15,7 +15,6 @@ import { clusterCommand } from "./commands/cluster";
 import { dashboardCommand } from "./commands/dashboard";
 import { agentCommand } from "./commands/agent";
 import { agentSessionCommand } from "./commands/agent-session";
-import { webCommand } from "./commands/web";
 import { serveCommand } from "./commands/serve";
 import { recipesCommand } from "./commands/recipes";
 import { collectCommand } from "./commands/collect";
@@ -87,7 +86,6 @@ export async function main(): Promise<void> {
     .command(agentCommand)
     .command(agentSessionCommand)
     .command(serveCommand)
-    .command(webCommand)
     .command(recipesCommand)
     .command(collectCommand)
     .command(workerCommand)

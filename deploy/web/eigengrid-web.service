@@ -1,5 +1,7 @@
+# Provision this account UID, roles, projects and HTTP origin in protected mission-client.json.
+# Give it access to the configured CAS and the protected agent-session directory.
 [Unit]
-Description=EigenGrid web workspace
+Description=EigenGrid React workspace and scientific API
 After=network-online.target postgresql.service
 Wants=network-online.target
 
@@ -8,12 +10,8 @@ Type=simple
 User=eigengrid-web
 Group=eigengrid-web
 WorkingDirectory=/srv/eigengrid/project
-EnvironmentFile=/etc/eigengrid/web.env
-Environment=XDG_STATE_HOME=/var/lib/eigengrid-web
-StateDirectory=eigengrid-web
-StateDirectoryMode=0700
 UMask=0077
-ExecStart=/opt/eigengrid/current/bin/eigengrid web --no-open --port 4317 --origin ${EIGENGRID_WEB_ORIGIN} --connection-dir /srv/eigengrid/model-connection
+ExecStart=/opt/eigengrid/current/bin/eigengrid serve
 Restart=on-failure
 RestartSec=5
 TimeoutStopSec=60

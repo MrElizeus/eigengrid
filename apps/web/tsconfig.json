@@ -6,5 +6,5 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["bun"]
   },
-  "include": ["src/**/*.browser.js", "src/contracts.d.ts"]
+  "include": ["src/**/*.browser.js", "src/**/*.ts", "src/**/*.tsx"]
 }

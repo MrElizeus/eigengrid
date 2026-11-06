@@ -51,6 +51,36 @@ const request = {
   privateScientificInput: "never-persist-this",
 };
 
+test("browser fetch keeps its global receiver for JSON and journal requests", async () => {
+  const browserFetch: typeof fetch = function (this: typeof globalThis, input) {
+    if (this !== globalThis) throw new TypeError("Illegal fetch receiver");
+    return Promise.resolve(
+      String(input).endsWith("/auth/session") ? response(session) : new Response("journal"),
+    );
+  };
+  const client = new Api(browserFetch, new MemoryStorage());
+  expect(await client.bootstrap()).toEqual(session);
+  expect(await (await client.transport("/api/v1/journal")).text()).toBe("journal");
+});
+
+test("a changed bootstrap identity fences previous in-flight responses", async () => {
+  let finish!: (response: Response) => void;
+  const client = new Api(
+    (input) =>
+      String(input).endsWith("/auth/session")
+        ? Promise.resolve(response({ ...session, actor: { ...session.actor, id: "other-user" } }))
+        : new Promise((resolve) => {
+            finish = resolve;
+          }),
+    new MemoryStorage(),
+  );
+  client.session = session;
+  const previous = client.get("/projects");
+  await client.bootstrap();
+  finish(response({ result: { private: "old account" } }));
+  await expect(previous).rejects.toThrow("The session changed");
+});
+
 describe("browser client durability and scientific request contracts", () => {
   test("cross-tab changes and focus revalidate without sharing session credentials", () => {
     const storage = new MemoryStorage();
@@ -269,7 +299,7 @@ describe("browser client durability and scientific request contracts", () => {
       createdAt: new Date().toISOString(),
     };
     const sessionId = "61f368eb-7ce0-4b78-b165-0e97f1839c77";
-    const destination = `#/projects/${scope.projectId}/missions/${scope.missionId}/agent/${sessionId}`;
+    const destination = `#/projects/${scope.projectId}/missions/${scope.missionId}/overview?session=${sessionId}`;
     expect(recoveryDestination(entry, { sessionId })).toBe(destination);
     expect(
       recoveryDestination(entry, { recoveredFromCanonical: true, observation: { sessionId } }),
