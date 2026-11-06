@@ -1,0 +1,27 @@
+schema: eigengrid.scientific-skill/v1
+id: workflows.gimic-ring-currents
+version: 1.0.0
+title: GIMIC magnetically induced ring currents and oriented flux integration
+summary: Plan GIMIC analysis of magnetically induced current pathways in molecular rings. Check the response-density interface, oriented cuts, signed current-strength susceptibility, and grid and boundary convergence.
+status: active
+knowledge_level: draft
+capability_levels: {reference: true, advisory: true, plannable: true, renderable: {}, executable: {}, validated: {}}
+domains: [molecular-electronic-structure]
+domain_maturity: {molecular-electronic-structure: plannable}
+engine_compatibility: {gimic: "2.2.1"}
+requires: []
+recommends:
+  - id: workflows.dft-cluster-preflight
+    range: ^1.0.0
+    reason: Verify the actual producer, converter, GIMIC binary and staging path in the proposed allocation.
+  - id: validation.dft-reference-panel
+    range: ^1.0.0
+    reason: Define an independent comparison and separate reference-replay tolerance from the study error budget.
+required_inputs:
+  - Exact molecule, coordinates with units and atom order, state, charge, multiplicity and electronic-structure model
+  - One matched MOL and XDENS pair with producer, converter, response-convergence and basis provenance
+  - Field unit vector, oriented integration surface, flux convention, target pathway and tolerances in nA/T
+missing_input_behavior: Request the missing response, interface metadata or cut definition. Hold quantitative interpretation until coordinate frames, AO blocks and convergence evidence agree.
+assets: {protocols: protocols/, rules: decision-rules/, references: references/, evals: evals/}
+review: {status: unreviewed, owner_role: computational-chemist, notes: Local replay of upstream response matrices covers postprocessing only. Independent scientific review and site qualification remain pending.}
+provenance: {created_by: model}

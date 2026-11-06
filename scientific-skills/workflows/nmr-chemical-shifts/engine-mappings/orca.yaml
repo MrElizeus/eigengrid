@@ -1,0 +1,17 @@
+schema: eigengrid.engine-mapping/v1
+engine: orca
+engine_range: '>=6.1.0 <6.2.0'
+maturity: advisory
+renderable: false
+executable: false
+validated: false
+observable_fields:
+  - Exact ORCA build, 6.1 manual revision, input identity, functional, basis and gauge
+  - NMR shielding request for actual H or C nuclei and mapping from ORCA atom numbers to persistent site IDs
+  - Completed SCF and property response, total shielding tensor or reported isotropic shielding in ppm, and warnings
+  - Matched reference tensor, or independently sourced isotope-specific calibration and its equation
+notes: >-
+  ORCA 6.1 documents NMR, the EPRNMR nucleus selector and the chemical shielding summary. Read the isotropic total, excluding anisotropy and individual diamagnetic or paramagnetic contributions. Verify the gauge-invariant kinetic-energy-density response treatment for a meta-GGA and the supported property method for the exact build. Checking the Slurm allocation, engine startup and completion of the property calculation are distinct steps.
+qualification_example: >-
+  Reproduce the FACCTs ORCA 6.1 tutorial's chloroform TMS/propionic acid comparison using its supplied coordinates, matched TPSS/pcSseg-1 model and gauge treatment. Pin that table row, inputs, versions and observable-specific tolerance before comparing. A separate blind compound and isotope-matched experimental assignments are needed to test transferability. This is a proposed test.
+references: [ORCA-NMR, ORCA-TUTORIAL]

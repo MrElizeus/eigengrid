@@ -29,7 +29,10 @@
     "workflows.solution-conformer-free-energy",
     "workflows.solution-redox",
     "workflows.tddft-absorption",
-    "workflows.transition-state-irc"
+    "workflows.transition-state-irc",
+    "workflows.gimic-ring-currents",
+    "workflows.nics-tensor-scans",
+    "workflows.nmr-chemical-shifts"
   ],
   "scope": ["source", "git-history", "release-artifacts"]
 }

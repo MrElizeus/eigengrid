@@ -3,8 +3,8 @@
 The public distribution supplies 15 foundational draft knowledge entries for molecular
 structures, charge/spin, basis selection, convergence, molecular DFT, dispersion,
 continuum solvation, geometry optimization, frequencies, diagnostics and validation.
-It also supplies 13 [DFT planning protocols](dft-protocols.md) covering molecular
-observables, periodic calculations, reference panels and cluster preflight.
+It also supplies 16 [DFT planning protocols](dft-protocols.md) covering molecular
+observables including magnetic response, periodic calculations, reference panels and cluster preflight.
 All entries await independent scientific review and numerical qualification. See `publication.json`
 for the exact allowlist and `publication-catalog.json` for reviewed file hashes.
 

@@ -1,0 +1,13 @@
+schema: eigengrid.engine-mapping/v1
+engine: orca
+engine_range: ">=6.1.0 <6.2.0"
+maturity: advisory
+renderable: false
+executable: false
+validated: false
+notes: ORCA 6.1 section 5.21.5 documents an H colon ghost center with a very tight s-type orbital basis function at a position of interest. Supply the corresponding tight fitting function for each auxiliary basis used by the RI approximation. Record the actual orbital, auxiliary and grid choices and confirm ghost shielding tensors appear in output. A geometry-only dummy or a conventional counterpoise ghost with a full partner basis changes this prescription.
+checks:
+  - Verify the ghost's nuclear charge is zero, the electron count and spin state are preserved, and coordinates match the requested probe map.
+  - Compare a common point in single-probe and multi-probe jobs since ghost centers may change the numerical integration grid. Inspect SCF and coupled-response diagnostics as well as normal termination.
+  - Extract the total Cartesian shielding tensor before principal-axis sorting. Retain the reported orientation, units and output label for each ghost.
+sources: [orca-nics]

@@ -1,0 +1,21 @@
+schema: eigengrid.validation-criteria/v1
+id: workflows.nics-tensor-scans.controls
+version: 1.0.0
+scope: Algebraic controls and proposed physical checks for a closed-shell NICS profile
+synthetic_control:
+  provenance: Constructed tensor in ppm for a frame and sign test. Values are arbitrary and represent no molecule.
+  sigma_ring_ppm: [[-3, 2, 0], [-2, 6, 0], [0, 0, 27]]
+  normal_ring: [0, 0, 1]
+  rotation_ring_to_output: [[0.6, 0, 0.8], [0, 1, 0], [-0.8, 0, 0.6]]
+  transform: sigma_out = R sigma_ring R^T and n_out = R n_ring
+  sigma_out_ppm: [[16.2, 1.2, 14.4], [-1.2, 6, 1.6], [14.4, -1.6, 7.8]]
+  normal_output: [0.8, 0, 0.6]
+  expected_nics_iso_ppm: -10
+  expected_nics_perp_ppm: -27
+  false_shortcut_ppm: -7.8
+  assessment: Recover the same trace and normal projection in both frames. Using minus the output zz element would give -7.8 ppm and fails the rotated case. At the same point reversing n leaves its quadratic projection unchanged.
+physical_controls:
+  - Select a published planar closed-shell reference with matching coordinates, response level, basis, probe positions and observable. Freeze the comparator and tolerance in ppm before examining the target. The algebra fixture cannot establish agreement with a chemical reference.
+  - Where a molecular mirror plane exchanges +h and -h and the environment preserves that symmetry, compare both faces and record their residual. In an asymmetric environment compare the two profiles without forcing equality.
+  - Under a rigid translation and rotation of all nuclei and probes, compare the scalar projections after transforming axes. Diagnose atom remapping, reorientation, gauge, basis and finite-grid errors if the residual exceeds the planned tolerance.
+  - Report the raw missing or failed points and any convergence-driven change to the apparent extrema. If a fused-ring conclusion depends on probe placement, preserve the profile and request a current-density analysis.
