@@ -40,7 +40,7 @@ test("the public asset allowlist is closed, strict and contains every browser im
     for (const match of source.matchAll(/from "\.\/([^"\n]+\.browser\.js)"/gu))
       pending.push(`/assets/${match[1]}`);
   }
-  expect(visited.size).toBe(15);
+  expect(visited.size).toBe(16);
   const browser = await Bun.build({
     entrypoints: [new URL("../../../../web/src/app.browser.js", import.meta.url).pathname],
     target: "browser",

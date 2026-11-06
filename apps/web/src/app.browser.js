@@ -3,6 +3,7 @@ import { el, button, busy, field, badge, date, empty, route, human } from "./dom
 import { renderCreate } from "./create.browser.js";
 import { renderMission } from "./mission.browser.js";
 import { recoveryPanel } from "./recovery.browser.js";
+import { announceSessionChange, watchSessionChanges } from "./session.browser.js";
 
 const root = document.getElementById("app");
 if (!root) throw new Error("Application root is missing");
@@ -71,6 +72,7 @@ function login(message) {
     void busy(submit, async () => {
       try {
         await api.login(secret);
+        announceSessionChange();
         initialized = true;
         await render();
       } catch (cause) {
@@ -193,6 +195,7 @@ function shell(projectId) {
             "Sign out",
             async () => {
               await api.logout();
+              announceSessionChange();
               login();
             },
             "text",
@@ -376,11 +379,13 @@ async function render() {
   let main = /** @type {HTMLElement | null} */ (null);
   try {
     if (!initialized || !api.session) {
-      await api.bootstrap();
+      await api.bootstrap(signal);
+      if (signal.aborted) return;
       initialized = true;
     }
-    projects = await api.list("/projects", signal);
+    const availableProjects = await api.list("/projects", signal);
     if (signal.aborted) return;
+    projects = availableProjects;
     if (!projects.length) {
       main = shell("");
       main.append(
@@ -445,6 +450,14 @@ window.addEventListener("hashchange", () => {
 window.addEventListener("eigengrid:session-expired", () =>
   login("Your session expired or access changed. Sign in to continue."),
 );
+watchSessionChanges(window, () => {
+  api.invalidateSession();
+  controller.abort();
+  initialized = false;
+  projects = [];
+  root.replaceChildren(el("p", { class: "loading", role: "status" }, "Checking session…"));
+  void render();
+});
 document.querySelector(".skip-link")?.addEventListener("click", (event) => {
   event.preventDefault();
   document.getElementById("main")?.focus();

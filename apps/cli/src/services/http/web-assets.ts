@@ -15,6 +15,7 @@ import records from "../../../../web/src/records.browser.js" with { type: "text"
 import review from "../../../../web/src/review.browser.js" with { type: "text" };
 import agent from "../../../../web/src/agent.browser.js" with { type: "text" };
 import recovery from "../../../../web/src/recovery.browser.js" with { type: "text" };
+import session from "../../../../web/src/session.browser.js" with { type: "text" };
 
 const assets = new Map<string, { source: string; type: string }>([
   ["/", { source: html, type: "text/html; charset=utf-8" }],
@@ -29,12 +30,21 @@ const assets = new Map<string, { source: string; type: string }>([
     { source, type: "text/css; charset=utf-8" },
   ]),
   ["/assets/mark.svg", { source: mark, type: "image/svg+xml" }],
-  ...Object.entries({ app, api, dom, create, mission, records, review, agent, recovery }).map(
-    ([name, source]): [string, { source: string; type: string }] => [
-      `/assets/${name}.browser.js`,
-      { source, type: "text/javascript; charset=utf-8" },
-    ],
-  ),
+  ...Object.entries({
+    app,
+    api,
+    dom,
+    create,
+    mission,
+    records,
+    review,
+    agent,
+    recovery,
+    session,
+  }).map(([name, source]): [string, { source: string; type: string }] => [
+    `/assets/${name}.browser.js`,
+    { source, type: "text/javascript; charset=utf-8" },
+  ]),
 ]);
 
 /** Only a fixed allowlist is public; API paths never fall through to the SPA. */

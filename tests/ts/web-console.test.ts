@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { Api, ApiError, canonical, sha256 } from "../../apps/web/src/api.browser.js";
+import { announceSessionChange, watchSessionChanges } from "../../apps/web/src/session.browser.js";
 import { createRequest } from "../../apps/web/src/create.browser.js";
 import { MissionCreateRequestSchema } from "../../apps/cli/src/services/mission-application";
 import { agentDigest } from "@eigengrid/agent-runtime";
@@ -32,8 +33,16 @@ const session = {
   csrfToken: "fixture-csrf-secret",
 };
 const response = (value: unknown, status = 200) => Response.json(value, { status });
-const errorResponse = (code: string, status: number) =>
-  response({ error: { code, message: code } }, status);
+const errorResponse = (code: string, status: number) => {
+  const incidentId = crypto.randomUUID();
+  return Response.json(
+    { error: { code, message: code, incidentId } },
+    {
+      status,
+      headers: { "X-Incident-Id": incidentId },
+    },
+  );
+};
 const scope = { projectId: "project-web", missionId: "mission-web" };
 const path = "/projects/project-web/missions/mission-web/start";
 const request = {
@@ -43,6 +52,72 @@ const request = {
 };
 
 describe("browser client durability and scientific request contracts", () => {
+  test("cross-tab changes and focus revalidate without sharing session credentials", () => {
+    const storage = new MemoryStorage();
+    announceSessionChange(storage);
+    const [key, nonce] = [...storage.values.entries()][0]!;
+    expect(nonce).toMatch(/^[a-f0-9-]{36}$/u);
+    const target = new EventTarget();
+    let changes = 0;
+    const stop = watchSessionChanges(target, () => changes++);
+    const storageEvent = (name: string) => {
+      const event = new Event("storage");
+      Object.defineProperty(event, "key", { value: name });
+      target.dispatchEvent(event);
+    };
+    storageEvent("unrelated");
+    expect(changes).toBe(0);
+    storageEvent(key);
+    target.dispatchEvent(new Event("focus"));
+    expect(changes).toBe(2);
+    stop();
+    storageEvent(key);
+    expect(changes).toBe(2);
+  });
+
+  test.each([200, 401])(
+    "a late %s response cannot restore or clear another session",
+    async (status) => {
+      let finish!: (response: Response) => void;
+      const client = new Api(
+        () =>
+          new Promise((resolve) => {
+            finish = resolve;
+          }),
+        new MemoryStorage(),
+      );
+      client.session = session;
+      const pending = client.bootstrap();
+      client.invalidateSession();
+      const nextSession = { ...session, actor: { ...session.actor, id: "another-human" } };
+      client.session = nextSession;
+      finish(status === 200 ? response(session) : errorResponse("UNAUTHORIZED", status));
+      await expect(pending).rejects.toThrow("session changed");
+      expect(client.session).toBe(nextSession);
+    },
+  );
+
+  test.each(["mutation", "lookup"])(
+    "a proxy error during %s cannot authorize clearing an outstanding key",
+    async (untrusted) => {
+      const client = new Api(async (_url, options) => {
+        const mutation = options?.method === "POST";
+        if ((untrusted === "mutation") === mutation)
+          return response(
+            { error: { code: "PROXY_ERROR", message: "Gateway failure" } },
+            mutation ? 502 : 404,
+          );
+        return errorResponse(mutation ? "REVISION_CONFLICT" : "NOT_FOUND", mutation ? 409 : 404);
+      }, new MemoryStorage());
+      client.session = session;
+      await expect(
+        client.mutate(path, scope.projectId, scope.missionId, "start", 7, request),
+      ).rejects.toThrow();
+      await expect(client.recover(client.pending[0]!)).rejects.toBeInstanceOf(ApiError);
+      expect(client.pending).toHaveLength(1);
+    },
+  );
+
   test("bootstrap and mutations use session CSRF, same-origin cookies and no credential storage", async () => {
     const storage = new MemoryStorage();
     const calls: { url: string; options?: RequestInit }[] = [];

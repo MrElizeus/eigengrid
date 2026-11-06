@@ -3,6 +3,7 @@
 const pendingStorage = "eigengrid.web.pending.v1";
 /** Opaque credentials and CSRF tokens never enter browser storage. */
 export class Api {
+  generation = 0;
   /** @type {Session | null} */ session = null;
   /** @type {PendingRequest[]} */ pending = [];
   /** @param {typeof fetch} [transport] @param {Storage | null} [storage] */
@@ -37,6 +38,7 @@ export class Api {
   }
   /** @template T @param {string} path @param {RequestInit} [options] @returns {Promise<T>} */
   async request(path, options = {}) {
+    const generation = this.generation;
     const headers = new Headers(options.headers);
     if (options.method && options.method !== "GET" && this.session)
       headers.set("X-CSRF-Token", this.session.csrfToken);
@@ -51,22 +53,33 @@ export class Api {
         : AbortSignal.timeout(120000),
     });
     const data = await response.json();
+    if (generation !== this.generation)
+      throw new DOMException("The session changed.", "AbortError");
     if (!response.ok) {
+      const incident = response.headers.get("X-Incident-Id");
       const error = new ApiError(
         data?.error?.code ?? "HTTP_ERROR",
         data?.error?.message ?? `Request failed (${response.status}).`,
         response.status,
+        !!incident &&
+          /^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/u.test(incident) &&
+          incident === data?.error?.incidentId,
       );
       if (response.status === 401) {
-        this.session = null;
+        this.invalidateSession();
         globalThis.dispatchEvent?.(new Event("eigengrid:session-expired"));
       }
       throw error;
     }
     return data;
   }
-  async bootstrap() {
-    this.session = await this.request("/auth/session");
+  invalidateSession() {
+    this.generation++;
+    this.session = null;
+  }
+  /** @param {AbortSignal} [signal] */
+  async bootstrap(signal) {
+    this.session = await this.request("/auth/session", { signal });
     return this.session;
   }
   /** @param {string} credential */
@@ -80,7 +93,7 @@ export class Api {
   }
   async logout() {
     await this.request("/auth/logout", { method: "POST" });
-    this.session = null;
+    this.invalidateSession();
   }
   /** @template T @param {string} path @param {AbortSignal} [signal] @returns {Promise<T>} */
   async get(path, signal) {
@@ -157,7 +170,7 @@ export class Api {
     } catch (error) {
       // Even a server error can follow a committed effect. Keep the durable key,
       // never repeat the POST or manufacture a success from a transport failure.
-      if (error instanceof ApiError) {
+      if (error instanceof ApiError && error.applicationResponse) {
         entry.responseReceived = true;
         this.persist();
       }
@@ -184,7 +197,12 @@ export class Api {
       // A received rejection followed by an authorized absent lookup means the
       // server finished without reserving this key. A lost connection alone
       // never establishes absence: its request could still be in flight.
-      if (error instanceof ApiError && error.status === 404 && entry.responseReceived) {
+      if (
+        error instanceof ApiError &&
+        error.applicationResponse &&
+        error.status === 404 &&
+        entry.responseReceived
+      ) {
         this.forget(entry);
         return { status: "not_recorded", operationId: "" };
       }
@@ -215,11 +233,12 @@ export class Api {
   }
 }
 export class ApiError extends Error {
-  /** @param {string} code @param {string} message @param {number} status */
-  constructor(code, message, status) {
+  /** @param {string} code @param {string} message @param {number} status @param {boolean} [applicationResponse] */
+  constructor(code, message, status, applicationResponse = false) {
     super(message);
     this.code = code;
     this.status = status;
+    this.applicationResponse = applicationResponse;
   }
 }
 /** @param {string} projectId @param {string} [missionId] */
