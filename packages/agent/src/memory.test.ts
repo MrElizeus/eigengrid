@@ -3,8 +3,24 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { AgentMemory, sanitizeMemoryText } from "./memory";
+import { buildRetrievedContext } from "./agent-loop";
 
 describe("AgentMemory authority and durability boundaries", () => {
+  test("retains scientific context when a prompt contains a long coordinate block", async () => {
+    const root = mkdtempSync(join(tmpdir(), "eigengrid-agent-long-prompt-"));
+    const memory = new AgentMemory({ dbPath: join(root, "memory.db") });
+    try {
+      await memory.connect();
+      const prompt = "Optimize molecular geometry\n" + "C 0.0 0.0 0.0\n".repeat(400);
+      expect(prompt.length).toBeGreaterThan(4000);
+      const blocks = await buildRetrievedContext(memory, prompt);
+      expect(blocks.some((block) => block.source === "canonical-skill")).toBe(true);
+      expect(blocks.some((block) => block.content.includes("SHA256:"))).toBe(true);
+    } finally {
+      await memory.close();
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
   test("redacts secrets and bounds arbitrary persisted text", () => {
     const result = sanitizeMemoryText(
       "api_key=sk-test-12345678901234567890 " + "x".repeat(2_000),

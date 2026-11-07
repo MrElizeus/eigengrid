@@ -22,13 +22,13 @@ export function applicability(
       reasons.push("condition:" + condition.key);
   return reasons;
 }
+export function normalizeSearchText(value: string): string {
+  return value.normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase();
+}
 export function terms(value: string): string[] {
   return [
     ...new Set(
-      value
-        .normalize("NFKD")
-        .replace(/\p{M}/gu, "")
-        .toLowerCase()
+      normalizeSearchText(value)
         .split(/[^a-z0-9]+/u)
         .filter((x) => x.length > 2),
     ),
