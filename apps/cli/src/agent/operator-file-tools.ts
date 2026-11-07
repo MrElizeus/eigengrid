@@ -80,10 +80,12 @@ const commandInput = z.object({
   timeoutMs: z.number().int().min(1).max(600000).optional(),
 });
 const commandOutput = z.object({
-  exitCode: z.number().optional(),
+  exitCode: z.number(),
   stdout: z.string(),
   stderr: z.string(),
   timedOut: z.boolean(),
+  stdoutTruncated: z.boolean(),
+  stderrTruncated: z.boolean(),
 });
 export const runCommandTool: Tool<z.infer<typeof commandInput>, z.infer<typeof commandOutput>> = {
   name: "run-command",
@@ -98,6 +100,43 @@ export const runCommandTool: Tool<z.infer<typeof commandInput>, z.infer<typeof c
       maxOutputBytes: 64 * 1024,
       maxErrorBytes: 16 * 1024,
     });
+    // A known process failure is an observation the model can act on, not an
+    // uncertain tool effect. In particular, undefined exit codes cannot enter
+    // the strict JSON journal (ENOENT, signals and timeouts all produce them).
+    if (result.exitCode !== 0 || result.timedOut || result.signal) {
+      const code = result.timedOut
+        ? "COMMAND_TIMEOUT"
+        : result.signal
+          ? "COMMAND_SIGNALLED"
+          : result.exitCode === undefined
+            ? "COMMAND_UNAVAILABLE"
+            : "COMMAND_FAILED";
+      const message = result.timedOut
+        ? "Command timed out; inspect any partial effects before retrying."
+        : result.signal
+          ? `Command terminated by ${result.signal}; inspect any partial effects before retrying.`
+          : result.exitCode === undefined
+            ? result.stderr.trim() || "Command could not be started."
+            : `Command exited with code ${result.exitCode}.`;
+      return {
+        ok: false,
+        error: {
+          code,
+          message,
+          // Keep bounded diagnostics available to inference even on failure.
+          // JSON has an explicit null for an unobserved exit code.
+          hint: JSON.stringify({
+            exitCode: result.exitCode ?? null,
+            signal: result.signal ?? null,
+            stdout: result.stdout,
+            stderr: result.stderr,
+            timedOut: result.timedOut,
+            stdoutTruncated: result.stdoutTruncated,
+            stderrTruncated: result.stderrTruncated,
+          }),
+        },
+      };
+    }
     return {
       ok: true,
       data: {
@@ -105,6 +144,8 @@ export const runCommandTool: Tool<z.infer<typeof commandInput>, z.infer<typeof c
         stdout: result.stdout,
         stderr: result.stderr,
         timedOut: result.timedOut,
+        stdoutTruncated: result.stdoutTruncated,
+        stderrTruncated: result.stderrTruncated,
       },
     };
   },

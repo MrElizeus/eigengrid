@@ -13,16 +13,17 @@ billing and implement explicit quota detection before enabling a rootless CI
 fallback. Repository settings must require approval for all external contributors
 before running workflows; inspect workflow changes before approval.
 
-To release `1.0.1`, `1.0.0` or a version in the `1.0.0-rc.x` series (after PR approval):
+To release `1.0.2`, `1.0.1`, `1.0.0` or a version in the `1.0.0-rc.x` series (after PR approval):
 
 1. Update the JavaScript and Python versions together and merge the change into
    `main` using a Conventional Commit.
-2. Push the corresponding tag, for example `v1.0.1`.
+2. Include reviewed notes at `docs/release-notes/<tag>.md` and push the corresponding
+   tag, for example `v1.0.2`. Publication reads the notes from the exact tagged commit.
 3. The software workflow checks publication scope, commit policy, static quality,
    native binaries, reproducibility, TypeScript tests and Python tests. Only after
    all checks pass does its publication job upload and publish the release.
 
-The `v1.0.0` and `v1.0.1` tags publish stable software releases; RC tags publish prereleases.
+The `v1.0.0`, `v1.0.1` and `v1.0.2` tags publish stable software releases; RC tags publish prereleases.
 A PR alone does not publish a release. Scientific qualification remains a separate
 installation decision for both kinds of release.
 
@@ -34,7 +35,7 @@ drafts cannot deploy. Do not replace published assets or reuse a version tag.
 ## Cluster release controller
 
 The existing controller admits only the `1.0.0-rc.x` series. It does not automatically
-install stable `1.0.0` or `1.0.1`; site administrators must separately review installation or
+install stable releases; site administrators must separately review installation or
 controller policy changes. Preparing the stable software release does not expand
 this deployment authority.
 
