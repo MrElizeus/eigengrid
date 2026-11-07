@@ -3,7 +3,25 @@
 Source and release artifacts follow [the publication policy](publication.md).
 Run `bun run verify:publication` before building and publishing any release.
 
-Version **1.0.1** prepares a maintenance release, subject to PR review and passing CI:
+Version **1.0.2** completes the scientific planning conversation and corrects command recovery:
+
+- `/plan` calls the configured model, retains conversation and tool context, inspects
+  relevant protocol versions and dependencies, and asks structured scientific questions.
+  Choices include explanations, an optional recommendation and free-text input.
+- Long proposals are assembled in sections within the configured response token limit.
+  Complete proposals include stages, dependencies, parameters, resources, validation,
+  recovery and limitations, and are stored as immutable revisions.
+- Planning can search RCSB and acquire bounded public HTTPS inputs with provenance and
+  hashes. It cannot run shell commands, submit calculations or install software.
+- Ordinary operator command failures retain their diagnostics instead of producing a
+  misleading success followed by an uncertain-effect serialization error.
+- Release publication reads reviewed notes from the exact source commit.
+
+See the [1.0.2 release notes](release-notes/v1.0.2.md) and
+[interactive planning guide](interactive-scientific-planning.md). Database migrations,
+scientific execution approvals and private catalog contents remain unchanged.
+
+Version **1.0.1** introduced catalog preservation and agent memory corrections:
 
 - The cluster installer preserves the selected external scientific catalog in both
   the shared client launcher and Lmod module. Preparation verifies the catalog through
@@ -90,7 +108,7 @@ Commit the source and build the Linux x64 distribution before packaging it:
 ```bash
 bun run build:native
 node scripts/release/package.mjs
-node scripts/release/verify-package.mjs dist/packages/eigengrid-1.0.1-linux-x64.tar.gz --source dist/native
+node scripts/release/verify-package.mjs dist/packages/eigengrid-1.0.2-linux-x64.tar.gz --source dist/native
 ```
 
 Packaging requires a clean checkout and a distribution built from its exact commit and

@@ -7,7 +7,8 @@ Version 1.0.0 includes the CLI, terminal interface and authenticated HTTP API.
 The React web interface is deferred to a separate development branch and is not
 included in this release.
 
-This branch prepares **1.0.1**, a maintenance release for catalog preservation and agent memory. Linux x64 software contracts are covered by
+Version **1.0.2** completes interactive scientific planning and fixes command-failure recovery,
+while retaining catalog preservation and agent memory from 1.0.1. Linux x64 software contracts are covered by
 local and PostgreSQL integration tests. Installation-specific Slurm/AMBER qualification,
 large-system performance and scientific acceptance remain separate requirements.
 See [supported capabilities](docs/scientific-capabilities.md) before planning a campaign.
