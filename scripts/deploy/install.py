@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import pathlib
+import re
 import shutil
 import subprocess
 import sys
@@ -148,8 +149,152 @@ def extract_archive(archive, stage):
     return stage / top
 
 
+CATALOG_ENV = "EIGENGRID_SCIENTIFIC_SKILLS_ROOT"
+
+
+def catalog_selection(wrapper, module, explicit=None):
+    """Read generated literals, never source shell/Lua configuration as root."""
+    values = []
+    for text, pattern in [
+        (wrapper, r':\s+"\$\{' + CATALOG_ENV + r':=([^}]+)\}"'),
+        (module, r'setenv\(\s*"' + CATALOG_ENV + r'"\s*,\s*"([^"]+)"\s*\)'),
+    ]:
+        found = []
+        for line in text.splitlines():
+            line = line.strip()
+            if (
+                not line
+                or line.startswith(("#", "--"))
+                or CATALOG_ENV not in line
+                or line == "export " + CATALOG_ENV
+            ):
+                continue
+            match = re.fullmatch(pattern, line)
+            if not match:
+                raise ValueError(
+                    "Unsupported scientific catalog selection; use a literal site path"
+                )
+            found.append(match.group(1))
+        if len(found) > 1:
+            raise ValueError("Duplicate scientific catalog selection")
+        values.extend(found)
+    if explicit is not None:
+        values.append(explicit)
+    if not values:
+        return None
+    if any(value != values[0] for value in values):
+        raise ValueError("Conflicting scientific catalog selections")
+    root = values[0]
+    # These literals are emitted into both shell parameter defaults and Lua strings.
+    if not isinstance(root, str) or not re.fullmatch(
+        r"/(?:[A-Za-z0-9_.-]+/)*[A-Za-z0-9_.-]+", root
+    ):
+        raise ValueError(
+            "Scientific catalog must use a literal absolute path without shell syntax"
+        )
+    if ".." in P(root).parts or not P(root).is_dir():
+        raise ValueError("Scientific catalog directory is unavailable")
+    if not any(P(root).rglob("skill.yaml")):
+        raise ValueError("Scientific catalog has no manifests")
+    return root
+
+
+def selected_catalog():
+    return catalog_selection(
+        (old_client / "bin/eigengrid").read_text(),
+        old_module.read_text(),
+        plan.get("scientificSkillsRoot"),
+    )
+
+
+def client_wrapper(root):
+    selection = (
+        ': "${' + CATALOG_ENV + ":=" + root + '}"\nexport ' + CATALOG_ENV + "\n"
+        if root
+        else ""
+    )
+    return (
+        '#!/bin/sh\numask 077\n: "${EIGENGRID_PYTHON:='
+        + str(client / "bin/eigengrid-python")
+        + '}"\n: "${EIGENGRID_CLUSTER_PROFILE:='
+        + str(client / "cluster-profile.json")
+        + '}"\nexport EIGENGRID_PYTHON EIGENGRID_CLUSTER_PROFILE\n'
+        + selection
+        + "exec "
+        + str(client / "libexec/eigengrid")
+        + ' "$@"\n'
+    )
+
+
+def client_module(root):
+    return (
+        'help([[EigenGrid shared client with live Slurm inventory.]])\nwhatis("EigenGrid '
+        + version
+        + '")\nconflict("eigengrid")\nprepend_path("PATH", "'
+        + str(client / "bin")
+        + '")\nsetenv("EIGENGRID_PYTHON", "'
+        + str(client / "bin/eigengrid-python")
+        + '")\nsetenv("EIGENGRID_CLUSTER_PROFILE", "'
+        + str(client / "cluster-profile.json")
+        + '")\n'
+        + ('setenv("' + CATALOG_ENV + '", "' + root + '")\n' if root else "")
+    )
+
+
+def catalog_status(root=None):
+    output = json.loads(
+        run(
+            [
+                "sudo",
+                "-n",
+                "-H",
+                "-u",
+                plan["probeUser"],
+                "env",
+                "-u",
+                CATALOG_ENV,
+                "-u",
+                "EIGENGRID_RETRIEVAL_CONFIG",
+                str(client / "bin/eigengrid"),
+                "retrieval",
+                "status",
+                *(["--corpus", root] if root else []),
+            ],
+            timeout=60,
+        )
+    )
+    if not re.fullmatch(r"[0-9a-f]{64}", output["corpusDigest"]):
+        raise ValueError("Invalid scientific catalog digest")
+    for key in ("skills", "fragments", "documents"):
+        if type(output[key]) is not int or output[key] < 1:
+            raise ValueError("Empty or invalid scientific catalog")
+    return {
+        key: output[key] for key in ("corpusDigest", "skills", "fragments", "documents")
+    }
+
+
+def check_catalog(before, receipt=None):
+    assert digest(old_client / "bin/eigengrid") == before["oldClientWrapperSha256"]
+    assert digest(old_module) == before["oldModuleSha256"]
+    root = before["scientificSkillsRoot"]
+    assert selected_catalog() == root
+    if receipt:
+        assert digest(client / "bin/eigengrid") == receipt["clientWrapperSha256"]
+    observed = catalog_status()
+    if root and observed != catalog_status(root):
+        raise ValueError("Candidate wrapper lost the selected scientific catalog")
+    expected = plan.get("scientificCatalogDigest")
+    if expected and observed["corpusDigest"] != expected:
+        raise ValueError("Scientific catalog does not match the installation plan")
+    result = {"root": root, **observed}
+    if receipt and result != receipt["scientificCatalog"]:
+        raise ValueError("Scientific catalog changed after preparation")
+    return result
+
+
 def prepare():
     check_previous()
+    scientific_root = selected_catalog()
     assert not backup.exists() and not candidate.exists() and not client.exists()
     assert not new_module.exists()
     assert not (modules / ".modulerc.lua").exists()
@@ -164,6 +309,8 @@ def prepare():
         "unitSha256": digest("/etc/systemd/system/eigengrid-head.service"),
         "apparmorSha256": digest("/etc/apparmor.d/eigengrid-head"),
         "oldModuleSha256": digest(old_module),
+        "oldClientWrapperSha256": digest(old_client / "bin/eigengrid"),
+        "scientificSkillsRoot": scientific_root,
         "defaultModuleSha256": digest(default_module),
         "migrations": migrations(),
     }
@@ -171,6 +318,7 @@ def prepare():
     for source, name in [
         (env_path, "head.env"),
         (old_module, "previous-module.lua"),
+        (old_client / "bin/eigengrid", "previous-client.sh"),
         (P("/etc/systemd/system/eigengrid-head.service"), "head.service"),
         (P("/etc/apparmor.d/eigengrid-head"), "head.apparmor"),
         (default_module, "previous-default"),
@@ -302,13 +450,7 @@ def prepare():
     )
     write(
         client / "bin/eigengrid",
-        '#!/bin/sh\numask 077\n: "${EIGENGRID_PYTHON:='
-        + str(client / "bin/eigengrid-python")
-        + '}"\n: "${EIGENGRID_CLUSTER_PROFILE:='
-        + str(client / "cluster-profile.json")
-        + '}"\nexport EIGENGRID_PYTHON EIGENGRID_CLUSTER_PROFILE\nexec '
-        + str(client / "libexec/eigengrid")
-        + ' "$@"\n',
+        client_wrapper(scientific_root),
         0o755,
     )
     finish_prepare()
@@ -343,6 +485,7 @@ def finish_prepare():
         ).strip()
         == version
     )
+    scientific_catalog = check_catalog(before)
     observation = json.loads(
         run(
             [
@@ -426,6 +569,8 @@ def finish_prepare():
         "archiveSha256": plan["archiveSha256"],
         "headBinarySha256": digest(candidate / "bin/eigengrid-head"),
         "clientBinarySha256": digest(client / "libexec/eigengrid"),
+        "clientWrapperSha256": digest(client / "bin/eigengrid"),
+        "scientificCatalog": scientific_catalog,
         "pythonVersion": run([python, "--version"]).strip(),
         "clusterNodes": [n["name"] for n in observation["nodes"]],
         "schemaVersion": 22,
@@ -446,6 +591,7 @@ def activate():
     assert digest(candidate / "bin/eigengrid-head") == receipt["headBinarySha256"]
     assert digest(client / "libexec/eigengrid") == receipt["clientBinarySha256"]
     assert not new_module.exists()
+    check_catalog(before, receipt)
     old_env = env_path.read_text()
     lines = old_env.splitlines()
     assert sum(line.startswith("EIGENGRID_RELEASE_COMMIT=") for line in lines) == 1
@@ -461,15 +607,7 @@ def activate():
     try:
         write(
             new_module,
-            'help([[EigenGrid shared client with live Slurm inventory.]])\nwhatis("EigenGrid '
-            + version
-            + '")\nconflict("eigengrid")\nprepend_path("PATH", "'
-            + str(client / "bin")
-            + '")\nsetenv("EIGENGRID_PYTHON", "'
-            + str(client / "bin/eigengrid-python")
-            + '")\nsetenv("EIGENGRID_CLUSTER_PROFILE", "'
-            + str(client / "cluster-profile.json")
-            + '")\n',
+            client_module(before["scientificSkillsRoot"]),
         )
         write(
             old_module,
