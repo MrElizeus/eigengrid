@@ -10,6 +10,10 @@ Version **1.0.1** prepares a maintenance release, subject to PR review and passi
   the installed client; activation rejects a changed catalog digest or launcher.
   A site whose selection was already lost can explicitly pin its existing catalog
   root and digest in the installation plan. Catalog files remain outside the release.
+- `eigengrid retrieval compose` prepares a private site view containing public
+  updates and existing site protocols. It deduplicates identical versions, retains
+  distinct versions, and stops on identity conflicts, dependency errors or evaluation
+  regressions. Explicit source digests are required before writing a new view.
 - Tool observations redact credentials inside nested JSON file contents before
   retaining evidence. Existing append-only evidence is not rewritten; installations
   with older captured credentials need their own data review and credential rotation.

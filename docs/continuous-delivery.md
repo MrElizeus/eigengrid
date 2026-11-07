@@ -54,6 +54,8 @@ and timer in `/etc/systemd/system`. Configure a root-readable
 ```
 
 Use a dedicated unprivileged probe account with no sudo or SSH authorization.
+It needs site-approved read/traverse access to the selected scientific catalog;
+an inaccessible or empty catalog fails preparation.
 The controller requires an existing installation with a shared client under
 `/opt/apps/eigengrid/current`, a protected Head under `/opt/eigengrid/current`,
 an installation receipt, a Python virtual environment and an Lmod default.
@@ -116,3 +118,12 @@ This requires updating the site-owned installer; merely installing a new binary
 cannot repair an older installer. Keep site paths, private protocol contents and
 recovery plans outside the public repository and artifacts. The existing version
 and external catalog remain available for rollback.
+
+To incorporate new public protocols while retaining site protocols, use the
+[site-only composition procedure](catalogs.md) before selecting the new catalog.
+The public archive always contains only the reviewed public catalog. A composed
+view is a separately versioned, private site artifact; it is never uploaded as a
+release asset. Verify its receipt and access under the current client before
+changing the launcher/module selection, then let the installer preserve that
+selection during the software update. If the current client cannot validate the
+new view, stop for a coordinated client/catalog update instead of activating it.
