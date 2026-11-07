@@ -12,6 +12,30 @@ import {
 } from "../../apps/cli/src/tui/render/tool-result-formatters";
 
 describe("summarizeToolResult", () => {
+  it("shows a concise command failure while keeping large diagnostics out of the tool card", () => {
+    const result = {
+      error: {
+        code: "COMMAND_FAILED",
+        message: "Command exited with code 1.",
+        hint: JSON.stringify({
+          stdout: "x".repeat(10000),
+          stderr: "Traceback\nModuleNotFoundError: matplotlib",
+        }),
+      },
+    };
+    expect(summarizeToolError(result)).toBe(
+      "COMMAND_FAILED · Command exited with code 1. · ModuleNotFoundError: matplotlib",
+    );
+  });
+  it("reports command exit status and truncation instead of a generic completion", () => {
+    expect(summarizeToolResult("run-command", { data: { exitCode: 0 } })).toBe("exit 0");
+    expect(summarizeToolResult("run-command", { data: { exitCode: 7 } })).toBe("exit 7");
+    expect(summarizeToolResult("run-command", { data: { timedOut: true } })).toBe("timed out");
+    expect(
+      summarizeToolResult("run-command", { data: { exitCode: 0, stdoutTruncated: true } }),
+    ).toBe("exit 0 · output truncated");
+    expect(summarizeToolResult("run-command", {})).toBe("no exit code observed");
+  });
   it("summarizes list-jobs with count and status breakdown", () => {
     const result = {
       data: [
