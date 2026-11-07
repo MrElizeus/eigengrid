@@ -50,18 +50,31 @@ const SCIENTIFIC_QUERY_ALIASES: Readonly<Record<string, string>> = Object.freeze
   sonda: "probe", sondas: "probe", barrido: "scan", periferico: "peripheral",
 });
 
-export function scientificQueryTerms(query: string): string[] {
+function orderedQueryTerms(query: string): string[] {
   const normalized = query.toLowerCase().normalize("NFKD").replace(/\p{M}/gu, "");
-  return [...new Set(normalized.split(/[^a-z0-9]+/u).map((term) => Object.hasOwn(SCIENTIFIC_QUERY_ALIASES, term) ? SCIENTIFIC_QUERY_ALIASES[term] : term))]
-    .filter((term) => term.length > 2 && !STOP_WORDS.has(term))
-    .sort();
+  return normalized
+    .split(/[^a-z0-9]+/u)
+    .map((term) =>
+      Object.hasOwn(SCIENTIFIC_QUERY_ALIASES, term) ? SCIENTIFIC_QUERY_ALIASES[term] : term,
+    )
+    .filter((term) => term.length > 2 && !STOP_WORDS.has(term));
+}
+
+export function scientificQueryTerms(query: string): string[] {
+  return [...new Set(orderedQueryTerms(query))].sort();
+}
+
+function queryPhrases(text: string): Set<string> {
+  const words = orderedQueryTerms(text);
+  return new Set(words.slice(1).map((word, index) => `${words[index]} ${word}`));
 }
 
 function scoreSkill(
   skill: LoadedScientificSkill,
   terms: readonly string[],
   query: string,
-): SkillSearchHit {
+  phrases: ReadonlySet<string>,
+): SkillSearchHit & { baseScore: number } {
   const id = skill.manifest.id.toLowerCase();
   const title = skill.manifest.title.toLowerCase();
   const description = `${skill.manifest.summary} ${skill.frontmatter.description}`.toLowerCase();
@@ -96,6 +109,20 @@ function scoreSkill(
   const normalizedQuery = query.trim().toLowerCase();
   if (normalizedQuery && description.includes(normalizedQuery)) score += 10;
   if (normalizedQuery && id === normalizedQuery) score += 50;
+  const baseScore = score;
+  // Preserve ordered concepts in identity and summary fields. Each phrase votes
+  // once per field; repetitions and full protocol bodies cannot inflate it.
+  const idPhrases = queryPhrases(id);
+  const titlePhrases = queryPhrases(title);
+  const descriptionPhrases = new Set([
+    ...queryPhrases(skill.manifest.summary),
+    ...queryPhrases(skill.frontmatter.description),
+  ]);
+  for (const phrase of phrases) {
+    if (idPhrases.has(phrase)) score += 12;
+    if (titlePhrases.has(phrase)) score += 8;
+    if (descriptionPhrases.has(phrase)) score += 4;
+  }
   return {
     skill: {
       skillId: skill.manifest.id,
@@ -105,6 +132,7 @@ function scoreSkill(
     title: skill.manifest.title,
     description: skill.manifest.summary,
     score,
+    baseScore,
     matchedTerms,
   };
 }
@@ -123,8 +151,9 @@ export function searchScientificSkills(
   options: SkillSearchOptions = {},
 ): SkillSearchResult {
   const terms = scientificQueryTerms(query);
+  const phrases = queryPhrases(query);
   const candidateIds = options.candidateIds ? new Set(options.candidateIds) : undefined;
-  const hits = registry
+  const candidates = registry
     .all()
     .filter((skill) => options.includeDeprecated || skill.manifest.status === "active")
     .filter(
@@ -132,18 +161,24 @@ export function searchScientificSkills(
         !options.domains?.length ||
         options.domains.some((domain) => skill.manifest.domains.includes(domain)),
     )
-    .map((skill) => scoreSkill(skill, terms, query))
-    .filter((hit) => terms.length === 0 || hit.score > 0 || candidateIds?.has(hit.skill.skillId))
+    .map((skill) => scoreSkill(skill, terms, query, phrases))
+    .filter((hit) => terms.length === 0 || hit.score > 0 || candidateIds?.has(hit.skill.skillId));
+  // Phrase order improves ranking, but must not hide an otherwise ambiguous
+  // choice between plausible protocols. Ranking is not execution authority.
+  const base = candidates.map((hit) => hit.baseScore).sort((a, b) => b - a);
+  const baseAmbiguous = (base[0] ?? 0) === 0 || ((base[1] ?? 0) > 0 && base[0] - base[1] < 3);
+  const hits = candidates
     .sort(
       (left, right) =>
         right.score - left.score ||
         left.skill.skillId.localeCompare(right.skill.skillId) ||
         left.skill.version.localeCompare(right.skill.version),
     )
-    .slice(0, options.limit ?? 20);
+    .slice(0, options.limit ?? 20)
+    .map(({ baseScore: _baseScore, ...hit }) => hit);
   const top = hits[0]?.score ?? 0;
   const second = hits[1]?.score ?? 0;
-  return { query, hits, ambiguous: top === 0 || (second > 0 && top - second < 3) };
+  return { query, hits, ambiguous: baseAmbiguous || top === 0 || (second > 0 && top - second < 3) };
 }
 
 /** Rebuildable indexes rank candidate ids only; repository manifests remain authoritative. */

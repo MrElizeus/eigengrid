@@ -14,6 +14,9 @@ Version **1.0.1** prepares a maintenance release, subject to PR review and passi
   updates and existing site protocols. It deduplicates identical versions, retains
   distinct versions, and stops on identity conflicts, dependency errors or evaluation
   regressions. Explicit source digests are required before writing a new view.
+- Scientific discovery preserves adjacent concepts in IDs, titles and summaries
+  when ranking protocols from multiple catalogs. Phrase matches do not suppress
+  ambiguity between otherwise plausible alternatives or grant execution authority.
 - Tool observations redact credentials inside nested JSON file contents before
   retaining evidence. Existing append-only evidence is not rewritten; installations
   with older captured credentials need their own data review and credential rotation.

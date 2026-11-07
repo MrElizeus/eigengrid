@@ -136,8 +136,12 @@ describe("repository scientific skill corpus", () => {
 
   test("contains exactly the allowlisted scientific catalog", () => {
     const skills = corpus();
-    const policy = JSON.parse(readFileSync(new URL("../../../publication.json", import.meta.url), "utf8"));
-    expect(skills.map(skill => skill.manifest.id).sort()).toEqual([...policy.catalogSkillIds].sort());
+    const policy = JSON.parse(
+      readFileSync(new URL("../../../publication.json", import.meta.url), "utf8"),
+    );
+    expect(skills.map((skill) => skill.manifest.id).sort()).toEqual(
+      [...policy.catalogSkillIds].sort(),
+    );
     for (const skill of skills) {
       expect(skill.manifest.knowledge_level).toBe("draft");
       expect(skill.manifest.review.status).toBe("unreviewed");
@@ -157,13 +161,7 @@ describe("repository scientific skill corpus", () => {
     expect(left.failed).toBe(0);
     expect(left).toEqual(right);
     expect(new Set(left.cases.map((item) => item.kind))).toEqual(
-      new Set([
-        "positive",
-        "negative",
-        "planning",
-        "diagnostic",
-        "composition",
-      ]),
+      new Set(["positive", "negative", "planning", "diagnostic", "composition"]),
     );
   }, 20_000);
 
@@ -367,14 +365,19 @@ describe("progressive disclosure, search, and exact attribution", () => {
       maxFragments: 4,
       maxCharacters: 7000,
     });
-    expect(context.fragments.some(
-      (f) => f.assetKind === "protocols" && f.content.includes("REL_CUTOFF"),
-    )).toBe(true);
-    expect(context.fragments.some(
-      (f) => f.assetKind === "references" && f.content.includes("manual.cp2k.org"),
-    )).toBe(true);
-    expect(() => resolveScientificSkillGraph(registry, { ...request, requiredCapability: "executable" }))
-      .toThrowError(expect.objectContaining({ code: "CAPABILITY_INCOMPATIBLE" }));
+    expect(
+      context.fragments.some(
+        (f) => f.assetKind === "protocols" && f.content.includes("REL_CUTOFF"),
+      ),
+    ).toBe(true);
+    expect(
+      context.fragments.some(
+        (f) => f.assetKind === "references" && f.content.includes("manual.cp2k.org"),
+      ),
+    ).toBe(true);
+    expect(() =>
+      resolveScientificSkillGraph(registry, { ...request, requiredCapability: "executable" }),
+    ).toThrowError(expect.objectContaining({ code: "CAPABILITY_INCOMPATIBLE" }));
   });
 
   test("honors exact required fragment ids even under a zero optional budget", () => {
@@ -408,6 +411,57 @@ describe("progressive disclosure, search, and exact attribution", () => {
     expect(result.hits[0]?.matchedTerms.length).toBeGreaterThan(2);
     expect(searchScientificSkills(registry, "please help").ambiguous).toBe(true);
   });
+
+  test("preserves a multiword identity instead of treating its query as an unordered bag of words", () => {
+    const registry = new ScientificSkillRegistry([
+      fakeSkill("methods.collective-motions", "1.0.0", {
+        title: "Collective-mode analysis",
+        summary: "Compare collective motions, displacement, intensity and spectrum features.",
+      }),
+      fakeSkill("workflows.displacement-spectrum", "1.0.0", {
+        title: "Displacement spectrum estimation",
+        summary: "Compare collective motions, displacement, intensity and spectrum features.",
+      }),
+    ]);
+    expect(
+      searchScientificSkills(registry, "collective motions displacement intensity spectrum").hits[0]
+        ?.skill.skillId,
+    ).toBe("methods.collective-motions");
+  });
+
+  test("ranks a coherent summary phrase above isolated common words in a competing protocol", () => {
+    const registry = new ScientificSkillRegistry([
+      fakeSkill("workflows.path-analysis", "1.0.0", {
+        title: "Reaction chain analysis",
+        summary: "Trace an ordered reaction chain from input to product.",
+      }),
+      fakeSkill("methods.chain-validation", "1.0.0", {
+        title: "Chain trace report",
+        summary: "Use the input chain to trace a product; the reaction steps are ordered.",
+      }),
+    ]);
+    expect(
+      searchScientificSkills(registry, "trace ordered reaction chain input product").hits[0]?.skill
+        .skillId,
+    ).toBe("workflows.path-analysis");
+  });
+});
+
+test("phrase ranking preserves an ambiguous choice between equally plausible alternatives", () => {
+  const registry = new ScientificSkillRegistry([
+    fakeSkill("fixtures.signal-generation", "1.0.0", {
+      title: "Signal generation",
+      summary: "Compare signal generation and validation options.",
+    }),
+    fakeSkill("fixtures.signal-validation", "1.0.0", {
+      title: "Signal validation",
+      summary: "Compare signal generation and validation options.",
+    }),
+  ]);
+  const result = searchScientificSkills(registry, "signal generation validation");
+  expect(result.hits[0]?.skill.skillId).toBe("fixtures.signal-generation");
+  expect(result.ambiguous).toBe(true);
+  expect(Object.keys(result.hits[0])).not.toContain("baseScore");
 });
 
 describe("fail-closed manifest and content validation", () => {
