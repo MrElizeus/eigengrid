@@ -76,6 +76,34 @@ function reviewed(id = "lesson-a") {
 const context = { facts: { cluster: "fixture-a" } };
 
 describe("governed experiential memory", () => {
+  test("finds persisted accented lessons with either spelling without rewriting their history", () => {
+    const initial = candidate(
+      "spanish",
+      { kind: "project" },
+      {
+        title: "Optimización molecular",
+        claim: "La geometría converge.",
+      },
+    );
+    const verified = memory.verify("spanish", initial.current.digest, service);
+    const lesson = memory.review("spanish", verified.current.digest, human, "Reviewed", confidence);
+    // The Unicode filter must run before the 500 matching-candidate bound.
+    for (let i = 0; i < 501; i++) candidate(`unrelated-${i}`);
+    memory.close();
+    memory = new ExperienceMemory(path, boundary, () => now);
+    for (const query of ["optimización", "OPTIMIZACION", "geometri\u0301a", "geometria"]) {
+      expect(memory.search(query, context).map((hit) => hit.lesson.candidate.id)).toEqual([
+        "spanish",
+      ]);
+      expect(memory.search(query, { facts: { cluster: "another-site" } })).toEqual([]);
+    }
+    expect(
+      memory
+        .search("", context, { semanticIds: ["spanish"] })
+        .map((hit) => hit.lesson.candidate.id),
+    ).toEqual(["spanish"]);
+    expect(memory.get("spanish")).toEqual(lesson);
+  });
   test("persists normalized, redacted, append-only evidence and a complete review chain", () => {
     const lesson = reviewed();
     const promoted = memory.promote(

@@ -20,7 +20,7 @@ import {
 } from "./contracts";
 import { openExperienceDatabase } from "./database";
 import { redactMemory } from "./privacy";
-import { applicability, relevance, terms } from "./retrieval";
+import { applicability, relevance, terms, normalizeSearchText } from "./retrieval";
 
 type EvidenceInput = Omit<ExperienceEvidence, "schemaVersion" | "boundary" | "digest">;
 export type LessonInput = Omit<
@@ -372,14 +372,26 @@ export class ExperienceMemory {
       throw new Error("Invalid memory search bounds");
     const words = terms(query);
     const semantic = [...new Set(options.semanticIds ?? [])].slice(0, 100);
-    const conditions = [...words.map(() => "body LIKE ?"), ...semantic.map(() => "id=?")];
-    const sql =
-      "SELECT id FROM experience_lessons_v1 WHERE boundary=?" +
-      (conditions.length ? " AND (" + conditions.join(" OR ") + ")" : "") +
-      " ORDER BY rowid DESC LIMIT 500";
-    const rows = this.db
-      .query<{ id: string }, string[]>(sql)
-      .all(this.boundaryKey, ...words.map((word) => "%" + word + "%"), ...semantic);
+    // SQLite LIKE does not fold accents. Normalize both sides before the candidate
+    // limit, streaming only this boundary without rewriting append-only records.
+    const rows: Array<{ id: string }> = [];
+    const candidates = this.db
+      .query<
+        { id: string; body: string },
+        [string]
+      >("SELECT id,body FROM experience_lessons_v1 WHERE boundary=? ORDER BY rowid DESC")
+      .iterate(this.boundaryKey);
+    for (const row of candidates) {
+      const body = normalizeSearchText(row.body);
+      if (
+        (!words.length && !semantic.length) ||
+        words.some((word) => body.includes(word)) ||
+        semantic.includes(row.id)
+      ) {
+        rows.push({ id: row.id });
+        if (rows.length === 500) break;
+      }
+    }
     const ranked = rows
       .map((row) => this.get(row.id))
       .map((lesson) => ({ lesson, lexical: relevance(lesson, query) }))
