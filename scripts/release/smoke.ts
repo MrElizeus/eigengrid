@@ -79,6 +79,40 @@ try {
   assert.equal(retrievalStatus.mode, "lexical");
   assert.equal(retrievalStatus.indexState, "disabled");
   assert.ok(retrievalStatus.fragments > 0);
+  const publicCorpus = join(distribution, manifest.scientificSkills);
+  const preview = JSON.parse(
+    await run("eigengrid", [
+      "retrieval",
+      "compose",
+      "--corpus",
+      publicCorpus,
+      "--site-corpus",
+      publicCorpus,
+    ]),
+  );
+  assert.equal(preview.written, false);
+  assert.equal(preview.identicalDuplicates, retrievalStatus.skills);
+  const composed = JSON.parse(
+    await run("eigengrid", [
+      "retrieval",
+      "compose",
+      "--corpus",
+      publicCorpus,
+      "--site-corpus",
+      publicCorpus,
+      "--expected-public-digest",
+      preview.public.corpusDigest,
+      "--expected-site-digest",
+      preview.site.corpusDigest,
+      "--output",
+      join(cwd, "site-composition"),
+    ]),
+  );
+  assert.equal(composed.written, true);
+  const composedStatus = JSON.parse(
+    await run("eigengrid", ["retrieval", "status", "--corpus", composed.root]),
+  );
+  assert.equal(composedStatus.corpusDigest, retrievalStatus.corpusDigest);
   const retrievalResult = JSON.parse(
     await run("eigengrid", [
       "retrieval",

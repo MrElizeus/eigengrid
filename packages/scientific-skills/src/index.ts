@@ -13,3 +13,4 @@ export * from "./helpers";
 export * from "./output";
 export * from "./lifecycle";
 export * from "./installation";
+export * from "./catalog-composition";

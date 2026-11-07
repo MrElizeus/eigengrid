@@ -1,6 +1,7 @@
 import { readFileSync, statSync } from "node:fs";
 import type { CommandModule } from "yargs";
 import { z } from "zod";
+import { composeScientificCatalog } from "@eigengrid/scientific-skills";
 import {
   createInstalledScientificRetrieval,
   evaluateScientificRetrieval,
@@ -8,10 +9,20 @@ import {
 } from "@eigengrid/scientific-retrieval";
 
 const Args = z.object({
-  action: z.enum(["status", "rebuild", "search", "evaluate"]),
+  action: z.enum(["status", "rebuild", "search", "evaluate", "compose"]),
   query: z.string().optional(),
   config: z.string().optional(),
   corpus: z.string().optional(),
+  "site-corpus": z.string().optional(),
+  output: z.string().optional(),
+  "expected-public-digest": z
+    .string()
+    .regex(/^[a-f0-9]{64}$/u)
+    .optional(),
+  "expected-site-digest": z
+    .string()
+    .regex(/^[a-f0-9]{64}$/u)
+    .optional(),
   mode: z.enum(["lexical", "vector", "hybrid", "scientific"]).optional(),
   cases: z.string().optional(),
   k: z.number().int().min(1).max(100).default(5),
@@ -32,6 +43,13 @@ export const retrievalCommand: CommandModule = {
         describe: "Owned retrieval configuration JSON; defaults to EIGENGRID_RETRIEVAL_CONFIG",
       })
       .option("corpus", { type: "string", describe: "Local scientific corpus root" })
+      .option("site-corpus", { type: "string", describe: "Site catalog to compose with --corpus" })
+      .option("output", {
+        type: "string",
+        describe: "New private composition directory; omit to preview",
+      })
+      .option("expected-public-digest", { type: "string" })
+      .option("expected-site-digest", { type: "string" })
       .option("mode", { type: "string", choices: ["lexical", "vector", "hybrid", "scientific"] })
       .option("context", { type: "boolean", default: false })
       .option("max-characters", { type: "number", default: 24000 })
@@ -43,6 +61,24 @@ export const retrievalCommand: CommandModule = {
       .option("repeats", { type: "number", default: 1 }),
   async handler(argv) {
     const args = Args.parse(argv);
+    if (args.action === "compose") {
+      if (!args.corpus || !args["site-corpus"])
+        throw new Error("compose requires --corpus and --site-corpus");
+      console.log(
+        JSON.stringify(
+          composeScientificCatalog({
+            publicRoot: args.corpus,
+            siteRoot: args["site-corpus"],
+            output: args.output,
+            expectedPublicDigest: args["expected-public-digest"],
+            expectedSiteDigest: args["expected-site-digest"],
+          }),
+          null,
+          2,
+        ),
+      );
+      return;
+    }
     const service = createInstalledScientificRetrieval(args.corpus, args.config);
     try {
       let output: unknown;

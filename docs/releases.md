@@ -3,8 +3,34 @@
 Source and release artifacts follow [the publication policy](publication.md).
 Run `bun run verify:publication` before building and publishing any release.
 
-Version **1.0.0** prepares the stable software release, subject to PR review and
-passing CI. It includes:
+Version **1.0.1** prepares a maintenance release, subject to PR review and passing CI:
+
+- The cluster installer preserves the selected external scientific catalog in both
+  the shared client launcher and Lmod module. Preparation verifies the catalog through
+  the installed client; activation rejects a changed catalog digest or launcher.
+  A site whose selection was already lost can explicitly pin its existing catalog
+  root and digest in the installation plan. Catalog files remain outside the release.
+- `eigengrid retrieval compose` prepares a private site view containing public
+  updates and existing site protocols. It deduplicates identical versions, retains
+  distinct versions, and stops on identity conflicts, dependency errors or evaluation
+  regressions. Explicit source digests are required before writing a new view.
+- Scientific discovery preserves adjacent concepts in IDs, titles and summaries
+  when ranking protocols from multiple catalogs. Phrase matches do not suppress
+  ambiguity between otherwise plausible alternatives or grant execution authority.
+- Tool observations redact credentials inside nested JSON file contents before
+  retaining evidence. Existing append-only evidence is not rewritten; installations
+  with older captured credentials need their own data review and credential rotation.
+- Long prompts retain scientific retrieval context instead of failing the experience
+  search length limit. The original prompt sent to the model is unchanged.
+- Experience search handles accented and unaccented text consistently, including
+  existing Spanish lessons, without changing their review state or stored history.
+
+This patch leaves database migrations and scientific execution contracts unchanged.
+The web interface remains separate. The release controller still admits only its
+existing RC channel; stable patch installation requires a site administration decision.
+See [catalog upgrade and recovery](continuous-delivery.md#scientific-catalog-preservation).
+
+Version **1.0.0** introduced the stable software release:
 
 - Domain modules extracted from the database, migrations, scientific schemas,
   model gateway, runners and execution coordinator, preserving their public contracts.
@@ -64,7 +90,7 @@ Commit the source and build the Linux x64 distribution before packaging it:
 ```bash
 bun run build:native
 node scripts/release/package.mjs
-node scripts/release/verify-package.mjs dist/packages/eigengrid-1.0.0-linux-x64.tar.gz --source dist/native
+node scripts/release/verify-package.mjs dist/packages/eigengrid-1.0.1-linux-x64.tar.gz --source dist/native
 ```
 
 Packaging requires a clean checkout and a distribution built from its exact commit and
