@@ -133,10 +133,11 @@ export function composeScientificCatalog(options: {
   if (evaluation.failed)
     throw new Error(
       "Combined catalog evaluations failed: " +
-        evaluation.cases
-          .filter((item) => !item.passed)
-          .map((item) => item.id)
-          .join(", "),
+        JSON.stringify(
+          evaluation.cases
+            .filter((item) => !item.passed)
+            .map(({ id, source, details }) => ({ id, source, details })),
+        ),
     );
   const receipt = {
     schemaVersion: "eigengrid.site-catalog-composition/v1",

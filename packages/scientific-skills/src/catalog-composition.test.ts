@@ -163,3 +163,30 @@ test("requires reviewed digests and refuses stale inputs, Git outputs and symlin
   symlinkSync(join(publicRoot, "representations/molecular-structures"), join(site, "link"));
   expect(() => composeScientificCatalog(pinned)).toThrow("symbolic links");
 });
+
+test("evaluation conflicts report expected and observed selection without writing a view", () => {
+  const older = oldSiteVersion();
+  const file = readdirSync(join(older, "evals")).find(
+    (name) => !name.includes("composition") && name.endsWith(".jsonl"),
+  )!;
+  const path = join(older, "evals", file);
+  const cases = readFileSync(path, "utf8")
+    .trim()
+    .split("\n")
+    .map((line) => JSON.parse(line));
+  cases[0].expected_top = "site.never-loaded";
+  writeFileSync(path, cases.map((item) => JSON.stringify(item)).join("\n") + "\n");
+  const output = join(temporary, "failed-evaluation");
+  const action = () =>
+    composeScientificCatalog({
+      publicRoot,
+      siteRoot: site,
+      output,
+      expectedPublicDigest: new ScientificSkillRegistry(loadScientificSkillCorpus(publicRoot))
+        .corpusDigest,
+      expectedSiteDigest: new ScientificSkillRegistry(loadScientificSkillCorpus(site)).corpusDigest,
+    });
+  expect(action).toThrow("Combined catalog evaluations failed");
+  expect(action).toThrow("site.never-loaded");
+  expect(existsSync(output)).toBe(false);
+});
