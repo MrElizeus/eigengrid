@@ -42,6 +42,13 @@ import { ModelPicker } from "./ModelPicker";
 import { VariantPicker } from "./VariantPicker";
 import { PermissionsPicker } from "./PermissionsPicker";
 import { OperationApproval } from "./OperationApproval";
+import { PlanningQuestions } from "./PlanningQuestions";
+import { ScientificPlanningSession } from "../../agent/scientific-planning";
+import type {
+  AskPlanningQuestions,
+  PlanningAnswers,
+  PlanningQuestions as PlanningQuestionRequest,
+} from "../../agent/planning-contracts";
 import {
   OperatorPermissions,
   type OperatorApprovalRequest,
@@ -153,7 +160,10 @@ function handleTabCompletion(query: string): string | null {
 
 // ── Slash command runner ──────────────────────────────────────────────────────
 
-type TurnControl = Pick<import("@eigengrid/agent").AgentInput, "signal" | "takeSteering">;
+type TurnControl = Pick<import("@eigengrid/agent").AgentInput, "signal" | "takeSteering"> & {
+  planning?: ScientificPlanningSession;
+  askPlanning?: AskPlanningQuestions;
+};
 
 type StreamChunk =
   | { type: "steering"; messages: readonly string[] }
@@ -176,12 +186,47 @@ async function* runSlashCommand(
 ): AsyncGenerator<StreamChunk, void, unknown> {
   const parts = input.trim().slice(1).split(/\s+/);
   const cmd = parts[0].toLowerCase();
+  if (
+    control.planning &&
+    input.trim().startsWith("/") &&
+    ![
+      "plan",
+      "agent",
+      "help",
+      "clear",
+      "q",
+      "exit",
+      "quit",
+      "connect",
+      "providers",
+      "models",
+      "model",
+      "variants",
+      "key",
+      "configure",
+      "endpoint",
+      "status",
+      "logs",
+      "artifacts",
+      "results",
+      "events",
+      "timeline",
+      "recipes",
+    ].includes(cmd)
+  ) {
+    yield {
+      type: "error",
+      text: "This command is unavailable during planning. Use /plan off before execution or environment changes.",
+    };
+    return;
+  }
   const execute = () =>
     executeSlashCommand(input, conversationHistory, onHistoryUpdate, permissions, control);
   if (
     !input.trim().startsWith("/") ||
     [
       "agent",
+      "plan",
       "help",
       "clear",
       "q",
@@ -254,23 +299,14 @@ async function* executeSlashCommand(
   }
 
   if (cmd === "plan") {
-    if (args.length === 0) {
-      yield {
-        type: "text",
-        text: "Usage: /plan <scientific objective>\nPlan Mode is hard zero-effect and never executes jobs.",
-      };
-      return;
-    }
-    const { runPlan } = await import("../../commands/plan");
-    const artifact = await runPlan({ objective: args.join(" "), json: true });
-    yield {
-      type: "text",
-      text: [
-        `Plan ${artifact.planId} revision ${artifact.revision} created`,
-        `Digest: ${artifact.materialDigest}`,
-        "Plan Mode: zero-effect (no job, SSH, Slurm, worker, install, or shell capability)",
-      ].join("\n"),
-    };
+    yield* runAgentTurn(
+      args.join(" ") ||
+        "Plan the scientific campaign discussed in this conversation. Ask for the objective if it is missing.",
+      conversationHistory,
+      onHistoryUpdate,
+      permissions,
+      control,
+    );
     return;
   }
 
@@ -479,19 +515,26 @@ async function* runAgentTurn(
     const runtime = await getRuntime(permissions);
     const { runAgentStream, DEFAULT_OPERATOR_MAXIMUM_STEPS } = await import("@eigengrid/agent");
 
-    const stream = runAgentStream({
-      prompt: message,
-      tools: runtime.registry,
-      ctx: runtime.ctx,
-      memory: runtime.memory,
-      history: conversationHistory,
-      maxSteps: DEFAULT_OPERATOR_MAXIMUM_STEPS,
-      reserveFinalResponse: true,
-      permissionRules: runtime.permissionRules,
-      approvalAuthority: runtime.approvalAuthority,
-      signal: control.signal,
-      takeSteering: control.takeSteering,
-    });
+    const stream = control.planning
+      ? control.planning.run(message, runtime, {
+          history: conversationHistory,
+          signal: control.signal,
+          takeSteering: control.takeSteering,
+          ask: control.askPlanning ?? (async () => undefined),
+        })
+      : runAgentStream({
+          prompt: message,
+          tools: runtime.registry,
+          ctx: runtime.ctx,
+          memory: runtime.memory,
+          history: conversationHistory,
+          maxSteps: DEFAULT_OPERATOR_MAXIMUM_STEPS,
+          reserveFinalResponse: true,
+          permissionRules: runtime.permissionRules,
+          approvalAuthority: runtime.approvalAuthority,
+          signal: control.signal,
+          takeSteering: control.takeSteering,
+        });
 
     // Track tool call IDs for matching
     const pendingCalls: Array<{ id: string; name: string }> = [];
@@ -577,6 +620,27 @@ export function Splash(): ReactNode {
     }
   });
   const [approval, setApproval] = useState<OperatorApprovalRequest>();
+  const [planning, setPlanning] = useState<ScientificPlanningSession>();
+  const planningRef = useRef<ScientificPlanningSession>();
+  const [planningQuestion, setPlanningQuestion] = useState<PlanningQuestionRequest>();
+  const questionResolver = useRef<(answers?: PlanningAnswers) => void>();
+  const askPlanning: AskPlanningQuestions = (request, signal) =>
+    new Promise((resolve) => {
+      if (signal?.aborted) {
+        resolve(undefined);
+        return;
+      }
+      const finish = (answers?: PlanningAnswers) => {
+        signal?.removeEventListener("abort", abort);
+        questionResolver.current = undefined;
+        setPlanningQuestion(undefined);
+        resolve(answers);
+      };
+      const abort = () => finish();
+      questionResolver.current = finish;
+      signal?.addEventListener("abort", abort, { once: true });
+      setPlanningQuestion(request);
+    });
   const approvalResolver = useRef<(approved: boolean) => void>();
   const [permissions] = useState(
     () =>
@@ -598,6 +662,7 @@ export function Splash(): ReactNode {
   useEffect(
     () => () => {
       approvalResolver.current?.(false);
+      questionResolver.current?.();
     },
     [],
   );
@@ -708,6 +773,23 @@ export function Splash(): ReactNode {
 
   // ── Run a slash command ────────────────────────────────────────
   const runCommand = async (cmd: string, clearInput = true) => {
+    if (/^\/plan\s+off\s*$/i.test(cmd.trim())) {
+      planningRef.current = undefined;
+      setPlanning(undefined);
+      setQuery("");
+      submittingRef.current = false;
+      dispatch({
+        type: "SYSTEM_MESSAGE",
+        level: "info",
+        text: "Planning mode ended. Saved proposals are preserved; no campaign has been executed.",
+      });
+      return;
+    }
+    if (/^\/plan(?:\s|$)/i.test(cmd.trim()) && !planningRef.current) {
+      const session = new ScientificPlanningSession(process.cwd());
+      planningRef.current = session;
+      setPlanning(session);
+    }
     if (/^\/permissions\s*$/i.test(cmd.trim())) {
       setPermissionsOpen(true);
       setVariantPicker(undefined);
@@ -752,7 +834,7 @@ export function Splash(): ReactNode {
     lastCmdRef.current = cmd;
     if (clearInput) setQuery("");
     setInputHint("");
-    const isAgent = !cmd.trim().startsWith("/") || /^\/agent\s/i.test(cmd);
+    const isAgent = !cmd.trim().startsWith("/") || /^\/(agent|plan)(?:\s|$)/i.test(cmd);
     const controller = isAgent ? new AbortController() : undefined;
     turnRef.current = controller;
     setActiveTool(undefined);
@@ -766,7 +848,7 @@ export function Splash(): ReactNode {
           conversationHistoryRef.current = updated;
         },
         permissions,
-        { signal: controller?.signal, takeSteering },
+        { signal: controller?.signal, takeSteering, planning: planningRef.current, askPlanning },
       );
 
       for await (const chunk of gen) {
@@ -947,7 +1029,14 @@ export function Splash(): ReactNode {
 
   // ── Keyboard shortcuts ────────────────────────────────
   useInput((_input, key) => {
-    if (providerPickerOpen || modelPickerOpen || variantPicker || permissionsOpen || approval)
+    if (
+      providerPickerOpen ||
+      modelPickerOpen ||
+      variantPicker ||
+      permissionsOpen ||
+      approval ||
+      planningQuestion
+    )
       return;
     if (waitingForKey) {
       if (key.escape) {
@@ -1014,7 +1103,11 @@ export function Splash(): ReactNode {
 
       {/* Status bar + prompt — stable container */}
       <Box flexDirection="column" paddingX={1} width={columns}>
-        <Text color={palette.dim}>Permissions: {permissionName} · /permissions</Text>
+        <Text color={palette.dim}>
+          {planning
+            ? "Planning · research, questions and proposals · no simulation execution · /plan off"
+            : `Permissions: ${permissionName} · /permissions`}
+        </Text>
         <StatusBar
           processing={tui.processing}
           spinnerFrame={spinnerFrame}
@@ -1036,7 +1129,8 @@ export function Splash(): ReactNode {
             modelPickerOpen ||
             !!variantPicker ||
             permissionsOpen ||
-            !!approval
+            !!approval ||
+            !!planningQuestion
           }
           processing={tui.processing}
           secret={waitingForKey}
@@ -1058,6 +1152,15 @@ export function Splash(): ReactNode {
           />
         )}
         {approval && <OperationApproval request={approval} onAnswer={answerApproval} />}
+        {planningQuestion && (
+          <PlanningQuestions
+            request={planningQuestion}
+            onAnswer={(answers) => {
+              if (!answers) turnRef.current?.abort();
+              questionResolver.current?.(answers);
+            }}
+          />
+        )}
 
         {variantPicker && (
           <VariantPicker
@@ -1148,6 +1251,7 @@ export function Splash(): ReactNode {
           !variantPicker &&
           !permissionsOpen &&
           !approval &&
+          !planningQuestion &&
           !waitingForKey &&
           !tui.processing &&
           (() => {

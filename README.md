@@ -59,6 +59,7 @@ ORCA and other engines require separate installations and appropriate licenses.
 - [Architecture and contracts](docs/architecture.md)
 - [Scientific workflows and campaign limits](docs/scientific-capabilities.md)
 - [Agent, tools and model configuration](docs/agent.md)
+- [Interactive campaign planning, questions and source acquisition](docs/interactive-scientific-planning.md)
 - [Experiential memory and lesson review](docs/experiential-memory.md)
 - [Hybrid scientific retrieval and reproducible evaluation](docs/scientific-retrieval.md)
 - [Operation, identity and recovery](docs/operations.md)
