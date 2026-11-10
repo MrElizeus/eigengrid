@@ -416,7 +416,8 @@ export class AgentMemory {
         content: `Candidate guidance only; inspect exact versions and required dependencies before selecting a procedure. Ranking scores are not scientific confidence or execution authority.\n${JSON.stringify({ corpusDigest: result.corpusDigest, retrievalDigest: result.retrievalDigest, ambiguous: result.ambiguous, candidates: result.hits.slice(0, 3).map((candidate) => ({ reference: candidate.skill, title: candidate.title, applicability: candidate.applicability, reasons: candidate.reasons })) })}`,
       });
     }
-    const recent = await this.search(prompt, { limit: 3 });
+    const memoryQuery = prompt.slice(0, 4000);
+    const recent = await this.search(memoryQuery, { limit: 3 });
     for (const observation of recent) {
       blocks.push({
         authority: AgentAuthorityLevel.RETRIEVED_MEMORY,
@@ -427,7 +428,8 @@ export class AgentMemory {
           sanitizeMemoryText(observation.content, 512),
       });
     }
-    for (const hit of this.experience?.search(prompt, this.experienceContext, { limit: 3 }) ?? []) {
+    for (const hit of this.experience?.search(memoryQuery, this.experienceContext, { limit: 3 }) ??
+      []) {
       const { candidate, current } = hit.lesson;
       blocks.push({
         authority: AgentAuthorityLevel.RETRIEVED_MEMORY,

@@ -200,6 +200,14 @@ function summarizeOperatorInfo(result: unknown): string {
  */
 export function summarizeToolResult(toolName: string, result: unknown): string {
   switch (toolName) {
+    case "run-command": {
+      const data = asRecord(asRecord(result).data ?? result);
+      if (data.timedOut) return "timed out";
+      if (data.signal) return `terminated by ${asStr(data.signal)}`;
+      if (typeof data.exitCode !== "number") return "no exit code observed";
+      const truncated = data.stdoutTruncated || data.stderrTruncated;
+      return `exit ${data.exitCode}${truncated ? " · output truncated" : ""}`;
+    }
     case "list-jobs":
       return summarizeListJobs(result);
     case "list-nodes":
@@ -245,6 +253,26 @@ export function summarizeToolError(result: unknown): string {
   const error = rec.error ?? result;
   if (typeof error === "string") return error;
   const detail = asRecord(error);
+  if (
+    ["COMMAND_UNAVAILABLE", "COMMAND_FAILED", "COMMAND_TIMEOUT", "COMMAND_SIGNALLED"].includes(
+      asStr(detail.code),
+    )
+  ) {
+    let diagnostic = "";
+    try {
+      const captured = asRecord(JSON.parse(asStr(detail.hint)));
+      diagnostic = asStr(captured.stderr).trim().split("\n").at(-1)?.slice(0, 240) ?? "";
+    } catch {
+      /* The original message remains usable without structured capture. */
+    }
+    return [
+      asStr(detail.code),
+      asStr(detail.message),
+      diagnostic !== detail.message ? diagnostic : "",
+    ]
+      .filter(Boolean)
+      .join(" · ");
+  }
   return (
     [asStr(detail.code), asStr(detail.message), asStr(detail.hint)].filter(Boolean).join(" · ") ||
     "Tool failed without a diagnostic"

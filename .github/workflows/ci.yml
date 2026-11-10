@@ -2,7 +2,7 @@ name: Software verification
 on:
   push:
     branches: [main]
-    tags: ["v1.0.0-rc.*", "v1.0.0"]
+    tags: ["v1.0.0-rc.*", "v1.0.0", "v1.0.1", "v1.0.2"]
   pull_request:
   workflow_dispatch:
 permissions:
@@ -101,10 +101,10 @@ jobs:
       - name: Distribution hygiene
         run: python scripts/release/scan.py .
       - name: Prepare validated release
-        if: (startsWith(github.ref, 'refs/tags/v1.0.0-rc.') || github.ref == 'refs/tags/v1.0.0')
+        if: (startsWith(github.ref, 'refs/tags/v1.0.0-rc.') || github.ref == 'refs/tags/v1.0.0' || github.ref == 'refs/tags/v1.0.1' || github.ref == 'refs/tags/v1.0.2')
         run: bun scripts/release/validation.ts
       - uses: actions/upload-artifact@v4
-        if: (startsWith(github.ref, 'refs/tags/v1.0.0-rc.') || github.ref == 'refs/tags/v1.0.0')
+        if: (startsWith(github.ref, 'refs/tags/v1.0.0-rc.') || github.ref == 'refs/tags/v1.0.0' || github.ref == 'refs/tags/v1.0.1' || github.ref == 'refs/tags/v1.0.2')
         with:
           name: validated-release
           path: dist/packages/*
@@ -113,12 +113,16 @@ jobs:
   publish:
     name: Publish validated release
     needs: verify
-    if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v1.0.0-rc.') || github.ref == 'refs/tags/v1.0.0')
+    if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v1.0.0-rc.') || github.ref == 'refs/tags/v1.0.0' || github.ref == 'refs/tags/v1.0.1' || github.ref == 'refs/tags/v1.0.2')
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
           name: validated-release
@@ -134,7 +138,7 @@ jobs:
             const tag = process.env.RELEASE_TAG;
             const validation = JSON.parse(fs.readFileSync('release/validation.json'));
             const manifest = JSON.parse(fs.readFileSync('release/release.json'));
-            if (!/^v1\.0\.0(?:-rc\.[1-9]\d*)?$/u.test(tag) ||
+            if (!/^v1\.0\.(?:0(?:-rc\.[1-9]\d*)?|[12])$/u.test(tag) ||
                 tag !== tag.trim() || tag !== `v${manifest.version}` || validation.tag !== tag ||
                 validation.sourceCommit !== process.env.RELEASE_COMMIT ||
                 manifest.sourceCommit !== process.env.RELEASE_COMMIT ||
@@ -150,10 +154,12 @@ jobs:
                 throw new Error('Release asset integrity mismatch');
               }
             }
+            const notes = fs.readFileSync(`docs/release-notes/${tag}.md`, 'utf8').trim();
+            if (!notes) throw new Error('Release notes must not be empty');
             const created = await github.rest.repos.createRelease({
               ...context.repo, tag_name: tag, target_commitish: process.env.RELEASE_COMMIT,
-              name: `EigenGrid ${tag}`, draft: true, prerelease: tag !== 'v1.0.0',
-              body: `${tag === 'v1.0.0' ? 'Stable software release' : 'Software release candidate'} from ${process.env.RELEASE_COMMIT}.\n\nValidated by GitHub-hosted CI. Scientific dispatch qualification remains a separate site decision.`,
+              name: `EigenGrid ${tag}`, draft: true, prerelease: tag.includes('-rc.'),
+              body: `${notes}\n\nSource commit: \`${process.env.RELEASE_COMMIT}\`.\n\n[GitHub-hosted verification](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}).`,
             });
             for (const name of [validation.archive, 'release.json', 'SHA256SUMS', 'validation.json']) {
               const data = fs.readFileSync(`release/${name}`);

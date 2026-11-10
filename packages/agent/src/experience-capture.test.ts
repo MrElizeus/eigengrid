@@ -2,9 +2,9 @@ import { afterEach, beforeEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { ExperienceMemory } from "@eigengrid/experience-memory";
+import { ExperienceMemory, memoryDigest } from "@eigengrid/experience-memory";
 import { InMemoryAgentJournal, ZERO_AGENT_CURSOR, type AgentEvent } from "@eigengrid/agent-runtime";
-import { captureAgentExperience } from "./experience-capture";
+import { captureAgentExperience, captureToolExperience } from "./experience-capture";
 
 let root: string, memory: ExperienceMemory;
 beforeEach(() => {
@@ -90,4 +90,34 @@ test("memory inspection and conversation do not manufacture operational lessons"
     ).toBeUndefined();
   }
   expect(memory.search("", {}, { includeIneligible: true })).toEqual([]);
+});
+
+test("redacts credentials inside serialized file contents before retaining tool evidence", () => {
+  const secret = "fixture-password-never-retain";
+  const call = { id: "read-config", name: "read-file", input: { path: "config.json" } };
+  const result = {
+    ok: true,
+    data: {
+      path: "config.json",
+      content: JSON.stringify({
+        password: secret,
+        nested: JSON.stringify([{ access_token: secret, note: "keep this context" }]),
+        plain: `password=${secret}`,
+      }),
+    },
+  };
+  const ref = captureToolExperience(memory, "nested-json", call, result, true);
+  memory.close();
+  memory = new ExperienceMemory(join(root, "memory.sqlite"), {
+    projectId: "project",
+    ownerId: "alice",
+  });
+  const evidence = memory.evidence(ref.id);
+  expect(evidence.observation).not.toContain(secret);
+  expect(evidence.observation).toContain("keep this context");
+  expect(evidence.observation).toContain("[REDACTED]");
+  expect(evidence.origin.sourceDigest).toBe(memoryDigest({ call, result, ok: true }));
+  const { digest, ...retained } = evidence;
+  expect(digest).toBe(memoryDigest(retained));
+  expect(captureToolExperience(memory, "nested-json", call, result, true)).toEqual(ref);
 });

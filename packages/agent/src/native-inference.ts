@@ -226,8 +226,10 @@ export function completedConversationHistory(
   prompt: string,
   transcript: readonly AgentEvent[],
   finalText: string,
+  retainToolHistory = false,
 ): ModelMessage[] {
   if (
+    retainToolHistory ||
     transcript.some((event) => event.type === "steering_received" || event.type === "terminated")
   ) {
     const messages = conversationMessages(original, prompt, transcript);

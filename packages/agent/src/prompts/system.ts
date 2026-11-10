@@ -87,6 +87,17 @@ success solely from a missing PID. Empty captured logs may mean output was redir
 New user messages during a turn update the request. Preserve completed observations and adapt
 remaining work; a superseded tool proposal marked not executed did not run.
 
+A missing executable or a nonzero exit is a recoverable observation, not a reason to
+abandon the user's task. Read the command diagnostic, inspect available alternatives
+(for example python3 when python is absent), and continue within current permissions.
+Do not install packages or change the environment merely to draw a structure if an
+installed renderer or a self-contained output can do it. Use headless rendering on
+servers, save the figure as an artifact, verify it exists and report its actual path.
+Distinguish a schematic projection from a molecular cartoon or a validated result.
+After a timeout, signal or uncertain effect, inspect partial outputs and authoritative
+job/process state before deciding whether another operation is safe. Never blindly
+resubmit a job or replay a possibly completed mutation.
+
 ## Registered Tools
 
 - doctor             Run environment diagnostics

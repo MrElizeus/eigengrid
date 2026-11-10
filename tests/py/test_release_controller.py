@@ -4,6 +4,8 @@ import copy
 import importlib.util
 import io
 import json
+import os
+import subprocess
 import tarfile
 from pathlib import Path
 
@@ -75,7 +77,15 @@ def test_unvalidated_release_is_rejected(part, key, value):
 
 
 @pytest.mark.parametrize(
-    "tag", ["v1.0.0-rc.0", "v1.0.0-rc.01", "v1.0.0-rc.2\n", "../v1.0.0-rc.2"]
+    "tag",
+    [
+        "v1.0.0-rc.0",
+        "v1.0.0-rc.01",
+        "v1.0.0-rc.2\n",
+        "../v1.0.0-rc.2",
+        "v1.0.0",
+        "v1.0.1",
+    ],
 )
 def test_release_names_cannot_escape_the_channel(tag):
     with pytest.raises(ValueError):
@@ -158,6 +168,8 @@ def test_failed_activation_restores_links_environment_and_modules(
     for directory, name in [
         (paths["candidate"] / "bin", "eigengrid-head"),
         (paths["client"] / "libexec", "eigengrid"),
+        (paths["client"] / "bin", "eigengrid"),
+        (paths["old_client"] / "bin", "eigengrid"),
     ]:
         directory.mkdir()
         (directory / name).write_bytes(b"candidate")
@@ -177,16 +189,28 @@ def test_failed_activation_restores_links_environment_and_modules(
         "headEnvironmentSha256": installer.digest(paths["env_path"]),
         "oldModuleSha256": installer.digest(paths["old_module"]),
         "defaultModuleSha256": installer.digest(paths["default_module"]),
+        "oldClientWrapperSha256": installer.digest(
+            paths["old_client"] / "bin/eigengrid"
+        ),
+        "scientificSkillsRoot": None,
     }
     receipt = {
         "headBinarySha256": installer.digest(paths["candidate"] / "bin/eigengrid-head"),
         "clientBinarySha256": installer.digest(paths["client"] / "libexec/eigengrid"),
+        "clientWrapperSha256": installer.digest(paths["client"] / "bin/eigengrid"),
+        "scientificCatalog": {"root": None, "corpusDigest": "b" * 64, "skills": 31},
     }
     (paths["backup"] / "before.json").write_text(json.dumps(before))
     (paths["backup"] / "prepared.json").write_text(json.dumps(receipt))
     monkeypatch.setattr(installer, "sha", "a" * 40, raising=False)
     monkeypatch.setattr(installer, "version", "1.0.0-rc.2", raising=False)
     monkeypatch.setattr(installer, "check_previous", lambda: None)
+    monkeypatch.setattr(installer, "plan", {}, raising=False)
+    monkeypatch.setattr(
+        installer,
+        "catalog_status",
+        lambda root=None: {"corpusDigest": "b" * 64, "skills": 31},
+    )
     restarts = []
 
     def restart(args, **kwargs):
@@ -206,3 +230,177 @@ def test_failed_activation_restores_links_environment_and_modules(
     assert paths["old_module"].read_text() == "previous module\n"
     assert paths["default_module"].read_text() == "previous default\n"
     assert not paths["new_module"].exists()
+
+
+@pytest.fixture
+def catalog(tmp_path):
+    root = tmp_path / "site-knowledge" / "corpus"
+    root.mkdir(parents=True)
+    (root / "skill.yaml").write_text(
+        "synthetic manifest; runtime validation is separate\n"
+    )
+    return str(root)
+
+
+def selection_text(root):
+    return (
+        ': "${EIGENGRID_SCIENTIFIC_SKILLS_ROOT:='
+        + root
+        + '}"\nexport EIGENGRID_SCIENTIFIC_SKILLS_ROOT\n',
+        'setenv("EIGENGRID_SCIENTIFIC_SKILLS_ROOT", "' + root + '")\n',
+    )
+
+
+def test_catalog_preserved_from_launcher_module_or_explicit_recovery(catalog):
+    wrapper, module = selection_text(catalog)
+    for launch, mod, explicit in [
+        (wrapper, module, None),
+        (wrapper, "", None),
+        ("", module, None),
+        ("", "", catalog),
+        (wrapper, module, catalog),
+    ]:
+        assert installer.catalog_selection(launch, mod, explicit) == catalog
+    assert installer.catalog_selection("#!/bin/sh\n", "-- public catalog\n") is None
+
+
+def test_catalog_selection_rejects_conflicts_missing_data_and_executable_syntax(
+    catalog, tmp_path
+):
+    wrapper, module = selection_text(catalog)
+    with pytest.raises(ValueError, match="Conflicting"):
+        installer.catalog_selection(wrapper, module, "/different/catalog")
+    with pytest.raises(ValueError, match="Duplicate"):
+        installer.catalog_selection(wrapper + wrapper, module)
+    with pytest.raises(ValueError, match="unavailable"):
+        installer.catalog_selection("", "", catalog + "/missing")
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    with pytest.raises(ValueError, match="no manifests"):
+        installer.catalog_selection("", "", str(empty))
+    for unsafe in [
+        "relative/path",
+        "/tmp/$(id)",
+        "/tmp/`id`",
+        "/tmp/catalog\nexport X=1",
+        catalog + "/../corpus",
+    ]:
+        with pytest.raises(ValueError):
+            installer.catalog_selection("", "", unsafe)
+    with pytest.raises(ValueError, match="Unsupported"):
+        installer.catalog_selection(
+            "export EIGENGRID_SCIENTIFIC_SKILLS_ROOT=$(lookup)", ""
+        )
+
+
+def test_generated_launcher_and_module_keep_site_catalog_and_user_override(
+    tmp_path, monkeypatch, catalog
+):
+    client = tmp_path / "client"
+    (client / "bin").mkdir(parents=True)
+    (client / "libexec").mkdir()
+    monkeypatch.setattr(installer, "client", client, raising=False)
+    monkeypatch.setattr(installer, "version", "1.0.1", raising=False)
+    executable = client / "libexec/eigengrid"
+    executable.write_text(
+        '#!/bin/sh\nprintf "%s\\n" "$EIGENGRID_SCIENTIFIC_SKILLS_ROOT" "$@"\n'
+    )
+    executable.chmod(0o755)
+    wrapper = client / "bin/eigengrid"
+    wrapper.write_text(installer.client_wrapper(catalog))
+    wrapper.chmod(0o755)
+    env = {k: v for k, v in os.environ.items() if k != installer.CATALOG_ENV}
+    assert subprocess.check_output(
+        [str(wrapper), "argument with spaces"], env=env, text=True
+    ).splitlines() == [catalog, "argument with spaces"]
+    env[installer.CATALOG_ENV] = "/user/catalog"
+    assert (
+        subprocess.check_output([str(wrapper)], env=env, text=True).strip()
+        == "/user/catalog"
+    )
+    assert (
+        installer.catalog_selection(
+            wrapper.read_text(), installer.client_module(catalog)
+        )
+        == catalog
+    )
+
+
+@pytest.mark.parametrize(
+    "failure", ["lost-root", "changed-catalog", "changed-wrapper", "expected-digest"]
+)
+def test_catalog_gate_rejects_changes_before_activation(
+    tmp_path, monkeypatch, catalog, failure
+):
+    old = tmp_path / "old"
+    client = tmp_path / "new"
+    module = tmp_path / "old.lua"
+    for path in (old, client):
+        (path / "bin").mkdir(parents=True)
+        (path / "bin/eigengrid").write_text(selection_text(catalog)[0])
+    module.write_text(selection_text(catalog)[1])
+    for name, value in {
+        "old_client": old,
+        "client": client,
+        "old_module": module,
+        "plan": {},
+    }.items():
+        monkeypatch.setattr(installer, name, value, raising=False)
+    before = {
+        "oldClientWrapperSha256": installer.digest(old / "bin/eigengrid"),
+        "oldModuleSha256": installer.digest(module),
+        "scientificSkillsRoot": catalog,
+    }
+    original = {
+        "corpusDigest": "b" * 64,
+        "skills": 83,
+        "fragments": 200,
+        "documents": 300,
+    }
+    receipt = {
+        "clientWrapperSha256": installer.digest(client / "bin/eigengrid"),
+        "scientificCatalog": {"root": catalog, **original},
+    }
+    observed = dict(original)
+    monkeypatch.setattr(
+        installer,
+        "catalog_status",
+        lambda root=None: original if root and failure == "lost-root" else observed,
+    )
+    assert installer.check_catalog(before, receipt) == receipt["scientificCatalog"]
+    if failure == "changed-wrapper":
+        (client / "bin/eigengrid").write_text("lost selection")
+    elif failure == "expected-digest":
+        installer.plan["scientificCatalogDigest"] = "c" * 64
+    else:
+        observed["corpusDigest"] = "c" * 64
+    with pytest.raises((ValueError, AssertionError)):
+        installer.check_catalog(before, receipt)
+
+
+def test_catalog_probe_does_not_inherit_overrides_and_requires_valid_content(
+    tmp_path, monkeypatch
+):
+    monkeypatch.setattr(installer, "client", tmp_path, raising=False)
+    monkeypatch.setattr(
+        installer, "plan", {"probeUser": "release-probe"}, raising=False
+    )
+    status = {
+        "corpusDigest": "a" * 64,
+        "skills": 31,
+        "fragments": 100,
+        "documents": 200,
+    }
+
+    def run(args, **kwargs):
+        assert args[:7] == ["sudo", "-n", "-H", "-u", "release-probe", "env", "-u"]
+        assert args[7:10] == [installer.CATALOG_ENV, "-u", "EIGENGRID_RETRIEVAL_CONFIG"]
+        assert args[10:] == [str(tmp_path / "bin/eigengrid"), "retrieval", "status"]
+        assert kwargs["timeout"] == 60
+        return json.dumps(status)
+
+    monkeypatch.setattr(installer, "run", run)
+    assert installer.catalog_status() == status
+    status["skills"] = 0
+    with pytest.raises(ValueError, match="Empty or invalid"):
+        installer.catalog_status()

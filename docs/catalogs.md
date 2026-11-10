@@ -11,6 +11,30 @@ The loader uses that directory instead of the bundled catalog; it does not merge
 catalogs or fetch a private repository. Keep private catalogs outside this checkout.
 Do not copy them into build inputs, public examples, artifacts or CI fixtures.
 
+To expose public updates alongside retained site knowledge, prepare a new private
+composition with `eigengrid retrieval compose --corpus PUBLIC_ROOT --site-corpus SITE_ROOT`.
+Without `--output` this only inspects both inputs. It checks every exact version's
+dependency closure and the combined catalog evaluations. Identical ID/version/digest
+entries are deduplicated; different versions remain available; a shared ID/version
+with different content stops preparation without selecting a winner.
+
+After reviewing the preview, repeat with `--expected-public-digest`,
+`--expected-site-digest` and `--output NEW_SITE_DIRECTORY`. Both digests are required
+for writing. The destination must be new, outside Git checkouts and source catalogs,
+under an owned directory that other users cannot write. The command creates
+`corpus/` and a private `composition.json` receipt, verifies the copied identities,
+and checks that both inputs remained unchanged. New files initially permit only
+the composing account to read them. No private bytes enter the public release.
+
+The site administrator grants the intended scientific readers and dedicated
+installation probe account read/traverse access to this new view, verifies it as
+those users, then selects its `corpus/` directory in the shared launcher and Lmod.
+Keep the previous selection and original catalogs for rollback. Never broaden
+access to everyone to make a verification probe pass. Composition does not activate
+itself, modify the source catalogs or publish data. Updating public files alone
+does not rewrite a previously selected composition; prepare and review a new one
+for each catalog update.
+
 The loader validates manifests, dependency closure, versions and content digests.
 Compiled plans retain exact version/fragment identities. A newer catalog does not
 rewrite an existing plan or authorize execution. Executable helpers are controlled

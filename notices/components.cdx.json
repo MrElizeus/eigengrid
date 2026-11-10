@@ -6,7 +6,7 @@
     "component": {
       "type": "application",
       "name": "eigengrid",
-      "version": "1.0.0"
+      "version": "1.0.2"
     },
     "properties": [
       {

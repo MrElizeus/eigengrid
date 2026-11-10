@@ -15,12 +15,15 @@ import {
 } from "@eigengrid/agent-runtime";
 import { AiSdkInferencePort, completedConversationHistory } from "./native-inference";
 import { OPERATOR_SYSTEM_PROMPT, MISSION_SYSTEM_PROMPT } from "./prompts/system";
+import { PLANNING_SYSTEM_PROMPT } from "./prompts/planning";
 
 // ────────────────────────────────────────────────────────────
 // Public Interfaces
 // ────────────────────────────────────────────────────────────
 
 export interface AgentInput {
+  /** Host-selected prompt surface; callers must also bind a restricted tool registry. */
+  surface?: "operator" | "planning";
   /** User message / prompt */
   prompt: string;
   /** Tool registry with all available tools */
@@ -126,9 +129,17 @@ references when proposing a lesson. Candidates and disputed or expired lessons
 must not guide execution. Only a human can review or promote a lesson; even a
 promoted lesson grants no tool permission or scientific protocol approval.`;
 
-export function buildSystemPrompt(surface: "operator" | "mission" = "operator"): string {
+export function buildSystemPrompt(
+  surface: "operator" | "mission" | "planning" = "operator",
+): string {
   // This function is intentionally independent of memory and user input.
-  return `${surface === "mission" ? MISSION_SYSTEM_PROMPT : OPERATOR_SYSTEM_PROMPT}\n${CONTEXT_AUTHORITY_POLICY}`;
+  const prompt =
+    surface === "planning"
+      ? PLANNING_SYSTEM_PROMPT
+      : surface === "mission"
+        ? MISSION_SYSTEM_PROMPT
+        : OPERATOR_SYSTEM_PROMPT;
+  return `${prompt}\n${CONTEXT_AUTHORITY_POLICY}`;
 }
 
 export async function buildRetrievedContext(
@@ -225,7 +236,7 @@ export async function runAgent(input: AgentInput): Promise<AgentOutput> {
     const journal = new InMemoryAgentJournal();
     const inference = new AiSdkInferencePort(
       model,
-      buildSystemPrompt(),
+      buildSystemPrompt(input.surface),
       prior,
       input.onTextDelta,
       input.onSteering,
@@ -370,6 +381,7 @@ export async function runAgent(input: AgentInput): Promise<AgentOutput> {
         !ok && inference.partialText
           ? `Incomplete response (interrupted):\n${inference.partialText}\n${response}`
           : response,
+        input.surface === "planning",
       ),
     };
   } catch (error) {
