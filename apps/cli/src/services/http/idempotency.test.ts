@@ -43,6 +43,7 @@ describe.skipIf(!canRunPostgres)("application PostgreSQL HTTP durable idempotenc
     await client.connect();
     try {
       await client.query(readFileSync(new URL("./schema-v1.sql", import.meta.url), "utf8"));
+      await client.query(readFileSync(new URL("./schema-v2.sql", import.meta.url), "utf8"));
     } finally {
       await client.end();
     }
@@ -55,6 +56,42 @@ describe.skipIf(!canRunPostgres)("application PostgreSQL HTTP durable idempotenc
     await pool?.end();
     await ephemeral?.cleanup();
   });
+  test.each(["material.apply", "md.publish-stage"] as const)(
+    "%s persists exact replay and uncertain failure fences",
+    async (operation) => {
+      let effects = 0;
+      const request = { ...mock, operation, key: `${operation}-first` };
+      await service.run(request, async () => {
+        effects++;
+        return { published: true };
+      });
+      const result = await service.run(request, async () => {
+        effects++;
+        return { duplicate: true };
+      });
+      expect(effects).toBe(1);
+      expect(result.replayed).toBe(true);
+      await expect(
+        service.run({ ...request, requestDigest: "b".repeat(64) }, async () => {
+          effects++;
+        }),
+      ).rejects.toMatchObject({ code: "IDEMPOTENCY_CONFLICT" });
+      const lost = { ...request, key: `${operation}-lost` };
+      await expect(
+        service.run(lost, async () => {
+          effects++;
+          throw new Error("response lost");
+        }),
+      ).rejects.toThrow("response lost");
+      await expect(
+        service.run(lost, async () => {
+          effects++;
+        }),
+      ).rejects.toMatchObject({ code: "EFFECT_UNCERTAIN" });
+      expect(effects).toBe(2);
+    },
+  );
+
   test("exact response replay is durable across adapters, without second start", async () => {
     let effects = 0;
     const first = await service.run(mock, async () => {

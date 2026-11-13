@@ -1,11 +1,14 @@
+import errno
 import hashlib
 import json
+import os
 import struct
 import subprocess
 import sys
 from pathlib import Path
 
 import pytest
+import eigengrid_chem.amber.inspection as inspection
 from eigengrid_chem.amber.inspection import (
     AMBER_BYTE_INSPECTION_SCHEMA_VERSION,
     AMBER_MINIMIZATION_PARSE_SCHEMA_VERSION,
@@ -133,6 +136,55 @@ def test_refuses_symlinks_and_nonregular_files_before_reading_bytes(tmp_path: Pa
     with pytest.raises(AmberInspectionError, match="regular files") as directory_error:
         inspect_amber_artifact(tmp_path, "trajectory")
     assert directory_error.value.code == "artifact_not_regular"
+
+
+def test_transient_nonblocking_open_retries_without_weakening_flags(tmp_path, monkeypatch):
+    target = tmp_path / "artifact"
+    target.write_bytes(b"abc")
+    original = os.open
+    calls, sleeps = [], []
+
+    def open_with_lease(path, flags, *args, **kwargs):
+        calls.append(flags)
+        if len(calls) < 4:
+            raise BlockingIOError(errno.EAGAIN, "writer lease")
+        return original(path, flags, *args, **kwargs)
+
+    monkeypatch.setattr(inspection.os, "open", open_with_lease)
+    monkeypatch.setattr(inspection.time, "sleep", sleeps.append)
+    with inspection._open_regular_readonly(target) as stream:
+        assert stream.read() == b"abc"
+    assert sleeps == [0.01, 0.02, 0.04]
+    assert all(flags & os.O_NOFOLLOW and flags & os.O_NONBLOCK for flags in calls)
+
+
+def test_open_retry_exhaustion_and_nontransient_errors_fail_closed(tmp_path, monkeypatch):
+    target = tmp_path / "artifact"
+    target.write_bytes(b"abc")
+    calls, sleeps = [], []
+
+    def denied(path, flags):
+        calls.append(flags)
+        raise BlockingIOError(errno.EAGAIN, "still busy")
+
+    monkeypatch.setattr(inspection.os, "open", denied)
+    monkeypatch.setattr(inspection.time, "sleep", sleeps.append)
+    with pytest.raises(AmberInspectionError) as error:
+        inspection._open_regular_readonly(target)
+    assert error.value.code == "artifact_open_failed"
+    assert len(calls) == 7 and sum(sleeps) == pytest.approx(0.47)
+
+    calls.clear()
+    sleeps.clear()
+
+    def forbidden(path, flags):
+        calls.append(flags)
+        raise PermissionError(errno.EACCES, "denied")
+
+    monkeypatch.setattr(inspection.os, "open", forbidden)
+    with pytest.raises(AmberInspectionError):
+        inspection._open_regular_readonly(target)
+    assert len(calls) == 1 and sleeps == []
 
 
 def test_cli_emits_the_same_byte_derived_trajectory_observation() -> None:

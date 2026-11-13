@@ -41,6 +41,9 @@ export async function openMissionApplication(
 ) {
   assertMissionDatabaseEnvironment(process.env);
   const context = await authority.current();
+  // Compatibility for existing sites; newer sites bind the exact protected authority.
+  const mdSiteAuthorityConfigPath =
+    context.mdSiteAuthorityConfigPath ?? "/etc/eigengrid/md-site-authority.json";
   const database = new PostgresDatabase(context.databaseUrl, { migrations: "validate" });
   const artifacts = new ContentAddressedArtifactStore(context.artifactRoot);
   const close = async () => {
@@ -87,7 +90,7 @@ export async function openMissionApplication(
           store,
           effects: new ScientificEffectReconciliationStore(database),
           artifacts,
-          site: createHeadMdSiteAuthorityReader("/etc/eigengrid/md-site-authority.json"),
+          site: createHeadMdSiteAuthorityReader(mdSiteAuthorityConfigPath),
           reviews: context.mdNoSubmitReviews ?? [],
           actor: context.authenticatedActor,
           roles: context.authorizedRoles,
@@ -99,7 +102,7 @@ export async function openMissionApplication(
       },
       async reconcileFailedAllocation(request: unknown) {
         await authority.assertCurrent(context);
-        const site = createHeadMdSiteAuthorityReader("/etc/eigengrid/md-site-authority.json");
+        const site = createHeadMdSiteAuthorityReader(mdSiteAuthorityConfigPath);
         return reconcileFailedAllocation(request, {
           store,
           effects: new ScientificEffectReconciliationStore(database),
@@ -142,7 +145,7 @@ export async function openMissionApplication(
           mdStore,
           artifacts,
           publications: new MdPreparationPublicationStore(database),
-          siteAuthority: createHeadMdSiteAuthorityReader("/etc/eigengrid/md-site-authority.json"),
+          siteAuthority: createHeadMdSiteAuthorityReader(mdSiteAuthorityConfigPath),
           policyDigest: context.mdCompilerPolicy.policyDigest,
           assertAccess: async (address) => {
             await authority.assertCurrent(context);

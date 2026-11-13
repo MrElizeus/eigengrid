@@ -3,8 +3,8 @@
 Source and release artifacts follow [the publication policy](publication.md).
 Run `bun run verify:publication` before building and publishing any release.
 
-Version **1.0.4** strengthens qualification, shared model compatibility and recovery.
-See the [1.0.4 notes](release-notes/v1.0.4.md) and
+Version **1.0.5** connects authenticated AMBER material and stage publication.
+See the [1.0.5 notes](release-notes/v1.0.5.md) and
 [production admission procedure](operations.md#production-dispatch-admission).
 
 Version **1.0.2** completes the scientific planning conversation and corrects command recovery:

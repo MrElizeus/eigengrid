@@ -54,6 +54,8 @@ export interface MissionHttpIdempotencyRequest {
   readonly actorId: string;
   readonly projectId: string;
   readonly operation:
+    | "material.apply"
+    | "md.publish-stage"
     | MissionHttpMutation
     | `agent.${"open" | "approve" | "resume" | "cancel" | "reconcile"}`;
   readonly key: string;

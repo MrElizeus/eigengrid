@@ -198,3 +198,33 @@ A copy on the same physical disk provides recovery from logical mistakes but doe
 provide off-site or disk-failure protection. Schedule encrypted transfer to independently
 stored media and test that copy's recovery. The script does not configure transfer,
 retention, timers or credentials automatically.
+
+## Authenticated material publication API
+
+HTTP schema version 2 adds these mission-scoped authenticated commands:
+
+- `POST /api/v1/projects/{projectId}/missions/{missionId}/materials` accepts an
+  `AmberMaterialRequestSchema` request, including its explicit material action.
+- `POST /api/v1/projects/{projectId}/missions/{missionId}/md-stage-publications`
+  accepts an `AmberMdPreparationRequestSchema` request for an approved stage.
+
+Both use the standard JSON envelope `{ "expectedRevision": 1, "request": ... }`,
+exact origin, session cookie, session-bound `X-CSRF-Token`, and an `Idempotency-Key`.
+Project and mission in the body must match the path. The existing application
+checks scientific roles, exact approvals, durable work, material digests and protected
+publication authority; HTTP does not grant direct filesystem or scheduler access.
+Material preparation and MD-stage publication remain distinct operations from dispatch.
+A cached response still requires current session and mission access.
+
+Apply the explicit HTTP schema upgrade through the protected admin migration command
+before starting the new listener. Version 1 SQL and its checksum remain unchanged;
+version 2 has its own checksum and expands only the allowed durable HTTP operation
+identities. Reapplying the upgrade validates history and preserves completed and pending
+requests. Runtime startup validates both installed schema versions and performs no DDL.
+The main scientific database migration sequence is unchanged by this HTTP-only upgrade.
+
+An acknowledgement lost after material publication leaves its HTTP intent pending.
+Lookup can return a stored completed response; if no complete canonical response proof
+is available, reconciliation preserves the pending fence. Inspect canonical material,
+work-unit and publication records before administrator-led recovery. Never repeat a
+pending operation under a fresh key merely to bypass its uncertainty fence.

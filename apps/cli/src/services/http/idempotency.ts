@@ -52,6 +52,8 @@ function validate(request: MissionHttpIdempotencyRequest): void {
       "compile",
       "start",
       "cancel",
+      "material.apply",
+      "md.publish-stage",
       "agent.open",
       "agent.approve",
       "agent.resume",
@@ -95,7 +97,7 @@ export class PostgresMissionHttpIdempotency implements MissionHttpIdempotencySer
     if (
       ![input.actorId, input.projectId, input.missionId].every((value) => name.test(value)) ||
       !keyPattern.test(input.key) ||
-      !/^(create|import|approve|compile|start|cancel|agent\.(open|approve|resume|cancel|reconcile))$/u.test(
+      !/^(create|import|approve|compile|start|cancel|material\.apply|md\.publish-stage|agent\.(open|approve|resume|cancel|reconcile))$/u.test(
         input.operation,
       )
     )

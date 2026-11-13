@@ -13,6 +13,7 @@ predeclared contracts to this observation afterwards.
 
 from __future__ import annotations
 
+import errno
 import hashlib
 import json
 import math
@@ -20,6 +21,7 @@ import os
 import re
 import stat
 import struct
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, BinaryIO, Iterator, Literal
@@ -253,12 +255,20 @@ def _open_regular_readonly(path: str | Path) -> BinaryIO:
     flags = os.O_RDONLY
     for name in ("O_CLOEXEC", "O_NOFOLLOW", "O_NONBLOCK"):
         flags |= getattr(os, name, 0)
-    try:
-        descriptor = os.open(os.fspath(path), flags)
-    except OSError as error:
-        raise AmberInspectionError(
-            "artifact_open_failed", "Artifact could not be opened as a safe regular file"
-        ) from error
+    # A local open can return EAGAIN while a remote NFS writer's lease is being
+    # returned, even after its process exits. Keep no-follow and nonblocking
+    # flags on every attempt; other errors fail immediately. Total wait <=470ms.
+    delays = (0.01, 0.02, 0.04, 0.08, 0.16, 0.16)
+    for attempt in range(len(delays) + 1):
+        try:
+            descriptor = os.open(os.fspath(path), flags)
+            break
+        except OSError as error:
+            if error.errno not in (errno.EAGAIN, errno.EWOULDBLOCK) or attempt == len(delays):
+                raise AmberInspectionError(
+                    "artifact_open_failed", "Artifact could not be opened as a safe regular file"
+                ) from error
+            time.sleep(delays[attempt])
     try:
         metadata = os.fstat(descriptor)
         if not stat.S_ISREG(metadata.st_mode):

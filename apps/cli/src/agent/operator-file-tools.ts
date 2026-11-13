@@ -1,3 +1,4 @@
+import { retryNonblockingFileIo } from "./operator-file-io";
 import { randomUUID } from "node:crypto";
 import {
   closeSync,
@@ -5,7 +6,7 @@ import {
   fstatSync,
   mkdirSync,
   openSync,
-  readFileSync,
+  readSync,
   renameSync,
   unlinkSync,
   writeFileSync,
@@ -25,14 +26,30 @@ export const readFileTool: Tool<z.infer<typeof readInput>, z.infer<typeof readOu
   outputSchema: readOutput,
   async execute(_ctx, input) {
     const path = resolveOperatorFile(input.path, process.cwd());
-    const fd = openSync(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
+    const ioDeadline = performance.now() + 450;
+    const fd = await retryNonblockingFileIo(
+      () => openSync(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK),
+      ioDeadline,
+    );
     try {
       const stat = fstatSync(fd);
       if (!stat.isFile())
         throw new Error("Read a regular text file; directories and special files are unsupported");
       if (stat.size > 64 * 1024)
         throw new Error("Read a smaller file or use the job log tools (64 KiB maximum)");
-      return { ok: true, data: { path, content: readFileSync(fd, "utf8") } };
+      const buffer = Buffer.alloc(64 * 1024 + 1);
+      let total = 0;
+      for (;;) {
+        const count = await retryNonblockingFileIo(
+          () => readSync(fd, buffer, total, buffer.length - total, total),
+          ioDeadline,
+        );
+        total += count;
+        if (total > 64 * 1024)
+          throw new Error("Read a smaller file or use the job log tools (64 KiB maximum)");
+        if (count === 0) break;
+      }
+      return { ok: true, data: { path, content: buffer.subarray(0, total).toString("utf8") } };
     } finally {
       closeSync(fd);
     }

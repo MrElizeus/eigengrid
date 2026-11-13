@@ -10,6 +10,9 @@ export async function observeApplicationOperation(
   application: MissionApplication,
   agent: () => AgentSessionService,
 ): Promise<unknown | null> {
+  // These application commands lack a complete read-only canonical response proof.
+  // Keep a lost acknowledgement fenced; never infer success or retry publication.
+  if (record.operation === "material.apply" || record.operation === "md.publish-stage") return null;
   const input = record.request as Record<string, unknown>;
   if (record.operation.startsWith("agent.")) {
     const service = agent();
