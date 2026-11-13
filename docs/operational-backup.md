@@ -46,8 +46,8 @@ restore have passed. No Head or API stop is performed by the adapter.
 
 ## Restore without replaying effects
 
-1. Fetch the selected remote encrypted archive and decrypt it using the protected
-   key into a new private quarantine directory. Use safe tar extraction; reject
+1. Set `umask 077`, then fetch the selected remote encrypted archive and decrypt it
+   using the protected key into a new private quarantine directory. Use safe tar extraction; reject
    links and path traversal. Preserve the snapshot directory's private mode.
 2. Run `operational-backup.py verify --backup /absolute/quarantine/snapshot`.
    Keep the recovered journals read-only and separate from live agent directories.
