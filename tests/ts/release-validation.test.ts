@@ -61,35 +61,27 @@ function fixture(version = "1.0.0-rc.2") {
 }
 
 describe("release validation manifest", () => {
-  test.each([
-    "1.0.0-rc.2",
-    "1.0.0",
-    "1.0.1",
-    "1.0.2",
-    "1.0.3",
-    "1.0.4",
-    "1.0.5",
-    "1.0.6",
-    "1.0.7",
-    "1.0.8",
-  ])("binds %s package bytes, source and migrations to the CI run", (version) => {
-    const item = fixture(version);
-    const result = item.execute();
-    expect(result.status).toBe(0);
-    const validation = JSON.parse(
-      readFileSync(join(item.root, "dist/packages/validation.json"), "utf8"),
-    );
-    expect(validation.sourceCommit).toBe(item.env.GITHUB_SHA);
-    expect(validation.repositoryId).toBe(456);
-    expect(validation.runId).toBe(123);
-    expect(validation.archiveSha256).toBe(
-      createHash("sha256").update("synthetic package").digest("hex"),
-    );
-    expect(validation.migrations).toHaveLength(22);
-    expect(validation.migrations[21].version).toBe(22);
-  });
+  test.each(["1.0.0-rc.2", "1.0.0", "1.0.1", "1.0.2", "1.0.3", "1.0.4", "1.0.5", "1.0.6", "1.0.7"])(
+    "binds %s package bytes, source and migrations to the CI run",
+    (version) => {
+      const item = fixture(version);
+      const result = item.execute();
+      expect(result.status).toBe(0);
+      const validation = JSON.parse(
+        readFileSync(join(item.root, "dist/packages/validation.json"), "utf8"),
+      );
+      expect(validation.sourceCommit).toBe(item.env.GITHUB_SHA);
+      expect(validation.repositoryId).toBe(456);
+      expect(validation.runId).toBe(123);
+      expect(validation.archiveSha256).toBe(
+        createHash("sha256").update("synthetic package").digest("hex"),
+      );
+      expect(validation.migrations).toHaveLength(22);
+      expect(validation.migrations[21].version).toBe(22);
+    },
+  );
 
-  test.each(["1.0.9", "1.1.0", "1.0.1-rc.1", "1.0.01", "1.0.0-rc.0", "1.0.0-rc.01", "1.0.0\n"])(
+  test.each(["1.0.8", "1.1.0", "1.0.1-rc.1", "1.0.01", "1.0.0-rc.0", "1.0.0-rc.01", "1.0.0\n"])(
     "rejects unsupported version %j even with matching metadata",
     (version) => {
       const item = fixture(version);
