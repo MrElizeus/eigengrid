@@ -7,9 +7,9 @@ Version 1.0.0 includes the CLI, terminal interface and authenticated HTTP API.
 The React web interface is deferred to a separate development branch and is not
 included in this release.
 
-Version **1.0.7** creates missions and their objective evidence atomically and
-requires complete evidence when recovering a lost creation response. Persistent agents
-use prepared mission workflows through a private HTTPS client.
+Version **1.0.8** reports bounded model-budget exhaustion accurately and improves
+operational backups of mission journals. Persistent agents use prepared mission
+workflows through a private HTTPS client.
 Linux x64 software contracts are covered
 by local and PostgreSQL integration tests. Installation-specific execution
 qualification, large-system performance and scientific acceptance remain separate.

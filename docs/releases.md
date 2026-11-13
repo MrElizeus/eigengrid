@@ -3,6 +3,10 @@
 Source and release artifacts follow [the publication policy](publication.md).
 Run `bun run verify:publication` before building and publishing any release.
 
+Version **1.0.8** reports model-budget exhaustion without releasing uncertain usage
+and supports operational backup of qualification state and journals. See the
+[1.0.8 notes](release-notes/v1.0.8.md).
+
 Version **1.0.7** makes mission creation atomic with objective evidence and checks
 the complete original creation request before recovering a lost response. See the
 [1.0.7 notes](release-notes/v1.0.7.md).
