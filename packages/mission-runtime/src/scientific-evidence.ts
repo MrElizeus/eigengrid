@@ -38,59 +38,74 @@ export class ScientificEvidence {
   // ── Evidence, checkpoints, and decisions ─────────────────
 
   async createEvidence(referenceInput: EvidenceReference): Promise<EvidenceReference> {
+    // Preserve validation errors before entering the storage error boundary.
     const reference = EvidenceReferenceSchema.parse(referenceInput);
     if (!reference.immutable) {
       throw new ScientificIntegrityError("Authoritative scientific evidence must be immutable", {
         evidenceId: reference.id,
       });
     }
-    return this.context.inTransaction("create evidence reference", async (tx) => {
-      await this.context.requiredRow(tx, "mission", reference.missionId, "scientific_missions");
-      if (reference.workUnitId) {
-        const work = await this.context.requiredRow<{ mission_id: string }>(
-          tx,
-          "work unit",
-          reference.workUnitId,
-          "scientific_work_units",
-        );
-        if (String(work.mission_id) !== reference.missionId) {
-          throw new ScientificIntegrityError("Evidence work unit belongs to another mission");
-        }
-      }
-      await this.context.insertIdempotent(tx, {
-        entity: "evidence reference",
-        table: "scientific_evidence",
-        id: reference.id,
-        payload: canonicalJson(reference),
-        columns: [
-          "id",
-          "mission_id",
-          "work_unit_id",
-          "kind",
-          "evidence_kind_id",
-          "uri",
-          "content_digest",
-          "immutable",
-          "source_id",
-          "payload_json",
-          "created_at",
-        ],
-        values: [
-          reference.id,
-          reference.missionId,
-          reference.workUnitId ?? null,
-          legacyEvidenceKind(reference.kind),
-          reference.kind,
-          reference.uri,
-          reference.contentDigest,
-          reference.immutable,
-          reference.sourceId ?? null,
-          canonicalJson(reference),
-          reference.createdAt,
-        ],
+    return this.context.inTransaction("create evidence reference", (tx) =>
+      this.createEvidenceInTransaction(tx, reference),
+    );
+  }
+
+  /** Internal composition port: the caller owns commit/rollback of the aggregate. */
+  async createEvidenceInTransaction(
+    tx: ScientificTransaction,
+    referenceInput: EvidenceReference,
+  ): Promise<EvidenceReference> {
+    const reference = EvidenceReferenceSchema.parse(referenceInput);
+    if (!reference.immutable) {
+      throw new ScientificIntegrityError("Authoritative scientific evidence must be immutable", {
+        evidenceId: reference.id,
       });
-      return reference;
+    }
+    await this.context.requiredRow(tx, "mission", reference.missionId, "scientific_missions");
+    if (reference.workUnitId) {
+      const work = await this.context.requiredRow<{ mission_id: string }>(
+        tx,
+        "work unit",
+        reference.workUnitId,
+        "scientific_work_units",
+      );
+      if (String(work.mission_id) !== reference.missionId) {
+        throw new ScientificIntegrityError("Evidence work unit belongs to another mission");
+      }
+    }
+    await this.context.insertIdempotent(tx, {
+      entity: "evidence reference",
+      table: "scientific_evidence",
+      id: reference.id,
+      payload: canonicalJson(reference),
+      columns: [
+        "id",
+        "mission_id",
+        "work_unit_id",
+        "kind",
+        "evidence_kind_id",
+        "uri",
+        "content_digest",
+        "immutable",
+        "source_id",
+        "payload_json",
+        "created_at",
+      ],
+      values: [
+        reference.id,
+        reference.missionId,
+        reference.workUnitId ?? null,
+        legacyEvidenceKind(reference.kind),
+        reference.kind,
+        reference.uri,
+        reference.contentDigest,
+        reference.immutable,
+        reference.sourceId ?? null,
+        canonicalJson(reference),
+        reference.createdAt,
+      ],
     });
+    return reference;
   }
 
   async createCheckpoint(checkpointInput: MissionCheckpoint): Promise<MissionCheckpoint> {

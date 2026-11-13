@@ -91,8 +91,9 @@ export class ScientificStore {
   async createMission(
     missionInput: ScientificMission,
     budgetInput: MissionBudget,
+    objectiveEvidence?: readonly EvidenceReference[],
   ): Promise<ScientificMission> {
-    return this.missions.createMission(missionInput, budgetInput);
+    return this.missions.createMission(missionInput, budgetInput, objectiveEvidence);
   }
 
   /**

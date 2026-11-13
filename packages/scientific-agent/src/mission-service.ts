@@ -302,9 +302,7 @@ export class ScientificMissionService {
 
   async createMission(input: CreateDurableScientificMissionInput): Promise<ScientificMission> {
     this.assertObjectiveEvidence(input);
-    const mission = await this.store.createMission(input.mission, input.budget);
-    for (const evidence of input.objectiveEvidence) await this.store.createEvidence(evidence);
-    return mission;
+    return this.store.createMission(input.mission, input.budget, input.objectiveEvidence);
   }
 
   /**
@@ -318,14 +316,13 @@ export class ScientificMissionService {
       throw new Error("Production mission requester must equal the authenticated human actor");
     }
     this.assertObjectiveEvidence(input);
-    const mission = await this.store.createMissionInProject({
+    return this.store.createMissionInProject({
       mission: input.mission,
       budget: input.budget,
       projectId: input.projectId,
       ownerUserId: actor.id,
+      objectiveEvidence: input.objectiveEvidence,
     });
-    for (const evidence of input.objectiveEvidence) await this.store.createEvidence(evidence);
-    return mission;
   }
 
   async planMissionInProject(

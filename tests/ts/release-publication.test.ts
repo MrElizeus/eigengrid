@@ -85,7 +85,7 @@ function fixture(version = "1.0.2") {
 }
 
 describe("release publication workflow", () => {
-  test.each(["1.0.0-rc.2", "1.0.0", "1.0.1", "1.0.2", "1.0.3", "1.0.4", "1.0.5", "1.0.6"])(
+  test.each(["1.0.0-rc.2", "1.0.0", "1.0.1", "1.0.2", "1.0.3", "1.0.4", "1.0.5", "1.0.6", "1.0.7"])(
     "publishes supported version %s after verification",
     async (version) => {
       const f = fixture(version);
