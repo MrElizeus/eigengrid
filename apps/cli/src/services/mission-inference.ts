@@ -4,7 +4,10 @@ import {
   AgentInferenceBudgetError,
   type AgentInferencePort,
 } from "@eigengrid/agent-runtime";
-import { AiSdkInferencePort } from "@eigengrid/agent/native-inference";
+import {
+  AiSdkInferencePort,
+  ModelConversationBudgetExceededError,
+} from "@eigengrid/agent/native-inference";
 import { configureLlm, loadLlmConfig, resolveConfiguredModel } from "@eigengrid/agent";
 import { buildSystemPrompt } from "@eigengrid/agent/agent-loop";
 import type { AgentPrincipal } from "./agent-sessions";
@@ -154,6 +157,10 @@ export function createMissionBoundInference(
         return await bound.infer(request);
       } catch (error) {
         if (error instanceof AgentInferenceBudgetError) throw error;
+        // This can arise before or after a provider response. The inner catch has
+        // already retained ambiguous usage; classification must not release it.
+        if (error instanceof ModelConversationBudgetExceededError)
+          throw new AgentInferenceBudgetError("MISSION_MODEL_BUDGET_EXCEEDED");
         // Provider/DB exceptions can include endpoints, SQL or private keys.
         // This message is persisted in the journal and visible to HTTP actors.
         throw new Error("MISSION_MODEL_INFERENCE_UNAVAILABLE");

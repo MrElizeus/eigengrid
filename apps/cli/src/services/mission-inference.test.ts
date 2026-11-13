@@ -123,3 +123,75 @@ test("scope drift during async preparation fences inference before provider call
   expect(called).toBe(0);
   expect(ambiguous).toBe(true);
 });
+
+test("gateway budget errors surface as budget exhaustion while preserving ambiguous reservations", async () => {
+  const { ModelConversationBudgetExceededError } =
+    await import("@eigengrid/agent/native-inference");
+  const { AgentInferenceBudgetError } = await import("@eigengrid/agent-runtime");
+  const observations: unknown[] = [];
+  const open = async () =>
+    ({
+      application: {
+        beginAgentInference: async () => ({
+          remainingBudget: { inputTokens: 10, outputTokens: 10, cost: 1 },
+        }),
+        observeAgentInference: async (_lease: unknown, value: unknown) => observations.push(value),
+      },
+      close: async () => {},
+    }) as unknown as Awaited<ReturnType<typeof openMissionApplication>>;
+  const request = {
+    sessionId: "session",
+    prompt: "inspect",
+    observations: [],
+    transcript: [],
+    tools: [],
+    step: 1,
+  };
+  const prepare = (error: Error) => async () => ({
+    provider: "fixture",
+    model: "fixture",
+    maximumOutputTokens: 10,
+    timeoutMilliseconds: 1000,
+    inference: {
+      infer: async () => {
+        throw error;
+      },
+    },
+  });
+  const budget = createMissionBoundInference(
+    async () => principal,
+    open,
+    prepare(new ModelConversationBudgetExceededError("secret endpoint detail")),
+  );
+  const error = await budget.infer(request).catch((reason: unknown) => reason);
+  expect(error).toBeInstanceOf(AgentInferenceBudgetError);
+  expect(error instanceof Error ? error.message : null).toBe("MISSION_MODEL_BUDGET_EXCEEDED");
+  expect(observations).toEqual([{ ambiguous: true }]);
+  observations.length = 0;
+  const { NativeAgentEngine, InMemoryAgentJournal } = await import("@eigengrid/agent-runtime");
+  const journal = new InMemoryAgentJournal();
+  const engine = new NativeAgentEngine({
+    journal,
+    inference: budget,
+    authority: {
+      describe: () => [],
+      decide: async () => "deny",
+      execute: async () => {
+        throw new Error("unexpected tool call");
+      },
+    },
+  });
+  engine.start({ sessionId: "budget-fence", prompt: "inspect" });
+  const state = await engine.run("budget-fence");
+  expect(state.phase).toBe("budget_exhausted");
+  expect(state.detail).toBe("MISSION_MODEL_BUDGET_EXCEEDED");
+  expect(observations).toEqual([{ ambiguous: true }]);
+  observations.length = 0;
+  const other = createMissionBoundInference(
+    async () => principal,
+    open,
+    prepare(new Error("secret endpoint detail")),
+  );
+  await expect(other.infer(request)).rejects.toThrow("MISSION_MODEL_INFERENCE_UNAVAILABLE");
+  expect(observations).toEqual([{ ambiguous: true }]);
+});
