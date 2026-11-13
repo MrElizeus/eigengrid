@@ -26,6 +26,7 @@ import type { ScientificDatabase } from "./types";
 export {
   MdStageAssessmentOperationRequestSchemaVersion,
   assertBiomolecularSystemDecisionAuthority,
+  assertForceFieldStackCoversSystem,
   assertMdStageOperationRequestAuthority,
   computeBiomolecularDecisionMaterialDigest,
   computeMdProtocolMaterialDigest,
