@@ -50,3 +50,47 @@ def test_symlink_hardlink_overwrite_and_bounds_fail_without_publication(tmp_path
 def test_no_overwrite_of_existing_snapshot(tmp_path,monkeypatch):
  policy,_,_=fixture(tmp_path,monkeypatch);output=tmp_path/'backup';sidecar.create(policy,output)
  with pytest.raises(FileExistsError):sidecar.create(policy,output)
+
+def test_capture_rejects_atomic_source_replacement(tmp_path,monkeypatch):
+ policy,secret,_=fixture(tmp_path,monkeypatch)
+ replacement=secret.parent/'replacement.json';replacement.write_text('replacement');replacement.chmod(0o600)
+ read=sidecar.os.read;changed=False
+ def replacing_read(fd,size):
+  nonlocal changed
+  data=read(fd,size)
+  if data and not changed:
+   changed=True;os.replace(replacement,secret)
+  return data
+ monkeypatch.setattr(sidecar.os,'read',replacing_read)
+ with pytest.raises(ValueError,match='source changed'):
+  sidecar.create(policy,tmp_path/'backup')
+ assert changed and not (tmp_path/'backup').exists() and not list(tmp_path.glob('.sidecar-*'))
+
+@pytest.mark.parametrize('mismatch',['digest','project','actor','duplicate'])
+def test_semantic_check_rejects_client_not_bound_to_server_operator(tmp_path,monkeypatch,mismatch):
+ from types import SimpleNamespace
+ import hashlib
+ tmp_path.chmod(0o700);credential='A'*43;cert='PUBLIC CERTIFICATE'
+ roles={
+  'production-config':json.dumps({'operators':[{'actorId':'scientist','httpCredentialDigest':hashlib.sha256(credential.encode()).hexdigest(),'httpProjectIds':['project-1']}]}),
+  'global-model':json.dumps({'apiKey':'synthetic','model':'fixture'}),
+  'signing-key':'synthetic-key','tls-production-cert':cert,'tls-production-key':'synthetic-key',
+  'restic-pass':'synthetic-pass','backup-pass':'synthetic-pass',
+  'credential:scientist':credential,
+  'client:scientist':json.dumps({'schemaVersion':'eigengrid.mission-http-client/v1','actorId':'scientist','projectId':'project-1','missionId':'mission-1','credential':credential,'caCertificate':cert}),
+ }
+ entries=[]
+ for index,(role,value) in enumerate(roles.items()):
+  path=f'{index:04d}.json';(tmp_path/path).write_text(value);entries.append({'role':role,'path':path})
+ (tmp_path/'sidecar-manifest.json').write_text(json.dumps({'actors':['scientist'],'files':entries}))
+ monkeypatch.setattr(sidecar,'verify',lambda root:{'verified':True})
+ monkeypatch.setattr(sidecar.subprocess,'run',lambda *a,**kw:SimpleNamespace(stdout=b'same-public-key'))
+ assert sidecar.semantic_verify(tmp_path)['clientsVerified']==1
+ config_path=tmp_path/next(x['path'] for x in entries if x['role']=='production-config');config=json.loads(config_path.read_text());operator=config['operators'][0]
+ if mismatch=='digest':operator['httpCredentialDigest']='f'*64
+ if mismatch=='project':operator['httpProjectIds']=['foreign-project']
+ if mismatch=='actor':operator['actorId']='someone-else'
+ if mismatch=='duplicate':config['operators'].append(dict(operator))
+ config_path.write_text(json.dumps(config))
+ with pytest.raises(ValueError,match='operator'):
+  sidecar.semantic_verify(tmp_path)

@@ -80,6 +80,9 @@ def capture_file(source, destination, expected_uid):
         fd = os.open(path.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=directory)
         try:
             before = os.fstat(fd)
+            named_before = os.stat(path.name, dir_fd=directory, follow_symlinks=False)
+            if identity(before) != identity(named_before):
+                raise ValueError("source name changed during capture")
             if not stat.S_ISREG(before.st_mode) or before.st_nlink != 1 or before.st_uid != expected_uid or before.st_mode & 0o022 or before.st_size > MAX_FILE:
                 raise ValueError("source must be bounded, single-link, protected and owned as reviewed")
             attributes = acl(fd); count = 0; digest = hashlib.sha256()
@@ -91,8 +94,9 @@ def capture_file(source, destination, expected_uid):
                     stream.write(chunk); digest.update(chunk)
                 stream.flush(); os.fsync(stream.fileno())
             after = os.fstat(fd)
+            named_after = os.stat(path.name, dir_fd=directory, follow_symlinks=False)
             current_parent = path.parent.lstat()
-            if identity(before) != identity(after) or count != before.st_size or (parent_before.st_dev, parent_before.st_ino) != (current_parent.st_dev, current_parent.st_ino):
+            if identity(before) != identity(after) or identity(after) != identity(named_after) or count != before.st_size or (parent_before.st_dev, parent_before.st_ino) != (current_parent.st_dev, current_parent.st_ino):
                 raise ValueError("source changed during capture; preserve existing services and retry coordinated capture")
             return {"sha256": digest.hexdigest(), "sizeBytes": count, "uid": before.st_uid,
                     "gid": before.st_gid, "mode": stat.S_IMODE(before.st_mode), "aclAccessBase64": attributes,
@@ -214,6 +218,16 @@ def semantic_verify(root):
             raise ValueError("client/actor/credential mismatch")
         if client.get("caCertificate", "").strip() != roles["tls-production-cert"].read_text().strip():
             raise ValueError("client CA does not match recovered TLS certificate")
+        operators = configuration.get("operators")
+        if not isinstance(operators, list): raise ValueError("protected operators missing")
+        matching = [item for item in operators if isinstance(item, dict) and item.get("actorId") == actor]
+        if len(matching) != 1:
+            raise ValueError("client actor must bind exactly one protected operator")
+        operator = matching[0]
+        project_ids = operator.get("httpProjectIds")
+        if (operator.get("httpCredentialDigest") != hashlib.sha256(credential.encode("utf-8")).hexdigest()
+                or not isinstance(project_ids, list) or client["projectId"] not in project_ids):
+            raise ValueError("client credential or project does not match protected operator")
     for role in ("restic-pass", "backup-pass"):
         if not roles[role].read_bytes().split(b"\n", 1)[0]: raise ValueError("recovery secret empty")
     return {**result, "clientsVerified": len(manifest["actors"]), "tlsKeyMatchesCertificate": True,

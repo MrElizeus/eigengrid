@@ -18,7 +18,8 @@ a static policy must not be assumed to discover newly created files.
 
 Capture limits are 512 files, 16 MiB per file, 32 MiB of payload and 4 MiB of
 manifest metadata. Only protected, regular single-link files are copied. Reads
-are bound to directory descriptors; changing file or parent identity fails the
+are bound to directory descriptors; the opened file and its directory entry are
+checked before and after reading, and a changed file or parent identity fails the
 capture. Original UID/GID/mode, parent metadata and POSIX access ACLs are recorded,
 while quarantine payloads remain operator-owned mode0600 under mode0700
 folders. Recorded permissions are never applied automatically.
@@ -27,7 +28,8 @@ The verification operation checks exact membership, SHA-256, stable sizes and
 recovery policy. `verify --semantic` additionally checks the production TLS
 certificate/key pair, parseability of the signing key and global model
 configuration, and each selected actor's client credential and CA against the
-recovered server-side files. These are structural/cryptographic checks: no model
+recovered server-side files. It also requires exactly one matching protected operator
+with the credential digest and the client's authorized project. These are structural/cryptographic checks: no model
 provider call, HTTP authentication, service activation, database connection or
 scientific submission occurs.
 
