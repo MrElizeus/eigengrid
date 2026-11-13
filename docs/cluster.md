@@ -44,7 +44,9 @@ A failed scheduler query produces an error instead of substituting stale data.
 The inventory reports scheduler capacity, CPU allocation, partitions and GRES.
 OS free memory is reported separately from configured scheduler memory.
 Inventory visibility does not qualify a scheduler version for execution.
-The existing strict submission/accounting contract still supports Slurm 23.11.x.
+The strict accounting contract supports Slurm 23.11.x and 26.05.x with the
+explicit parser selection described in [operations](operations.md). Other release
+lines fail closed.
 
 A configured cluster profile disables legacy execution through the client
 coordinator. It preserves personal inspection and preparation without treating
