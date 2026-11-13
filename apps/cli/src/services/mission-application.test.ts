@@ -902,6 +902,18 @@ describe.skipIf(!canRunPostgres)("human mission application through real Postgre
         const budget = await store.getMissionBudget(mission.id);
         expect(budget.consumed.modelTokens).toBe(4);
         expect(budget.consumed.cost).toBe(0.002);
+        const settledRows = await http.pool.query(
+          `SELECT kind, state, amount, payload_json FROM scientific_budget_reservations
+           WHERE budget_id = $1 AND kind IN ('model_tokens', 'cost')`,
+          [budget.id],
+        );
+        expect(settledRows.rows).toHaveLength(4);
+        for (const row of settledRows.rows) {
+          const payload = JSON.parse(row.payload_json);
+          expect(row.state).toBe("consumed");
+          expect(Number(row.amount)).toBe(payload.amount);
+          expect(payload.amount).toBe(row.kind === "model_tokens" ? 2 : 0.001);
+        }
         const modelIntents = (await store.getMissionProvenance(mission.id)).modelInvocationIntents;
         expect(modelIntents).toHaveLength(2);
         expect(
