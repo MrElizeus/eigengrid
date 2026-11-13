@@ -199,6 +199,20 @@ provide off-site or disk-failure protection. Schedule encrypted transfer to inde
 stored media and test that copy's recovery. The script does not configure transfer,
 retention, timers or credentials automatically.
 
+`scripts/operations/receive_backup.py` can receive an encrypted stream into an
+existing private directory on another node. Require a conservative `--max-bytes`
+bound for the entire incoming archive. The receiver reserves capacity for that
+bound before writing, rechecks available space during transfer and retains at least
+100 GiB and 20% free by default. It rejects oversized or empty streams and existing
+snapshot names, publishes atomically, and does not delete historical backups.
+Receivers serialize their capacity checks with a directory lock. Other writers on
+the filesystem still require site monitoring or quotas; this check cannot reserve
+space against unrelated processes. After an uncertain transfer, inspect the existing
+destination and verify it before any retry; never overwrite it to hide the failure.
+Its receipt proves storage only: the sender must still retrieve, decrypt and verify
+the backup before declaring success. Provision authenticated transport and a physical
+destination independent of the source separately.
+
 ## Authenticated material publication API
 
 HTTP schema version 2 adds these mission-scoped authenticated commands:
