@@ -1,0 +1,9 @@
+[Unit]
+Description=Daily independent qualification and agent journal recovery capture
+[Timer]
+OnCalendar=*-*-* 04:30:00
+RandomizedDelaySec=15min
+Persistent=true
+Unit=eigengrid-qualification-backup.service
+[Install]
+WantedBy=timers.target

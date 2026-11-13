@@ -1,5 +1,6 @@
 import { tool as aiTool, jsonSchema, type ModelMessage } from "ai";
 import { ModelGateway } from "@eigengrid/model-gateway";
+export { ModelConversationBudgetExceededError } from "@eigengrid/model-gateway";
 import { canonicalAgentJson } from "@eigengrid/agent-runtime";
 import type {
   AgentInferencePort,

@@ -1,10 +1,10 @@
 import { constants, type Stats } from "node:fs";
-import { open, type FileHandle } from "node:fs/promises";
+import { open, unlink, type FileHandle } from "node:fs/promises";
 import { basename, dirname, isAbsolute, resolve } from "node:path";
 import { canonicalJson } from "@eigengrid/scientific-schema";
 import { descriptorPath, stableAmberFile } from "./amber-runner-files";
 
-/** Identity-only seam for local tests. Production always uses kernel credentials
+/** Kernel I/O seam for local tests. Production always uses kernel credentials
  * and descriptor fstat; this is not a configurable site authentication bypass. */
 export interface AmberResultSpoolFileIO {
   uid(): number;
@@ -12,6 +12,7 @@ export interface AmberResultSpoolFileIO {
   groups(): number[];
   stat(file: FileHandle, path: string): Promise<Stats>;
   chown(file: FileHandle, uid: number, gid: number): Promise<void>;
+  unlink(path: string): Promise<void>;
 }
 export const amberResultSpoolFileIO: AmberResultSpoolFileIO = {
   uid: () => process.getuid!(),
@@ -19,6 +20,7 @@ export const amberResultSpoolFileIO: AmberResultSpoolFileIO = {
   groups: () => process.getgroups!(),
   stat: (file) => file.stat(),
   chown: (file, uid, gid) => file.chown(uid, gid),
+  unlink,
 };
 export const directoryFlags = constants.O_RDONLY | constants.O_DIRECTORY | constants.O_NOFOLLOW;
 export const fileFlags = constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK;

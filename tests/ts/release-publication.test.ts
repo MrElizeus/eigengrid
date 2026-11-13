@@ -85,20 +85,28 @@ function fixture(version = "1.0.2") {
 }
 
 describe("release publication workflow", () => {
-  test.each(["1.0.0-rc.2", "1.0.0", "1.0.1", "1.0.2", "1.0.3", "1.0.4", "1.0.5", "1.0.6", "1.0.7"])(
-    "publishes supported version %s after verification",
-    async (version) => {
-      const f = fixture(version);
-      await f.execute();
-      expect(f.created[0]).toMatchObject({
-        tag_name: `v${version}`,
-        draft: true,
-        prerelease: version.includes("-rc."),
-      });
-      expect(f.uploaded).toContain(`eigengrid-${version}-linux-x64.tar.gz`);
-      expect(f.published).toHaveLength(1);
-    },
-  );
+  test.each([
+    "1.0.0-rc.2",
+    "1.0.0",
+    "1.0.1",
+    "1.0.2",
+    "1.0.3",
+    "1.0.4",
+    "1.0.5",
+    "1.0.6",
+    "1.0.7",
+    "1.0.8",
+  ])("publishes supported version %s after verification", async (version) => {
+    const f = fixture(version);
+    await f.execute();
+    expect(f.created[0]).toMatchObject({
+      tag_name: `v${version}`,
+      draft: true,
+      prerelease: version.includes("-rc."),
+    });
+    expect(f.uploaded).toContain(`eigengrid-${version}-linux-x64.tar.gz`);
+    expect(f.published).toHaveLength(1);
+  });
   test("publishes the reviewed notes and only activates after all assets upload", async () => {
     const f = fixture();
     await f.execute();

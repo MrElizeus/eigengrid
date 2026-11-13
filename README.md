@@ -7,6 +7,9 @@ Version 1.0.0 includes the CLI, terminal interface and authenticated HTTP API.
 The React web interface is deferred to a separate development branch and is not
 included in this release.
 
+Version **1.0.8** hardens NFS result publication, budget diagnostics and operational
+recovery captures. See the [release notes](docs/release-notes/v1.0.8.md).
+
 Version **1.0.7** creates missions and their objective evidence atomically and
 requires complete evidence when recovering a lost creation response. Persistent agents
 use prepared mission workflows through a private HTTPS client.

@@ -4,7 +4,7 @@ export const AGENT_JOURNAL_VERSION = "eigengrid.agent.journal/v1" as const;
 export const AGENT_GENESIS = "0".repeat(64);
 
 export type ToolDecision = "allow" | "ask" | "deny";
-/** A host-owned parent budget refused inference before a provider call. */
+/** A model-budget boundary was exceeded; provider usage may still be uncertain. */
 export class AgentInferenceBudgetError extends Error {
   constructor(message: string) {
     super(message);

@@ -574,13 +574,15 @@ export type AmberWorkerResultPublicationInput = Omit<AmberResultPublicationInput
 };
 export type ResolvedAmberWorkerResultPublication = Omit<ResolvedAmberResultPublication, "binding">;
 
-function resolveInput(input: AmberWorkerResultPublicationInput) {
-  const siteConfig = AmberResultPublicationSiteConfigSchema.parse(input.siteConfig);
-  const siteProfile = assertAmberSlurmSiteProfile(input.siteProfile);
-  const capsule = assertAmberRunnerCapsule(input.capsule, siteProfile);
-  const observedBindingDigest = DigestSchema.parse(input.observedBindingDigest);
-  const receipt = AmberWorkerReceiptSchema.parse(input.receipt);
-  const transfer = AmberResultPublicationTransferSchema.parse(input.transfer);
+/** Validate the frozen writer/site relationship without accessing result bytes or creating paths. */
+export function assertAmberResultWriterSite(
+  siteConfigValue: unknown,
+  siteProfileValue: unknown,
+  capsuleValue: unknown,
+) {
+  const siteConfig = AmberResultPublicationSiteConfigSchema.parse(siteConfigValue);
+  const siteProfile = assertAmberSlurmSiteProfile(siteProfileValue);
+  const capsule = assertAmberRunnerCapsule(capsuleValue, siteProfile);
   if (
     siteConfig.siteProfilePath !== siteProfile.profilePath ||
     siteConfig.siteProfileDigest !== siteProfile.transport.siteProfileDigest ||
@@ -592,6 +594,18 @@ function resolveInput(input: AmberWorkerResultPublicationInput) {
     throw new Error("Result publication config differs from the protected Amber site identity");
   resultPublicationProject(siteConfig, capsule);
   assertSeparateNamespaces(siteConfig, siteProfile);
+  return { siteConfig, siteProfile, capsule };
+}
+
+function resolveInput(input: AmberWorkerResultPublicationInput) {
+  const { siteConfig, siteProfile, capsule } = assertAmberResultWriterSite(
+    input.siteConfig,
+    input.siteProfile,
+    input.capsule,
+  );
+  const observedBindingDigest = DigestSchema.parse(input.observedBindingDigest);
+  const receipt = AmberWorkerReceiptSchema.parse(input.receipt);
+  const transfer = AmberResultPublicationTransferSchema.parse(input.transfer);
   assertReceipt(capsule, siteProfile, receipt);
   return {
     siteConfig,

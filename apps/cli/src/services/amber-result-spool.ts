@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { constants, type Stats } from "node:fs";
-import { link, mkdir, open, readdir, unlink, type FileHandle } from "node:fs/promises";
+import { link, mkdir, open, readdir, type FileHandle } from "node:fs/promises";
 import { ContentAddressedArtifactStore } from "@eigengrid/mission-runtime";
 import { DigestSchema, canonicalJson, digestBytes } from "@eigengrid/scientific-schema";
 import type { SlurmSubmissionBinding } from "@eigengrid/slurm";
@@ -9,6 +9,7 @@ import {
   AmberResultPublicationReferenceSchema,
   AmberResultPublicationSiteConfigSchema,
   assertAmberResultPublicationManifest,
+  assertAmberResultWriterSite,
   createAmberWorkerResultPublication,
   type AmberResultPublicationReference,
   type AmberResultPublicationSiteConfig,
@@ -175,10 +176,11 @@ async function loadSpool(configPath: string, io: AmberResultSpoolFileIO) {
       throw error;
     }
   }
-  async function publicationDirectories(capsule: AmberRunnerCapsule, create: boolean) {
+  async function projectDirectories(capsule: AmberRunnerCapsule) {
     const handles: AnchoredDirectory[] = [];
     try {
-      // The writer can create operation descendants only, never the UID/project authorization boundary.
+      // Open the provisioned authorization boundary with the same flags used
+      // during publication. This is read-only and creates no child paths.
       const root = {
         file: await protectedDirectory(siteConfig.resultSpoolRoot, io),
         path: siteConfig.resultSpoolRoot,
@@ -194,6 +196,22 @@ async function loadSpool(configPath: string, io: AmberResultSpoolFileIO) {
       assertDirectory(await io.stat(uidDir.file, uidDir.path), siteConfig, 0, 0o750);
       const project = await child(uidDir, capsule.projectId, false, 0o2750);
       handles.push(project);
+      return { handles, project };
+    } catch (error) {
+      await Promise.all(handles.map(({ file }) => file.close()));
+      throw error;
+    }
+  }
+  async function assertWriterReady(capsuleValue: unknown) {
+    principal(true);
+    const { capsule } = assertAmberResultWriterSite(siteConfig, siteProfile, capsuleValue);
+    const { handles } = await projectDirectories(capsule);
+    await Promise.all(handles.map(({ file }) => file.close()));
+    // Readiness cannot guarantee a subsequent NFS write or scientific success.
+  }
+  async function publicationDirectories(capsule: AmberRunnerCapsule, create: boolean) {
+    const { handles, project } = await projectDirectories(capsule);
+    try {
       const operation = await child(project, capsule.operationId, create);
       handles.push(operation);
       const publication = await child(operation, amberRunnerCapsuleDigest(capsule), create);
@@ -311,13 +329,15 @@ async function loadSpool(configPath: string, io: AmberResultSpoolFileIO) {
               )
                 throw new Error("Amber result staging link does not belong to this transfer");
               await verifyBytes(existing.file, ref);
-              await unlink(tempPath);
-              await transfer!.file.sync();
-              await parent.file.sync();
             } finally {
+              // Close both aliases before unlink: NFS may otherwise retain a
+              // hidden silly-renamed link and report nlink=2 until close.
               await existing.file.close();
               await pending?.file.close();
             }
+            await io.unlink(tempPath);
+            await transfer!.file.sync();
+            await parent.file.sync();
             final = await openObject(parent, name, ref);
           }
         }
@@ -353,11 +373,13 @@ async function loadSpool(configPath: string, io: AmberResultSpoolFileIO) {
                 ![0o600, 0o440].includes(stat.mode & 0o7777)
               )
                 throw new Error("Unsafe interrupted result staging file");
-              await unlink(tempPath);
-              await transfer!.file.sync();
             } finally {
               await stale.close();
             }
+            // Close the validated staging inode before unlink to avoid NFS
+            // silly-rename retaining an open stale file.
+            await io.unlink(tempPath);
+            await transfer!.file.sync();
             pending = await open(
               tempPath,
               constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW,
@@ -383,9 +405,13 @@ async function loadSpool(configPath: string, io: AmberResultSpoolFileIO) {
           await pending.chmod(0o440);
           await pending.sync();
           await transfer!.file.sync();
+          // A writer kept open during unlink can make NFS silly-rename the
+          // staging alias; close it before linking, without weakening checks.
+          await pending.close();
+          pending = undefined;
           await link(tempPath, finalPath);
           await parent.file.sync();
-          await unlink(tempPath);
+          await io.unlink(tempPath);
           await transfer!.file.sync();
           await parent.file.sync();
           const verified = await openObject(parent, name, ref);
@@ -563,7 +589,7 @@ async function loadSpool(configPath: string, io: AmberResultSpoolFileIO) {
       throw error;
     }
   }
-  return { siteConfig, siteProfile, publish, openVerifiedPublication };
+  return { siteConfig, siteProfile, assertWriterReady, publish, openVerifiedPublication };
 }
 
 /** Production entrypoint: root-protected config and actual kernel credentials. */
