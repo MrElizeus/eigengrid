@@ -15,7 +15,7 @@ than publish a partial result. Different journal files and PostgreSQL can still
 represent different instants. File hashes prove preservation, not scientific
 acceptance or a globally consistent execution checkpoint.
 
-The root-only Monster Queen site adapter `qualification-backup.sh` captures:
+The root-only site adapter `qualification-backup.sh` captures:
 
 - DB `eigengrid_qualification` and its verified CAS at
   `/var/lib/eigengrid/head-qualification/artifacts` and the main CAS at
@@ -49,7 +49,14 @@ The worker copy protects against a head-disk failure; it is not an offsite backu
 
 Install the Python wrapper and shell adapter into
 `/usr/local/lib/eigengrid-deploy/` alongside the existing backup and storage
-helpers. Keep the installed files root-owned. Run the adapter as root to create
+helpers. Keep the installed files root-owned. Install the reviewed
+`operational-backup.env.example` as root-owned mode-0600
+`/etc/eigengrid/operational-backup.env`, then set the explicit site host label,
+receiver node, and partition. Preserve the existing Restic host label exactly;
+do not derive a new one automatically, because that changes historical grouping.
+The public template contains no private hostname. The deployed private adapter
+may retain its established site values until a separately reviewed replacement;
+record its actual checksum rather than claiming it matches this template. Run the adapter as root to create
 and verify a capture. Its systemd service and daily timer are provided separately;
 activate the timer only after a manual encrypted offnode capture and disposable
 restore have passed. No Head or API stop is performed by the adapter.

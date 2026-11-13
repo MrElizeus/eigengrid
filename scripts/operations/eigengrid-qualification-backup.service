@@ -4,6 +4,7 @@ After=postgresql@16-main.service slurmctld.service
 RequiresMountsFor=/var/lib/eigengrid /home/cluster/backups
 [Service]
 Type=oneshot
+EnvironmentFile=/etc/eigengrid/operational-backup.env
 ExecStart=/usr/local/lib/eigengrid-deploy/qualification-backup.sh
 UMask=0077
 Nice=19
