@@ -3,6 +3,10 @@
 Source and release artifacts follow [the publication policy](publication.md).
 Run `bun run verify:publication` before building and publishing any release.
 
+Version **1.0.7** makes mission creation atomic with objective evidence and checks
+the complete original creation request before recovering a lost response. See the
+[1.0.7 notes](release-notes/v1.0.7.md).
+
 Version **1.0.6** connects persistent agents to prepared mission workflows over HTTPS,
 checks system-build inputs before effects and binds minimization controls to their approved protocol.
 See the [1.0.6 notes](release-notes/v1.0.6.md) and
