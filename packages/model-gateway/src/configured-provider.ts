@@ -44,6 +44,8 @@ export interface ConfiguredModelOptions {
   providerName?: string;
   providerVersion?: string;
   modelRevision?: string;
+  /** Explicit false disables sampling when provider capability metadata is incorrect. */
+  supportsTemperature?: boolean;
   temperature?: number;
   maxTokens?: number;
   timeoutMilliseconds?: number;
@@ -367,6 +369,8 @@ export async function createConfiguredModelResolution(
   options: ConfiguredModelOptions,
   catalogLoader?: ModelCatalogLoader,
 ): Promise<ConfiguredModelResolution> {
+  if (options.supportsTemperature !== undefined && typeof options.supportsTemperature !== "boolean")
+    throw new Error("supportsTemperature must be boolean");
   const metadata = await modelMetadata(options, catalogLoader);
   const maximumRawResponseBytes = positiveSafeInteger(
     options.maximumRawResponseBytes ?? DEFAULT_MAXIMUM_RAW_RESPONSE_BYTES,
@@ -459,7 +463,8 @@ export async function createConfiguredModelResolution(
         temperature,
         maxOutputTokens: maxTokens,
         supportsTemperature:
-          options.reasoningEffort && options.reasoningEffort !== "none"
+          options.supportsTemperature === false ||
+          (options.reasoningEffort && options.reasoningEffort !== "none")
             ? false
             : metadata.supportsTemperature,
         providerOptions,
