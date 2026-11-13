@@ -1,3 +1,4 @@
+import { AmberWorkerPhaseError } from "./amber-worker-diagnostic";
 import { createHash, randomUUID } from "node:crypto";
 import { constants } from "node:fs";
 import { open, statfs, type FileHandle } from "node:fs/promises";
@@ -308,11 +309,18 @@ export async function runAmberSlurmStage(
   if (profile.resultPublicationConfigPath) {
     const match = /^egv1-([a-f0-9]{64})$/u.exec(host.jobName ?? "");
     if (!match) throw new Error("Amber result publication requires the full Slurm job-name digest");
-    resultSpool = await (
-      io.resultSpool ?? (await import("./amber-result-spool")).createAmberResultSpool
-    )(profile.resultPublicationConfigPath);
-    if (canonicalJson(resultSpool.siteProfile) !== canonicalJson(profile))
-      throw new Error("Amber publication profile differs from runner profile");
+    // Match publication's principal, configuration and existing directory checks
+    // before any workspace/engine claim; later stage-out may still fail.
+    try {
+      resultSpool = await (
+        io.resultSpool ?? (await import("./amber-result-spool")).createAmberResultSpool
+      )(profile.resultPublicationConfigPath);
+      if (canonicalJson(resultSpool.siteProfile) !== canonicalJson(profile))
+        throw new Error("Amber publication profile differs from runner profile");
+      await resultSpool.assertWriterReady(capsule);
+    } catch (error) {
+      throw new AmberWorkerPhaseError("result_preflight", error);
+    }
     observation = AmberResultObservationSchema.parse({
       schemaVersion: "eigengrid.amber-result-observation/v1",
       capsuleDigest: amberRunnerCapsuleDigest(capsule),
@@ -579,35 +587,39 @@ export async function collectAmberSlurmStage(
     const command = bundle.rendered.commandRequest;
     async function stageOut(receipt: AmberWorkerReceipt, reference: AmberBundleReference) {
       if (!profile.resultPublicationConfigPath) return { receipt, reference };
-      const file = await openAmberFile(metadata!, "result-observation.json", capsule.uid);
-      let observation: z.infer<typeof AmberResultObservationSchema>;
       try {
-        const bytes = await readBounded(file, 4096);
-        observation = AmberResultObservationSchema.parse(JSON.parse(bytes.toString("utf8")));
-        if (canonicalJson(observation) !== bytes.toString("utf8"))
-          throw new Error("Noncanonical frozen result observation");
-      } finally {
-        await file.close();
+        const file = await openAmberFile(metadata!, "result-observation.json", capsule.uid);
+        let observation: z.infer<typeof AmberResultObservationSchema>;
+        try {
+          const bytes = await readBounded(file, 4096);
+          observation = AmberResultObservationSchema.parse(JSON.parse(bytes.toString("utf8")));
+          if (canonicalJson(observation) !== bytes.toString("utf8"))
+            throw new Error("Noncanonical frozen result observation");
+        } finally {
+          await file.close();
+        }
+        if (observation.capsuleDigest !== identity || observation.jobId !== receipt.jobId)
+          throw new Error("Frozen result observation differs from receipt/capsule");
+        const spool = await (
+          resultSpoolFactory ?? (await import("./amber-result-spool")).createAmberResultSpool
+        )(profile.resultPublicationConfigPath);
+        if (canonicalJson(spool.siteProfile) !== canonicalJson(profile))
+          throw new Error("Amber publication profile differs from runner profile");
+        const published = await spool.publish({
+          capsule,
+          source: objects,
+          receiptReference: reference,
+          observedBindingDigest: observation.bindingDigest,
+          transfer: observation.transfer,
+        });
+        return {
+          receipt,
+          reference,
+          publication: { reference: published.reference, canonicalAcknowledged: false as const },
+        };
+      } catch (error) {
+        throw new AmberWorkerPhaseError("stage_out", error);
       }
-      if (observation.capsuleDigest !== identity || observation.jobId !== receipt.jobId)
-        throw new Error("Frozen result observation differs from receipt/capsule");
-      const spool = await (
-        resultSpoolFactory ?? (await import("./amber-result-spool")).createAmberResultSpool
-      )(profile.resultPublicationConfigPath);
-      if (canonicalJson(spool.siteProfile) !== canonicalJson(profile))
-        throw new Error("Amber publication profile differs from runner profile");
-      const published = await spool.publish({
-        capsule,
-        source: objects,
-        receiptReference: reference,
-        observedBindingDigest: observation.bindingDigest,
-        transfer: observation.transfer,
-      });
-      return {
-        receipt,
-        reference,
-        publication: { reference: published.reference, canonicalAcknowledged: false as const },
-      };
     }
     const existing = await readFrozenReceipt(metadata, capsule.uid);
     if (existing !== null) {

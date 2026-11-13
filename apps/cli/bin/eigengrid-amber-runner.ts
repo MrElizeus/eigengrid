@@ -8,6 +8,7 @@ import {
   runAmberSlurmStage,
 } from "../src/services/amber-slurm-runner";
 import { EIGENGRID_VERSION } from "../src/version";
+import { amberWorkerFailureDiagnostic } from "../src/services/amber-worker-diagnostic";
 
 /** Worker-local only. A capsule identifies admitted bytes, not authority to
  * submit Slurm or mutate an attempt. Site/UID/allocation checks remain mandatory.
@@ -68,8 +69,9 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch(() => {
+main().catch((error: unknown) => {
   // Detailed diagnostics belong to protected evidence, not arbitrary RPC text.
-  process.stderr.write('{"event":"amber_worker_failed","resubmitAllowed":false}\n');
+  const diagnostic = amberWorkerFailureDiagnostic(error);
+  process.stderr.write(canonicalJson(diagnostic) + "\n");
   process.exitCode = 74;
 });

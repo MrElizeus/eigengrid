@@ -9,6 +9,7 @@ import {
   AmberResultPublicationReferenceSchema,
   AmberResultPublicationSiteConfigSchema,
   assertAmberResultPublicationManifest,
+  assertAmberResultWriterSite,
   createAmberWorkerResultPublication,
   type AmberResultPublicationReference,
   type AmberResultPublicationSiteConfig,
@@ -175,10 +176,11 @@ async function loadSpool(configPath: string, io: AmberResultSpoolFileIO) {
       throw error;
     }
   }
-  async function publicationDirectories(capsule: AmberRunnerCapsule, create: boolean) {
+  async function projectDirectories(capsule: AmberRunnerCapsule) {
     const handles: AnchoredDirectory[] = [];
     try {
-      // The writer can create operation descendants only, never the UID/project authorization boundary.
+      // Open the provisioned authorization boundary with the same flags used
+      // during publication. This is read-only and creates no child paths.
       const root = {
         file: await protectedDirectory(siteConfig.resultSpoolRoot, io),
         path: siteConfig.resultSpoolRoot,
@@ -194,6 +196,22 @@ async function loadSpool(configPath: string, io: AmberResultSpoolFileIO) {
       assertDirectory(await io.stat(uidDir.file, uidDir.path), siteConfig, 0, 0o750);
       const project = await child(uidDir, capsule.projectId, false, 0o2750);
       handles.push(project);
+      return { handles, project };
+    } catch (error) {
+      await Promise.all(handles.map(({ file }) => file.close()));
+      throw error;
+    }
+  }
+  async function assertWriterReady(capsuleValue: unknown) {
+    principal(true);
+    const { capsule } = assertAmberResultWriterSite(siteConfig, siteProfile, capsuleValue);
+    const { handles } = await projectDirectories(capsule);
+    await Promise.all(handles.map(({ file }) => file.close()));
+    // Readiness cannot guarantee a subsequent NFS write or scientific success.
+  }
+  async function publicationDirectories(capsule: AmberRunnerCapsule, create: boolean) {
+    const { handles, project } = await projectDirectories(capsule);
+    try {
       const operation = await child(project, capsule.operationId, create);
       handles.push(operation);
       const publication = await child(operation, amberRunnerCapsuleDigest(capsule), create);
@@ -563,7 +581,7 @@ async function loadSpool(configPath: string, io: AmberResultSpoolFileIO) {
       throw error;
     }
   }
-  return { siteConfig, siteProfile, publish, openVerifiedPublication };
+  return { siteConfig, siteProfile, assertWriterReady, publish, openVerifiedPublication };
 }
 
 /** Production entrypoint: root-protected config and actual kernel credentials. */

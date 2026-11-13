@@ -148,16 +148,146 @@ describe("Amber result spool — local real bytes/FDs; two UIDs/root ownership m
     await expect(f.open()).rejects.toThrow("principal/group");
   });
 
-  test("wrong protected project mode rejects stage-out but retains source receipt for retry", async () => {
+  test("wrong protected project mode rejects before workspace and engine", async () => {
     const f = await fixture();
     await chmod(f.project, 0o2770);
-    await expect(runAmberSlurmStage(f.capsule, f.profile, undefined, f.runnerIO)).rejects.toThrow(
-      "ownership/mode",
+    await expect(
+      runAmberSlurmStage(f.capsule, f.profile, undefined, f.runnerIO),
+    ).rejects.toMatchObject({
+      phase: "result_preflight",
+      category: "other",
+    });
+    await expect(stat(f.launches)).rejects.toMatchObject({ code: "ENOENT" });
+    await expect(stat(f.workspace)).rejects.toMatchObject({ code: "ENOENT" });
+    await expect(stat(f.publicationRoot)).rejects.toMatchObject({ code: "ENOENT" });
+  });
+
+  test("kernel execute-only project directory cannot be opened and no engine starts", async () => {
+    const f = await fixture();
+    await chmod(f.project, 0o2110);
+    try {
+      await expect(
+        runAmberSlurmStage(f.capsule, f.profile, undefined, f.runnerIO),
+      ).rejects.toMatchObject({
+        phase: "result_preflight",
+        category: "access_denied",
+        errno: "EACCES",
+      });
+      await expect(stat(f.launches)).rejects.toMatchObject({ code: "ENOENT" });
+      await expect(stat(f.workspace)).rejects.toMatchObject({ code: "ENOENT" });
+    } finally {
+      await chmod(f.project, 0o2750);
+    }
+  });
+
+  test("preflight access errors expose only a closed label and never start the engine", async () => {
+    const f = await fixture();
+    const original = f.io.stat;
+    f.io.stat = async (file, path) => {
+      if (path === f.project)
+        throw Object.assign(new Error("secret path or provider"), { code: "EACCES" });
+      return original(file, path);
+    };
+    const error = await runAmberSlurmStage(f.capsule, f.profile, undefined, f.runnerIO).catch(
+      (e: unknown) => e,
+    );
+    expect(error).toMatchObject({
+      phase: "result_preflight",
+      category: "access_denied",
+      message: "Amber worker phase failed",
+    });
+    expect(JSON.stringify(error)).not.toContain("secret");
+    await expect(stat(f.launches)).rejects.toMatchObject({ code: "ENOENT" });
+    await expect(stat(f.workspace)).rejects.toMatchObject({ code: "ENOENT" });
+  });
+
+  test("unprovisioned project and overlapping namespaces fail before engine", async () => {
+    const unprovisioned = await fixture();
+    unprovisioned.config.projects = [
+      { subject: "other-user", projectId: unprovisioned.capsule.projectId },
+    ];
+    await unprovisioned.writeConfig();
+    await expect(
+      runAmberSlurmStage(
+        unprovisioned.capsule,
+        unprovisioned.profile,
+        undefined,
+        unprovisioned.runnerIO,
+      ),
+    ).rejects.toMatchObject({ phase: "result_preflight" });
+    await expect(stat(unprovisioned.launches)).rejects.toMatchObject({ code: "ENOENT" });
+    await expect(stat(unprovisioned.workspace)).rejects.toMatchObject({ code: "ENOENT" });
+    const overlap = await fixture();
+    overlap.config.resultSpoolRoot = overlap.profile.scratchRoot;
+    await overlap.writeConfig();
+    await expect(
+      runAmberSlurmStage(overlap.capsule, overlap.profile, undefined, overlap.runnerIO),
+    ).rejects.toMatchObject({ phase: "result_preflight" });
+    await expect(stat(overlap.launches)).rejects.toMatchObject({ code: "ENOENT" });
+    await expect(stat(overlap.workspace)).rejects.toMatchObject({ code: "ENOENT" });
+  });
+
+  test("missing writer group fences before engine", async () => {
+    const f = await fixture();
+    f.io.groups = () => [];
+    await expect(
+      runAmberSlurmStage(f.capsule, f.profile, undefined, f.runnerIO),
+    ).rejects.toMatchObject({
+      phase: "result_preflight",
+      category: "other",
+    });
+    await expect(stat(f.launches)).rejects.toMatchObject({ code: "ENOENT" });
+    await expect(stat(f.workspace)).rejects.toMatchObject({ code: "ENOENT" });
+  });
+
+  test("stage-out EAGAIN reports only allowlisted errno and preserves receipt", async () => {
+    const f = await fixture();
+    const original = f.io.stat;
+    let projectChecks = 0;
+    f.io.stat = async (file, path) => {
+      if (path === f.project && ++projectChecks >= 2)
+        throw Object.assign(new Error("private worker path"), { code: "EAGAIN" });
+      return original(file, path);
+    };
+    const error = await runAmberSlurmStage(f.capsule, f.profile, undefined, f.runnerIO).catch(
+      (e: unknown) => e,
+    );
+    expect(error).toMatchObject({ phase: "stage_out", category: "other", errno: "EAGAIN" });
+    expect(JSON.stringify(error)).not.toContain("private");
+    expect(await readFile(join(f.workspace, ".eigengrid/receipt.json"), "utf8")).toContain(
+      "not_evaluated",
     );
     expect(await readFile(f.launches, "utf8")).toBe("launch\n");
-    expect(Bun.spawnSync(["/usr/bin/chmod", "2750", f.project]).exitCode).toBe(0);
-    const result = await collectAmberSlurmStage(f.capsule, f.profile, f.runnerIO.host(), f.factory);
-    expect(result.publication?.canonicalAcknowledged).toBe(false);
+  });
+
+  test("post-preflight layout drift leaves complete local receipt and never reruns engine", async () => {
+    const f = await fixture();
+    const original = f.io.stat;
+    let projectChecks = 0;
+    f.io.stat = async (file, path) => {
+      const result = await original(file, path);
+      if (path === f.project && ++projectChecks >= 2)
+        result.mode = (result.mode & ~0o7777) | 0o2770;
+      return result;
+    };
+    await expect(
+      runAmberSlurmStage(f.capsule, f.profile, undefined, f.runnerIO),
+    ).rejects.toMatchObject({
+      phase: "stage_out",
+      category: "other",
+    });
+    expect(await readFile(f.launches, "utf8")).toBe("launch\n");
+    expect(await readFile(join(f.workspace, ".eigengrid/receipt.json"), "utf8")).toContain(
+      "not_evaluated",
+    );
+    f.io.stat = original;
+    const recovered = await collectAmberSlurmStage(
+      f.capsule,
+      f.profile,
+      f.runnerIO.host(),
+      f.factory,
+    );
+    expect(recovered.publication?.canonicalAcknowledged).toBe(false);
     expect(await readFile(f.launches, "utf8")).toBe("launch\n");
   });
 
@@ -256,9 +386,12 @@ describe("Amber result spool — local real bytes/FDs; two UIDs/root ownership m
     const f = await fixture();
     f.config.limits.maxObjectBytes = 1;
     await f.writeConfig();
-    await expect(runAmberSlurmStage(f.capsule, f.profile, undefined, f.runnerIO)).rejects.toThrow(
-      "receipt exceeds",
-    );
+    await expect(
+      runAmberSlurmStage(f.capsule, f.profile, undefined, f.runnerIO),
+    ).rejects.toMatchObject({
+      phase: "stage_out",
+      category: "other",
+    });
     expect(await readFile(join(f.workspace, ".eigengrid/receipt.json"), "utf8")).toContain(
       "not_evaluated",
     );
