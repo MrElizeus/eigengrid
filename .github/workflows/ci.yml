@@ -138,7 +138,7 @@ jobs:
             const tag = process.env.RELEASE_TAG;
             const validation = JSON.parse(fs.readFileSync('release/validation.json'));
             const manifest = JSON.parse(fs.readFileSync('release/release.json'));
-            if (!/^v1\.0\.(?:0(?:-rc\.[1-9]\d*)?|[12345])$/u.test(tag) ||
+            if (!/^v1\.0\.(?:0(?:-rc\.[1-9]\d*)?|[123456])$/u.test(tag) ||
                 tag !== tag.trim() || tag !== `v${manifest.version}` || validation.tag !== tag ||
                 validation.sourceCommit !== process.env.RELEASE_COMMIT ||
                 manifest.sourceCommit !== process.env.RELEASE_COMMIT ||
