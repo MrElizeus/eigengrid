@@ -18,7 +18,9 @@ acceptance or a globally consistent execution checkpoint.
 The root-only Monster Queen site adapter `qualification-backup.sh` captures:
 
 - DB `eigengrid_qualification` and its verified CAS at
-  `/var/lib/eigengrid/head-qualification/artifacts`;
+  `/var/lib/eigengrid/head-qualification/artifacts` and the main CAS at
+  `/var/lib/eigengrid/head/artifacts`, because the isolated qualification database
+  can reference either namespace;
 - the real production namespace source `/var/lib/eigengrid/head/agent-sessions`,
   the legacy host directory `/var/lib/eigengrid/agent-sessions`, and
   `/var/lib/eigengrid/head-qualification/agent-sessions`, including scope, journal,

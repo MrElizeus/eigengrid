@@ -13,7 +13,8 @@ snapshot="$base/$stamp"
 export EIGENGRID_QUALIFICATION_BACKUP_DB='dbname=eigengrid_qualification user=postgres host=/var/run/postgresql'
 python3 /usr/local/lib/eigengrid-deploy/operational-backup.py create \
   --database-env EIGENGRID_QUALIFICATION_BACKUP_DB --postgres-os-user postgres \
-  --artifact-root /var/lib/eigengrid/head-qualification/artifacts --output "$snapshot" \
+  --artifact-root /var/lib/eigengrid/head-qualification/artifacts \
+  --artifact-root /var/lib/eigengrid/head/artifacts --output "$snapshot" \
   --journal-root production=/var/lib/eigengrid/head/agent-sessions \
   --journal-root legacy=/var/lib/eigengrid/agent-sessions \
   --journal-root qualification=/var/lib/eigengrid/head-qualification/agent-sessions

@@ -109,3 +109,17 @@ def test_mutation_during_capture_fails_closed_and_cleans_staging(tmp_path, monke
         backup.create(tmp_path / "snapshot", {"qualification": source}, [])
     assert not (tmp_path / "snapshot").exists()
     assert not list(tmp_path.glob(".operational-*"))
+
+
+def test_cli_preserves_all_cas_roots_for_independent_database_component(tmp_path, monkeypatch, capsys):
+    import sys
+    captured = {}
+    def create(output, journals, arguments):
+        captured.update(output=output, journals=journals, arguments=arguments)
+        return {"verified": True}
+    monkeypatch.setattr(backup, "create", create)
+    monkeypatch.setattr(sys, "argv", ["operational-backup.py", "create", "--output", str(tmp_path / "output"), "--database-env", "PRIVATE_DB", "--artifact-root", "/qualified/cas", "--artifact-root", "/main/cas", "--journal-root", "production=/main/journal"])
+    backup.main()
+    assert captured["arguments"] == ["--database-env", "PRIVATE_DB", "--artifact-root", "/qualified/cas", "--artifact-root", "/main/cas"]
+    assert captured["journals"] == {"production": "/main/journal"}
+    assert json.loads(capsys.readouterr().out) == {"verified": True}

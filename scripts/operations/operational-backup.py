@@ -220,7 +220,7 @@ def main():
     commands = parser.add_subparsers(dest="command", required=True)
     c = commands.add_parser("create")
     c.add_argument("--output", type=Path, required=True)
-    c.add_argument("--artifact-root", type=Path, required=True)
+    c.add_argument("--artifact-root", type=Path, action="append", required=True)
     c.add_argument("--database-env", required=True)
     c.add_argument("--postgres-os-user")
     c.add_argument("--journal-root", action="append", required=True, help="label=canonical-directory")
@@ -237,7 +237,9 @@ def main():
                 if label in journals:
                     raise ValueError("duplicate journal root label")
                 journals[label] = source
-            extra = ["--database-env", args.database_env, "--artifact-root", str(args.artifact_root)]
+            extra = ["--database-env", args.database_env]
+            for artifact_root in args.artifact_root:
+                extra.extend(["--artifact-root", str(artifact_root)])
             if args.postgres_os_user:
                 extra.extend(["--postgres-os-user", args.postgres_os_user])
             result = create(args.output, journals, extra)
