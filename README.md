@@ -7,8 +7,8 @@ Version 1.0.0 includes the CLI, terminal interface and authenticated HTTP API.
 The React web interface is deferred to a separate development branch and is not
 included in this release.
 
-Version **1.0.3** adds administrator-owned model defaults, Slurm 26.05 accounting
-and explicit production Head admission. Linux x64 software contracts are covered
+Version **1.0.4** strengthens production qualification, model pricing compatibility
+and PostgreSQL/artifact recovery. Linux x64 software contracts are covered
 by local and PostgreSQL integration tests. Installation-specific execution
 qualification, large-system performance and scientific acceptance remain separate.
 See [supported capabilities](docs/scientific-capabilities.md) before planning a campaign.

@@ -1,3 +1,4 @@
+import { productionStatus } from "../doctor/production-status";
 import type { CommandModule } from "yargs";
 import { existsSync } from "fs";
 import { hostname } from "os";
@@ -12,6 +13,7 @@ import { registerHeadChecks } from "../doctor/head-checks";
 import { registerWorkerChecks } from "../doctor/worker-checks";
 
 type DoctorArgs = {
+  production?: boolean;
   role?: string;
   json?: boolean;
 };
@@ -30,6 +32,11 @@ export const doctorCommand: CommandModule = {
   describe: "Run environment diagnostics",
   builder: (y) =>
     y
+      .option("production", {
+        type: "boolean",
+        describe:
+          "Inspect production prerequisites without reading credentials or changing services",
+      })
       .option("role", {
         type: "string",
         choices: ["standalone", "head", "worker"] as const,
@@ -45,6 +52,12 @@ export const doctorCommand: CommandModule = {
 };
 
 export async function runDoctor(args: DoctorArgs, deps: DoctorDependencies = {}): Promise<void> {
+  if (args.production) {
+    const status = productionStatus();
+    process.stdout.write(`${JSON.stringify(status, null, 2)}\n`);
+    if (!status.readiness) process.exitCode = 1;
+    return;
+  }
   const executor = deps.executor ?? new DefaultCommandExecutor();
   const configRole = (deps.readRoleFromConfig ?? readRoleFromConfig)();
 

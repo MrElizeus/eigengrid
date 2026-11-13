@@ -8,6 +8,46 @@ import {
 import { openCodeGoModels } from "../../../tests/fixtures/opencode-go";
 
 describe("provider model metadata", () => {
+  test("bounds duration-specific cache writes including context overrides", async () => {
+    const model = catalogModel("duration-cache", {
+      cost: {
+        text: {
+          input: {
+            price: 1,
+            cache: { read: 0.1, write: { "5m": 1.25, "1h": 2 } },
+            overrides: [{ price: 3, cache: { write: { "5m": 3.75, "1h": 6 } } }],
+          },
+          output: { price: 4 },
+        },
+      },
+    });
+    expect(model.cost?.cache_write).toBe(2);
+    expect(model.cost?.tiers?.[0]?.cache_write).toBe(6);
+    const resolved = await createConfiguredModelResolution(
+      {
+        providerName: "fixture",
+        model: model.id,
+        baseUrl: "https://example.test/v1",
+        apiKey: "fixture",
+      },
+      async () => ({ fixture: { models: { [model.id]: model } } }),
+    );
+    expect(resolved.pricing).toEqual({
+      costPerInputToken: 6 / 1_000_000,
+      costPerOutputToken: 4 / 1_000_000,
+    });
+  });
+
+  test("rejects malformed duration rates instead of silently underpricing", () => {
+    for (const write of [{}, { "5m": -1 }, { "1h": "2" }, { "5m": Infinity }, [], null]) {
+      expect(() =>
+        catalogModel("bad", {
+          cost: { text: { input: { price: 1, cache: { write } }, output: { price: 2 } } },
+        }),
+      ).toThrow("Invalid model catalog cache write pricing");
+    }
+  });
+
   test("reads models.dev effort controls and live v2 efforts without inventing toggle/budget levels", () => {
     expect(
       parseModelReasoningLevels({

@@ -7,6 +7,23 @@ function record(value: unknown): Record<string, unknown> {
     : {};
 }
 
+/** Duration-keyed cache writes are alternate prices, not additive charges. */
+function cacheWriteRate(value: unknown): number | undefined {
+  if (value === undefined) return undefined;
+  const values =
+    value !== null && typeof value === "object" && !Array.isArray(value)
+      ? Object.values(value)
+      : [value];
+  if (
+    values.length === 0 ||
+    values.some((rate) => typeof rate !== "number" || !Number.isFinite(rate) || rate < 0)
+  )
+    throw new Error(
+      "Invalid model catalog cache write pricing: expected nonnegative rates by duration",
+    );
+  return Math.max(...(values as number[]));
+}
+
 function rates(value: unknown, output = false): ModelCatalogCost {
   const rate = record(value);
   const cache = record(rate.cache);
@@ -15,7 +32,7 @@ function rates(value: unknown, output = false): ModelCatalogCost {
     : {
         input: rate.price as number | undefined,
         cache_read: cache.read as number | undefined,
-        cache_write: cache.write as number | undefined,
+        cache_write: cacheWriteRate(cache.write),
       };
 }
 

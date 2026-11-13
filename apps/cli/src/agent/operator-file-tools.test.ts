@@ -1,9 +1,12 @@
 import { describe, expect, test } from "bun:test";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { canonicalAgentJson } from "@eigengrid/agent-runtime";
 import { runAgent, type AgentInput } from "@eigengrid/agent";
 import { ToolRegistry, type ToolContext } from "@eigengrid/tool-registry";
-import { runCommandTool } from "./operator-file-tools";
+import { readFileTool, runCommandTool } from "./operator-file-tools";
 
 const ctx = {} as ToolContext;
 const missingExecutable = `eigengrid-missing-renderer-${randomUUID()}`;
@@ -15,6 +18,74 @@ function registry() {
 }
 
 describe("operator command observations", () => {
+  test("reads a real scientific output and rejects directories with an actionable diagnostic", async () => {
+    const root = mkdtempSync(join(tmpdir(), "eigengrid-agent-output-"));
+    try {
+      const path = join(root, "convergence.txt");
+      writeFileSync(path, "SCF converged\nTotal energy: -12.34 eV\n");
+      const tools = new ToolRegistry([{ action: "*", resource: "*", effect: "allow" }]);
+      tools.register(readFileTool);
+      const scope = tools.materialize();
+      const rejected = await scope.settle(
+        { id: "directory", name: "read-file", input: { path: root } },
+        ctx,
+      );
+      expect(rejected.ok).toBe(false);
+      expect(rejected.error?.message).toContain("regular file");
+      const observed = await scope.settle(
+        { id: "output", name: "read-file", input: { path } },
+        ctx,
+      );
+      expect(observed.ok).toBe(true);
+      expect(observed.output).toEqual({
+        path,
+        content: "SCF converged\nTotal energy: -12.34 eV\n",
+      });
+      const requests: unknown[] = [];
+      const model = {
+        specificationVersion: "v3",
+        provider: "test",
+        modelId: "scientific-output-review",
+        supportedUrls: {},
+        async doGenerate(request: unknown) {
+          requests.push(request);
+          const reading = requests.length === 1;
+          return {
+            content: reading
+              ? [
+                  {
+                    type: "tool-call",
+                    toolCallId: "read-scf",
+                    toolName: "read-file",
+                    input: JSON.stringify({ path }),
+                  },
+                ]
+              : [{ type: "text", text: "SCF converged; total energy is -12.34 eV." }],
+            finishReason: { unified: reading ? "tool-calls" : "stop", raw: "stop" },
+            usage: {
+              inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 },
+              outputTokens: { total: 1, text: 1, reasoning: 0 },
+            },
+            warnings: [],
+          };
+        },
+      } as unknown as NonNullable<AgentInput["model"]>;
+      const review = await runAgent({
+        prompt: "Read the SCF output and report convergence and energy",
+        ctx,
+        tools,
+        model,
+        maxSteps: 2,
+      });
+      expect(review.ok).toBe(true);
+      expect(review.response).toBe("SCF converged; total energy is -12.34 eV.");
+      expect(JSON.stringify(requests[1])).toContain("Total energy: -12.34 eV");
+      expect(review.toolCalls).toHaveLength(1);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   test("missing executable is a serializable failure with its diagnostic", async () => {
     const result = await registry().settleAuthorized(
       { id: "missing", name: "run-command", input: { command: missingExecutable } },

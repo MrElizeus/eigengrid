@@ -266,15 +266,15 @@ its own reviewed configuration, credentials and scientific inputs. Provision in 
    Scientific engines and their licenses are installed separately.
 4. Install and adapt the [service templates](../packaging/README.md). Start with dispatch
    disabled and inspect `eigengrid-head --health --dispatch-disabled`. Health is a
-   dependency check, not scientific acceptance. The production deployment profile
-   currently requires dispatch to remain disabled; this guide does not qualify or unlock it.
+   dependency check, not scientific acceptance. Production dispatch requires the release-bound qualification and protected
+   configuration described in [operations](operations.md); installation alone does not enable it.
 5. If HTTP is needed, provision the exact HTTPS origin and authenticated operators,
    explicitly run `eigengrid serve init-schema` with the protected admin role, then start
    `eigengrid serve` behind the TLS reverse proxy. Preserve the published HTTP migration
    and existing session/idempotency records when upgrading.
    Version 1.0.0 exposes the backend API only; the web interface is developed separately.
 
-The supported scheduler contract is Slurm 23.11.x. An unsupported scheduler or engine tuple
+Supported scheduler contracts are Slurm 23.11.x and 26.05.x. An unsupported scheduler or engine tuple
 needs its own adapter qualification. Never bypass a version, digest or authority check to
 make a health check pass. See [operation and recovery](operations.md) for the boundaries.
 
