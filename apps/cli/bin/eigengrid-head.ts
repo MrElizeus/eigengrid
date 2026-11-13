@@ -21,6 +21,7 @@ import { ScientificMissionDriverRouter } from "../src/services/scientific-intern
 import { createHeadMdExecutionGateway } from "../src/services/amber-preparation-publication";
 import { AmberMaterialPublicationDriver } from "../src/services/amber-material-publication";
 import { EIGENGRID_VERSION } from "../src/version";
+import { loadProductionDispatchConfig } from "../src/services/production-dispatch";
 
 const HELP = `Usage: eigengrid-head [--once|--health] [options]
 
@@ -28,6 +29,7 @@ Options:
   --once                 Reconcile and execute one Head tick, then stop
   --health               Initialize dependencies, report health, then stop
   --dispatch-disabled    Monitor the durable DB without claiming/submitting work
+  --production-config <path>  Protected release-bound dispatch admission
   --owner-id <id>        Stable Head lease-owner identity
   --interval-ms <ms>     Continuous-loop interval (default: 1000)
   --lease-ms <ms>        Work-unit lease duration (default: 30000)
@@ -86,30 +88,45 @@ async function main(): Promise<void> {
   const health = process.argv.includes("--health") || process.argv.includes("health");
   const dispatchDisabled = process.argv.includes("--dispatch-disabled");
   const production = process.env.EIGENGRID_DEPLOYMENT_PROFILE === "production";
-  // Source composition is available, but dispatch remains closed until the
-  // installed candidate and complete result/recovery path pass site qualification.
-  if (production && !dispatchDisabled) {
+  const productionConfigPath =
+    option("--production-config") ?? process.env.EIGENGRID_PRODUCTION_DISPATCH_CONFIG;
+  if (production && !dispatchDisabled && !productionConfigPath)
     throw new Error(
-      "Production Slurm dispatch is not yet qualified; start Head with --dispatch-disabled",
+      "Production dispatch requires qualified --production-config or --dispatch-disabled",
     );
-  }
+  const admission =
+    production && !dispatchDisabled
+      ? await loadProductionDispatchConfig(
+          productionConfigPath!,
+          process.env.EIGENGRID_RELEASE_COMMIT,
+        )
+      : undefined;
   const intervalMilliseconds = positiveInteger(option("--interval-ms"), 1_000, "--interval-ms");
   const leaseMilliseconds = positiveInteger(option("--lease-ms"), 30_000, "--lease-ms");
   const ownerId =
     option("--owner-id") ?? process.env.EIGENGRID_HEAD_ID ?? `eigengrid-head:${hostname()}`;
   const configuredPolicyDigest =
-    option("--policy-digest") ?? process.env.EIGENGRID_SCIENTIFIC_POLICY_DIGEST;
+    admission?.policyDigest ??
+    option("--policy-digest") ??
+    process.env.EIGENGRID_SCIENTIFIC_POLICY_DIGEST;
   const currentPolicyDigest =
     configuredPolicyDigest === undefined ? undefined : DigestSchema.parse(configuredPolicyDigest);
   const mdSiteAuthorityConfigPath =
-    option("--md-site-authority") ?? process.env.EIGENGRID_HEAD_MD_SITE_AUTHORITY;
+    admission?.mdSiteAuthority ??
+    option("--md-site-authority") ??
+    process.env.EIGENGRID_HEAD_MD_SITE_AUTHORITY;
   const mdArtifactRoot =
-    option("--md-artifact-root") ?? process.env.EIGENGRID_HEAD_MD_ARTIFACT_ROOT;
+    admission?.mdArtifactRoot ??
+    option("--md-artifact-root") ??
+    process.env.EIGENGRID_HEAD_MD_ARTIFACT_ROOT;
   const mdPostprocessingConfigPath =
-    option("--md-postprocessing") ?? process.env.EIGENGRID_HEAD_MD_POSTPROCESSING;
+    admission?.mdPostprocessing ??
+    option("--md-postprocessing") ??
+    process.env.EIGENGRID_HEAD_MD_POSTPROCESSING;
   if (mdPostprocessingConfigPath && !mdSiteAuthorityConfigPath)
     throw new Error("MD postprocessing requires the canonical MD gateway");
-  const frozenMaterialPublication = process.argv.includes("--frozen-material-publication");
+  const frozenMaterialPublication =
+    Boolean(admission) || process.argv.includes("--frozen-material-publication");
   if (
     frozenMaterialPublication &&
     (currentPolicyDigest === undefined || mdArtifactRoot === undefined)

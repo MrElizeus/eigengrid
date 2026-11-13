@@ -28,18 +28,21 @@ export const SACCT_ENV = Object.freeze({
 });
 
 export interface SacctContract {
-  schema: "slurm-23.11/parsable2-v1";
+  schema: "slurm-23.11/parsable2-v1" | "slurm-26.05/parsable2-v1";
+  nativeParser: "v0.0.40" | "v0.0.45";
   version: string;
   fields: readonly string[];
   format: string;
 }
 
 export function sacctContractForVersion(version: string): SacctContract {
-  if (!/^23\.11\.\d+(?:[-+][A-Za-z0-9.+-]+)?$/u.test(version)) {
+  const release = /^(23\.11|26\.05)\.\d+(?:[-+][A-Za-z0-9.+-]+)?$/u.exec(version);
+  if (!release) {
     throw new Error(`Unqualified Slurm accounting version: ${version}`);
   }
   return Object.freeze({
-    schema: "slurm-23.11/parsable2-v1",
+    schema: release[1] === "26.05" ? "slurm-26.05/parsable2-v1" : "slurm-23.11/parsable2-v1",
+    nativeParser: release[1] === "26.05" ? "v0.0.45" : "v0.0.40",
     version,
     fields: SACCT_23_11_FIELDS,
     format: SACCT_23_11_FIELDS.join(","),

@@ -75,6 +75,9 @@ let cachedResolution: ConfiguredModelResolution | null = null;
 
 /** Update LLM configuration and invalidate the shared gateway resolution. */
 export function configureLlm(config: Partial<LlmConfig>): void {
+  const credentialDestinationChanged = (
+    ["baseUrl", "providerName", "authMode", "chatGptProfileId"] as const
+  ).some((key) => Object.hasOwn(config, key) && config[key] !== activeConfig[key]);
   const connectionChanged = (
     ["baseUrl", "providerName", "model", "authMode", "chatGptProfileId"] as const
   ).some((key) => Object.hasOwn(config, key) && config[key] !== activeConfig[key]);
@@ -83,6 +86,7 @@ export function configureLlm(config: Partial<LlmConfig>): void {
   );
   activeConfig = {
     ...activeConfig,
+    ...(credentialDestinationChanged ? { apiKey: undefined } : {}),
     ...(identityChanged ? { costPerInputToken: undefined, costPerOutputToken: undefined } : {}),
     ...(connectionChanged ? { reasoningEffort: undefined } : {}),
     ...config,

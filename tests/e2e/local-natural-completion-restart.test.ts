@@ -47,7 +47,12 @@ describe("local natural completion after launcher restart", () => {
       ].join("\n"),
     );
     const xtb = join(binDir, "xtb");
-    writeFileSync(xtb, '#!/bin/sh\nsleep 1\ncat "$EIGENGRID_XTB_FIXTURE"\n', { mode: 0o700 });
+    const release = join(root, "release-engine");
+    writeFileSync(
+      xtb,
+      '#!/bin/sh\nremaining=500\nwhile [ ! -f "$EIGENGRID_XTB_RELEASE" ]; do\n  [ "$remaining" -gt 0 ] || exit 75\n  remaining=$((remaining - 1))\n  sleep 0.02\ndone\ncat "$EIGENGRID_XTB_FIXTURE"\n',
+      { mode: 0o700 },
+    );
     chmodSync(xtb, 0o700);
 
     const launcher = Bun.spawn(
@@ -64,6 +69,7 @@ describe("local natural completion after launcher restart", () => {
           ...process.env,
           PATH: `${binDir}:${process.env.PATH ?? ""}`,
           EIGENGRID_XTB_FIXTURE: fixtureOutput,
+          EIGENGRID_XTB_RELEASE: release,
         },
         stdout: "pipe",
         stderr: "pipe",
@@ -86,6 +92,8 @@ describe("local natural completion after launcher restart", () => {
     expect(existsSync(durableExitStatusPath(jobDir, launched.attemptId))).toBe(false);
     expect(existsSync(receiptPath(jobDir, launched.attemptId))).toBe(false);
 
+    // Release only after the original launcher exited, independent of host load.
+    writeFileSync(release, "complete\n");
     await waitFor(() => existsSync(durableExitStatusPath(jobDir, launched.attemptId)));
     const restarted = await createApplicationContext({
       config: { databasePath, jobsDir, dbProvider: "sqlite" },

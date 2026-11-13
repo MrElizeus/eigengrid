@@ -22,7 +22,7 @@ import {
   writeSync,
 } from "fs";
 import { randomUUID } from "node:crypto";
-import { join, dirname } from "path";
+import { join, dirname, isAbsolute, resolve } from "path";
 import type { LlmConfig } from "./llm-client";
 import { isReasoningEffort, type ReasoningEffort } from "@eigengrid/model-gateway";
 
@@ -140,7 +140,20 @@ export function saveLlmConfig(config: LlmConfig, apiKey?: string): void {
  * Returns full config including API key if saved.
  */
 export function loadLlmConfig(cwd?: string): Partial<LlmConfig> | null {
-  const configPath = getConfigPath(cwd);
+  // A private selection replaces the entire site selection. Never send a site
+  // credential to a user's different endpoint by merging the two objects.
+  return loadStoredLlmConfig(getConfigPath(cwd), false) ?? loadGlobalLlmConfig();
+}
+
+/** Site defaults are administrator-owned; ordinary model edits remain private. */
+export function loadGlobalLlmConfig(): Partial<LlmConfig> | null {
+  const path = process.env.EIGENGRID_GLOBAL_LLM_CONFIG ?? "/etc/eigengrid/llm.json";
+  if (!isAbsolute(path) || resolve(path) !== path)
+    throw new Error("Global model configuration requires a canonical absolute path");
+  return loadStoredLlmConfig(path, true);
+}
+
+function loadStoredLlmConfig(configPath: string, global: boolean): Partial<LlmConfig> | null {
   let descriptor: number;
   try {
     // A named pipe must reach fstat validation without waiting for a writer.
@@ -157,15 +170,31 @@ export function loadLlmConfig(cwd?: string): Partial<LlmConfig> | null {
   try {
     const info = fstatSync(descriptor),
       dir = lstatSync(dirname(configPath));
+    if (global) {
+      for (let path = dirname(configPath); ; path = dirname(path)) {
+        const ancestor = lstatSync(path);
+        if (
+          !ancestor.isDirectory() ||
+          ancestor.isSymbolicLink() ||
+          ancestor.uid !== 0 ||
+          (ancestor.mode & 0o022) !== 0
+        )
+          throw new Error("Global model configuration requires protected root-owned ancestors");
+        if (path === dirname(path)) break;
+      }
+    }
     if (
       !info.isFile() ||
+      info.nlink !== 1 ||
       info.size > 64 * 1024 ||
-      (info.mode & 0o077) !== 0 ||
+      (info.mode & (global ? 0o027 : 0o077)) !== 0 ||
       !dir.isDirectory() ||
       dir.isSymbolicLink() ||
       (dir.mode & 0o022) !== 0 ||
-      (typeof process.getuid === "function" &&
-        (info.uid !== process.getuid() || dir.uid !== process.getuid()))
+      (global
+        ? info.uid !== 0
+        : typeof process.getuid === "function" &&
+          (info.uid !== process.getuid() || dir.uid !== process.getuid()))
     )
       throw new Error("Stored model configuration must have private owner-only permissions");
     raw = readFileSync(descriptor, "utf8");
@@ -190,7 +219,7 @@ export function loadLlmConfig(cwd?: string): Partial<LlmConfig> | null {
         stored.authMode !== "api-key" &&
         stored.authMode !== "chatgpt") ||
       (stored.authMode === "chatgpt" &&
-        (typeof stored.chatGptProfileId !== "string" || !stored.chatGptProfileId))
+        (global || typeof stored.chatGptProfileId !== "string" || !stored.chatGptProfileId))
     )
       throw new Error("Invalid model configuration");
     return {
@@ -216,7 +245,7 @@ export function loadLlmConfig(cwd?: string): Partial<LlmConfig> | null {
 
 /** Remove only the saved credential; model and accounting preferences survive. */
 export function forgetStoredLlmApiKey(): boolean {
-  const stored = loadLlmConfig();
+  const stored = loadStoredLlmConfig(getConfigPath(), false);
   if (!stored?.apiKey) return false;
   saveLlmConfig({ ...stored, apiKey: undefined } as LlmConfig);
   return true;
@@ -226,6 +255,6 @@ export function forgetStoredLlmApiKey(): boolean {
  * Get the API key hint from stored config (first 8 chars).
  */
 export function getStoredApiKeyHint(): string | undefined {
-  const stored = loadLlmConfig();
+  const stored = loadStoredLlmConfig(getConfigPath(), false);
   return stored?.apiKey ? stored.apiKey.slice(0, 8) + "..." : undefined;
 }

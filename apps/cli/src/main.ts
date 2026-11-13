@@ -33,6 +33,7 @@ import { exportCommand } from "./commands/export";
 import { dbCommand } from "./commands/db";
 import { cancelCommand } from "./commands/cancel";
 import { planCommand } from "./commands/plan";
+import { modelConfigCommand } from "./commands/model-config";
 import { missionCommand } from "./commands/mission";
 import { amberCommand } from "./commands/amber";
 import { printSplash } from "./splash";
@@ -105,6 +106,7 @@ export async function main(): Promise<void> {
     .command(cancelCommand)
     .command(dbCommand)
     .command(planCommand)
+    .command(modelConfigCommand)
     .command(missionCommand)
     .command(amberCommand)
     .demandCommand(1, "Use --help to see available commands")

@@ -51,6 +51,21 @@ status alone does not establish process liveness.
 
 ## Model configuration
 
+Administrators can install a shared default at `/etc/eigengrid/llm.json`, or select
+a different protected path with `EIGENGRID_GLOBAL_LLM_CONFIG`. The JSON fields are
+the same as private model preferences below. Use a root-owned regular file with
+mode 0640, readable by the authorized user group, in root-owned directories that
+other users cannot write. Do not put a personal ChatGPT login in shared configuration;
+site defaults support API credentials and local model endpoints.
+
+CLI, TUI, planning and mission inference load the shared default when there is no
+private `.eigengrid/llm.json`. A private file replaces the entire shared selection,
+including credentials. Invalid private configuration blocks inference instead of
+falling back. Changing the endpoint/provider clears the active inherited key.
+`/key --forget` removes only a private saved key. `eigengrid model-config` reports
+the effective source and model; `eigengrid model-config --global` inspects site
+defaults. Neither command prints credentials or invokes the provider.
+
 The TUI `/models` selects an optional provider/model. `/models set` accepts `baseUrl`, `model`,
 `apiKey`, `temperature`, `maxTokens`, `costPerInputToken` and `costPerOutputToken`. Explicit
 free local inference uses both per-token costs set to zero. Provider, endpoint or model

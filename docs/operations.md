@@ -87,7 +87,52 @@ Providers and scientific engines are external, optional components with separate
 
 ## Supported scheduler contract
 
-The current strict accounting and submission contract supports Slurm 23.11.x.
-A newer scheduler release requires an adapter contract with its own real-format
-fixtures and qualification. Slurm 26.05.x is rejected by the existing version guard;
-changing the reported version or bypassing that guard is not a supported migration.
+The accounting adapter supports Slurm 23.11.x with data_parser/v0.0.40 and
+Slurm 26.05.x with explicitly selected data_parser/v0.0.45. Terminal observations
+require matching text/JSON allocation and step identities, states and exit codes.
+The 26.05 adapter retains the full exit byte; the 23.11 adapter corroborates its
+historical text truncation. Other release lines fail closed. Live 26.05.5 fixtures
+cover successful/failed jobs, exit 137, cancellation and timeout; they do not
+establish molecular scientific acceptance or OOM qualification.
+
+## Production dispatch admission
+
+The default service remains in standby until the site's complete submission,
+accounting, result collection, restart recovery and cancellation paths have passed.
+An administrator can then provision canonical, root-owned JSON for
+`ProductionDispatchConfigSchema` in `apps/cli/src/services/production-dispatch.ts`:
+
+```json
+{
+  "schemaVersion": "eigengrid.production-dispatch/v1",
+  "releaseCommit": "<exact installed 40-character commit>",
+  "policyDigest": "<reviewed MD compiler policy digest>",
+  "slurmVersion": "26.05.5",
+  "mdSiteAuthority": "/etc/eigengrid/md-authority.json",
+  "mdArtifactRoot": "/var/lib/eigengrid/head/artifacts",
+  "mdPostprocessing": "/etc/eigengrid/md-postprocessing.json",
+  "qualificationReport": "/etc/eigengrid/qualification.json",
+  "qualificationSha256": "<SHA-256 of the canonical qualification JSON>"
+}
+```
+
+The qualification report uses `eigengrid.production-qualification/v1`, the same
+`releaseCommit` and `slurmVersion`, and a `checks` object with `submission`,
+`accounting`, `resultCollection`, `restartRecovery` and `cancellation` all true.
+Retain the underlying observed evidence separately. Never mark an unperformed
+site check as passed or substitute unit tests for the installed end-to-end path.
+
+Start `eigengrid-head --production-config /etc/eigengrid/dispatch.json` after
+adapting the service's filesystem and AppArmor access to the protected configuration,
+signing key, per-UID submitter sockets, publication roots and postprocessing Python.
+First run the same confined configuration with `--health`. It validates release
+identity, qualification, private artifact storage, the compiler/environment profile,
+signing authority and admitted project memberships before reporting readiness.
+The MD publication, execution and postprocessing route retains exact scientific
+approvals, kernel identities, durable effect claims and per-mission budgets.
+
+Standby is still available with `--dispatch-disabled`. A new software commit needs
+a matching reviewed admission report; the previous release's report cannot silently
+enable a different binary. Keep the previous binary, configuration, policies and
+database backup together for rollback. The release installer preserves standby and
+does not automatically widen an existing site's execution policy.

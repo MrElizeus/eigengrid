@@ -43,6 +43,7 @@ export type { CatalogProvider, CatalogModel } from "./model-catalog";
 export {
   saveLlmConfig,
   loadLlmConfig,
+  loadGlobalLlmConfig,
   getStoredApiKeyHint,
   findLlmConfigPath,
   forgetStoredLlmApiKey,

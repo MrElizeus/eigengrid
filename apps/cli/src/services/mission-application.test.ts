@@ -1092,6 +1092,13 @@ describe.skipIf(!canRunPostgres)("human mission application through real Postgre
         await http.request("/api/v1/auth/login", "POST", { credential: "B".repeat(43) });
       expect(
         (await http.request("/api/v1/auth/login", "POST", { credential: "B".repeat(43) })).status,
+      ).toBe(401);
+      // Unknown secrets never consume a provisioned user's quota. Re-enable
+      // the fixture user and verify throttling with its actual credential.
+      await http.pool.query("UPDATE users SET status='active' WHERE id=$1", [actor.id]);
+      for (let i = 0; i < 9; i++) await http.login();
+      expect(
+        (await http.request("/api/v1/auth/login", "POST", { credential: "A".repeat(43) })).status,
       ).toBe(429);
     } finally {
       await http.close();

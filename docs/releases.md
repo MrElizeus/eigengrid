@@ -3,6 +3,10 @@
 Source and release artifacts follow [the publication policy](publication.md).
 Run `bun run verify:publication` before building and publishing any release.
 
+Version **1.0.3** adds shared model defaults, Slurm 26.05 accounting and explicit
+release-bound Head admission. See the [1.0.3 notes](release-notes/v1.0.3.md) and
+[production admission procedure](operations.md#production-dispatch-admission).
+
 Version **1.0.2** completes the scientific planning conversation and corrects command recovery:
 
 - `/plan` calls the configured model, retains conversation and tool context, inspects

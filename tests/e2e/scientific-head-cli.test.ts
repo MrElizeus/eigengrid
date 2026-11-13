@@ -547,7 +547,7 @@ describe("eigengrid-head compiled lifecycle", () => {
     roots.push(root);
     const result = await runHead(root, ["--once"], { deploymentProfile: "production" });
     expect(result.exitCode).toBe(1);
-    expect(result.stderr).toContain("Production Slurm dispatch is not yet qualified");
+    expect(result.stderr).toContain("Production dispatch requires qualified --production-config");
     await expect(access(join(root, "eigengrid.db"))).rejects.toThrow();
   });
 
