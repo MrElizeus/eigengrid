@@ -107,3 +107,11 @@ only its ID. A committed answer, including an empty answer, is reused after rest
 Cancellation is checked again after asynchronous authorization, immediately before tool
 execution. Usage returned after cancellation is still recorded; an already started effect
 with a lost acknowledgement remains uncertain and requires reconciliation.
+
+If a provider advertises sampling support but rejects `temperature`, set
+`"supportsTemperature": false` in that exact model's protected global or private
+LLM configuration. This omits the parameter in generation, streaming and mission
+inference without changing the price or other advertised capabilities. Reopen the
+agent after changing configuration. The override is cleared when selecting a
+different model or connection, and cannot enable sampling denied by the catalog.
+A rejected request is not automatically retried by this override.

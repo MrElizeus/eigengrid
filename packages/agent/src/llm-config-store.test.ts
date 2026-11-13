@@ -43,6 +43,17 @@ describe("private operator model preferences", () => {
     costPerOutputToken: 0,
   };
 
+  test("sampling capability override survives reload and rejects malformed values", () => {
+    saveLlmConfig({ ...config, supportsTemperature: false });
+    expect(loadLlmConfig()?.supportsTemperature).toBe(false);
+    configureLlm({ supportsTemperature: false });
+    configureLlm({ model: "other-model" });
+    expect(getLlmConfig().supportsTemperature).toBeUndefined();
+    const path = findLlmConfigPath();
+    writeFileSync(path, JSON.stringify({ ...config, supportsTemperature: "false" }));
+    expect(() => loadLlmConfig()).toThrow("invalid");
+  });
+
   test("model timeout preferences survive reload and reject invalid limits", () => {
     saveLlmConfig({ ...config, timeoutMilliseconds: 450000 });
     expect(loadLlmConfig()?.timeoutMilliseconds).toBe(450000);

@@ -116,11 +116,18 @@ An administrator can then provision canonical, root-owned JSON for
 }
 ```
 
-The qualification report uses `eigengrid.production-qualification/v1`, the same
-`releaseCommit` and `slurmVersion`, and a `checks` object with `submission`,
-`accounting`, `resultCollection`, `restartRecovery` and `cancellation` all true.
-Retain the underlying observed evidence separately. Never mark an unperformed
-site check as passed or substitute unit tests for the installed end-to-end path.
+The qualification report uses `eigengrid.production-qualification/v2` and binds the
+release, Slurm version, policy digest, artifact root and the exact set of protected
+site configuration files by canonical JSON SHA-256. Include the Head authority,
+postprocessing configuration, each submitter service, policy and site profile, and
+each referenced result-publication configuration. The site profiles bind the runner,
+engine and environment digests. Record fixture digests, reviewer and UTC review time;
+for each of `submission`, `accounting`, `resultCollection`, `restartRecovery` and
+`cancellation`, record a concrete observation and SHA-256 digests of retained raw
+evidence. The report identifies evidence; admission does not independently retrieve or
+verify the raw evidence, so the reviewer must inspect and preserve it. Never mark an
+unperformed site check as passed or substitute unit tests for the installed end-to-end
+path. Version 1 reports are rejected and must be requalified.
 
 Start `eigengrid-head --production-config /etc/eigengrid/dispatch.json` after
 adapting the service's filesystem and AppArmor access to the protected configuration,
@@ -136,3 +143,58 @@ a matching reviewed admission report; the previous release's report cannot silen
 enable a different binary. Keep the previous binary, configuration, policies and
 database backup together for rollback. The release installer preserves standby and
 does not automatically widen an existing site's execution policy.
+
+## Production diagnostics
+
+`eigengrid doctor --production --json` inspects configuration file metadata and
+systemd state without loading database credentials or changing services. It bypasses
+project-local configuration. `absent` and `inaccessible` are distinct: run under the
+appropriate authorized identity if permissions prevent inspection. `serviceObservable`
+is false if systemctl is unavailable or fails. Raw service command lines are not printed.
+
+Readiness is false for observed blocking conditions (standby, inactive service or
+missing/invalid configuration) and null when execution readiness remains unverified.
+The command exits 1 unless readiness has been positively verified; this presence check
+never certifies execution. Run the protected Head's `--health` under its actual service
+identity and confinement to evaluate configured execution dependencies.
+
+## PostgreSQL and artifact backups
+
+`scripts/operations/production-backup.py` creates a PostgreSQL custom-format dump,
+then copies and verifies published immutable CAS objects. It requires every CAS reference
+found in the frozen dump to exist in the backup. Coordinate retention so objects are not
+removed while a backup runs. The command does not back up engine installations, protected
+site configuration or arbitrary source inputs outside the specified CAS roots; preserve
+those separately. Output is private and published only after verification.
+
+The database connection is read from the named environment variable and is omitted from
+arguments, manifests and diagnostics. With local peer authentication, an authorized root
+operator can use `--postgres-os-user postgres`: only database subprocesses change identity;
+the main process retains restricted access to artifacts. For example, with DATABASE_URL
+already provisioned in a protected environment:
+
+```bash
+python3 scripts/operations/production-backup.py create \
+  --database-env DATABASE_URL --postgres-os-user postgres \
+  --artifact-root /var/lib/eigengrid/head/artifacts \
+  --output /data/backups/new-private-snapshot
+python3 scripts/operations/production-backup.py verify \
+  --backup /data/backups/new-private-snapshot
+```
+
+`verify` checks hashes, dump readability and referenced objects without restoring.
+For a real restoration rehearsal, provision a separate empty verification database named
+`eigengrid_restore_<suffix>` and put its connection in a separate environment variable:
+
+```bash
+python3 scripts/operations/production-backup.py verify-restore \
+  --backup /data/backups/new-private-snapshot \
+  --database-env RESTORE_DATABASE_URL --postgres-os-user postgres
+```
+
+Restore refuses other names and nonempty databases, uses one transaction and never uses
+`--clean`. Inspect recovered mission/provenance records and artifacts after restoring.
+A copy on the same physical disk provides recovery from logical mistakes but does not
+provide off-site or disk-failure protection. Schedule encrypted transfer to independently
+stored media and test that copy's recovery. The script does not configure transfer,
+retention, timers or credentials automatically.

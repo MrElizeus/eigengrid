@@ -25,9 +25,12 @@ export const readFileTool: Tool<z.infer<typeof readInput>, z.infer<typeof readOu
   outputSchema: readOutput,
   async execute(_ctx, input) {
     const path = resolveOperatorFile(input.path, process.cwd());
-    const fd = openSync(path, constants.O_RDONLY | constants.O_NOFOLLOW);
+    const fd = openSync(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
     try {
-      if (fstatSync(fd).size > 64 * 1024)
+      const stat = fstatSync(fd);
+      if (!stat.isFile())
+        throw new Error("Read a regular text file; directories and special files are unsupported");
+      if (stat.size > 64 * 1024)
         throw new Error("Read a smaller file or use the job log tools (64 KiB maximum)");
       return { ok: true, data: { path, content: readFileSync(fd, "utf8") } };
     } finally {

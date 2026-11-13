@@ -517,3 +517,63 @@ test("a streaming deadline reports timeout distinctly and never confirms incompl
   expect(await outcome).toMatchObject({ name: "TimeoutError" });
   expect(((await outcome) as Error).message).toContain("timed out");
 });
+
+test("explicit sampling disable survives advertised support and explicit pricing in generation and streaming", async () => {
+  const bodies: Record<string, unknown>[] = [];
+  const resolution = await createConfiguredModelResolution(
+    {
+      baseUrl: "https://fixture.example/v1",
+      model: "fixture-model",
+      supportsTemperature: false,
+      costPerInputToken: 0,
+      costPerOutputToken: 0,
+      fetch: async (_input, init) => {
+        const body = JSON.parse(String(init?.body));
+        bodies.push(body);
+        if (body.stream) {
+          const chunk = {
+            id: "fixture",
+            created: 1,
+            model: "fixture-model",
+            choices: [
+              { index: 0, delta: { role: "assistant", content: "observed" }, finish_reason: null },
+            ],
+          };
+          const done = {
+            ...chunk,
+            choices: [{ index: 0, delta: {}, finish_reason: "stop" }],
+            usage: { prompt_tokens: 4, completion_tokens: 3, total_tokens: 7 },
+          };
+          return new Response(
+            `data: ${JSON.stringify(chunk)}\n\ndata: ${JSON.stringify(done)}\n\ndata: [DONE]\n\n`,
+            { headers: { "content-type": "text/event-stream" } },
+          );
+        }
+        return Response.json({
+          id: "fixture",
+          created: 1,
+          model: "fixture-model",
+          choices: [
+            {
+              index: 0,
+              message: { role: "assistant", content: "observed" },
+              finish_reason: "stop",
+            },
+          ],
+          usage: { prompt_tokens: 4, completion_tokens: 3, total_tokens: 7 },
+        });
+      },
+    },
+    async () => ({ fixture: { models: { "fixture-model": { temperature: true } } } }),
+  );
+  const input = {
+    ...request(resolution.model, { providerIdentity: resolution.identity }),
+    model: undefined,
+  };
+  expect((await resolution.gateway.generateConversation(input)).result.text).toBe("observed");
+  const stream = resolution.gateway.streamConversation(input);
+  for await (const _part of stream.result.fullStream) void _part;
+  await stream.metadata;
+  expect(bodies).toHaveLength(2);
+  for (const body of bodies) expect(body).not.toHaveProperty("temperature");
+});

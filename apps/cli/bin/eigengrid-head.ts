@@ -157,7 +157,7 @@ async function main(): Promise<void> {
   process.once("SIGTERM", () => stop("SIGTERM"));
 
   try {
-    if (health) {
+    if (health && (dispatchDisabled || currentPolicyDigest === undefined)) {
       log("scientific_head_health", {
         status: dispatchDisabled ? "not-ready" : "database-ready",
         liveness: true,
@@ -257,6 +257,18 @@ async function main(): Promise<void> {
       leaseMilliseconds,
       policyDigestFor: currentPolicyDigestFor,
     });
+
+    if (health) {
+      log("scientific_head_health", {
+        status: "execution-configured",
+        liveness: true,
+        readiness: true,
+        databaseSchema: await context.db.getMigrationVersion(),
+        dispatchEnabled: true,
+        ownerId,
+      });
+      return;
+    }
 
     log("scientific_head_ready", {
       ownerId,

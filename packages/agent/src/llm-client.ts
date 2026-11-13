@@ -34,6 +34,8 @@ export interface LlmConfig {
   /** System prompt. Retrieved context never changes this value. */
   systemPrompt?: string;
   /** Temperature (0.0 - 2.0). */
+  /** Explicit false disables sampling when provider capability metadata is incorrect. */
+  supportsTemperature?: boolean;
   temperature?: number;
   /** Maximum output tokens per model-loop step. */
   maxTokens?: number;
@@ -88,7 +90,7 @@ export function configureLlm(config: Partial<LlmConfig>): void {
     ...activeConfig,
     ...(credentialDestinationChanged ? { apiKey: undefined } : {}),
     ...(identityChanged ? { costPerInputToken: undefined, costPerOutputToken: undefined } : {}),
-    ...(connectionChanged ? { reasoningEffort: undefined } : {}),
+    ...(connectionChanged ? { reasoningEffort: undefined, supportsTemperature: undefined } : {}),
     ...config,
   };
   cachedResolution = null;
@@ -112,6 +114,7 @@ function configuredOptions(): Parameters<typeof createConfiguredModelResolution>
     providerName: activeConfig.providerName,
     providerVersion: activeConfig.providerVersion,
     modelRevision: activeConfig.modelRevision,
+    supportsTemperature: activeConfig.supportsTemperature,
     temperature: activeConfig.temperature,
     maxTokens: activeConfig.maxTokens,
     timeoutMilliseconds: activeConfig.timeoutMilliseconds,

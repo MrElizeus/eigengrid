@@ -34,6 +34,8 @@ interface StoredLlmConfig {
   model: string;
   providerName?: string;
   apiKey?: string;
+  /** Explicit false disables sampling when provider capability metadata is incorrect. */
+  supportsTemperature?: boolean;
   temperature?: number;
   maxTokens?: number;
   timeoutMilliseconds?: number;
@@ -85,6 +87,7 @@ export function saveLlmConfig(config: LlmConfig, apiKey?: string): void {
     model: config.model,
     providerName: config.providerName,
     apiKey: apiKey ?? config.apiKey,
+    supportsTemperature: config.supportsTemperature,
     temperature: config.temperature,
     maxTokens: config.maxTokens,
     timeoutMilliseconds: config.timeoutMilliseconds,
@@ -213,6 +216,8 @@ function loadStoredLlmConfig(configPath: string, global: boolean): Partial<LlmCo
       !stored.model ||
       (stored.timeoutMilliseconds !== undefined &&
         (!Number.isSafeInteger(stored.timeoutMilliseconds) || stored.timeoutMilliseconds <= 0)) ||
+      (stored.supportsTemperature !== undefined &&
+        typeof stored.supportsTemperature !== "boolean") ||
       (stored.apiKey !== undefined && typeof stored.apiKey !== "string") ||
       (stored.reasoningEffort !== undefined && !isReasoningEffort(stored.reasoningEffort)) ||
       (stored.authMode !== undefined &&
@@ -230,6 +235,7 @@ function loadStoredLlmConfig(configPath: string, global: boolean): Partial<LlmCo
       model: stored.model,
       providerName: stored.providerName,
       apiKey: stored.apiKey,
+      supportsTemperature: stored.supportsTemperature,
       temperature: stored.temperature,
       maxTokens: stored.maxTokens,
       ...(stored.timeoutMilliseconds === undefined

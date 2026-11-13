@@ -1,7 +1,7 @@
 import { lstatSync } from "node:fs";
 import { isAbsolute, resolve } from "node:path";
 import { z } from "zod";
-import { DigestSchema } from "@eigengrid/scientific-schema";
+import { DigestSchema, digestCanonical } from "@eigengrid/scientific-schema";
 import { sacctContractForVersion } from "@eigengrid/slurm";
 import {
   HeadMdSiteAuthorityConfigSchema,
@@ -36,18 +36,33 @@ export const ProductionDispatchConfigSchema = z
   })
   .strict();
 
+const evidence = z
+  .object({
+    observation: z.string().trim().min(1).max(4096),
+    evidenceSha256: z.array(DigestSchema).min(1).max(32),
+  })
+  .strict();
+
+/** The evidence hashes identify retained, observed records; they do not themselves
+ * assert scientific validity. The reviewer must inspect those records. */
 export const ProductionQualificationSchema = z
   .object({
-    schemaVersion: z.literal("eigengrid.production-qualification/v1"),
+    schemaVersion: z.literal("eigengrid.production-qualification/v2"),
     releaseCommit: z.string().regex(/^[a-f0-9]{40}$/u),
     slurmVersion: z.string(),
+    policyDigest: DigestSchema,
+    artifactRoot: path,
+    reviewedBy: z.string().trim().min(1).max(256),
+    reviewedAt: z.string().datetime(),
+    fixtureDigests: z.array(DigestSchema).min(1).max(128),
+    configurationDigests: z.record(path, DigestSchema).refine((v) => Object.keys(v).length > 0),
     checks: z
       .object({
-        submission: z.literal(true),
-        accounting: z.literal(true),
-        resultCollection: z.literal(true),
-        restartRecovery: z.literal(true),
-        cancellation: z.literal(true),
+        submission: evidence,
+        accounting: evidence,
+        resultCollection: evidence,
+        restartRecovery: evidence,
+        cancellation: evidence,
       })
       .strict(),
   })
@@ -64,11 +79,21 @@ export function validateProductionQualification(
     !releaseCommit ||
     config.releaseCommit !== releaseCommit ||
     qualification.releaseCommit !== releaseCommit ||
-    qualification.slurmVersion !== config.slurmVersion
+    qualification.slurmVersion !== config.slurmVersion ||
+    qualification.policyDigest !== config.policyDigest ||
+    qualification.artifactRoot !== config.mdArtifactRoot
   )
     throw new Error(
       "Production qualification does not match the installed release and Slurm version",
     );
+}
+
+export function validateQualificationConfigurations(
+  qualified: Record<string, string>,
+  observed: Record<string, string>,
+): void {
+  if (digestCanonical(observed) !== digestCanonical(qualified))
+    throw new Error("Production qualification does not match protected site configuration");
 }
 
 export async function loadProductionDispatchConfig(
@@ -96,6 +121,15 @@ export async function loadProductionDispatchConfig(
   )
     throw new Error("Production MD artifacts require a private Head-owned directory");
   createHeadMdPostprocessingAuthority(config.mdPostprocessing, config.policyDigest).resolve();
+  const observedConfigs: Record<string, string> = {};
+  const bindConfig = (configPath: string, value: unknown) => {
+    const digest = digestCanonical(value);
+    if (observedConfigs[configPath] && observedConfigs[configPath] !== digest)
+      throw new Error("Inconsistent protected configuration");
+    observedConfigs[configPath] = digest;
+  };
+  bindConfig(config.mdSiteAuthority, authority);
+  bindConfig(config.mdPostprocessing, readProtectedHeadJson(config.mdPostprocessing, z.unknown()));
   const liveAuthority = createHeadMdSiteAuthorityReader(config.mdSiteAuthority);
   let members = 0;
   for (const servicePath of authority.submitterConfigPaths) {
@@ -104,6 +138,14 @@ export async function loadProductionDispatchConfig(
     const profile = assertAmberSlurmSiteProfile(
       readProtectedHeadJson(service.siteProfilePath, AmberSlurmSiteProfileSchema),
     );
+    bindConfig(servicePath, service);
+    bindConfig(service.policyPath, policy);
+    bindConfig(service.siteProfilePath, profile);
+    if (profile.resultPublicationConfigPath)
+      bindConfig(
+        profile.resultPublicationConfigPath,
+        readProtectedHeadJson(profile.resultPublicationConfigPath, z.unknown()),
+      );
     if (
       service.configPath !== servicePath ||
       service.headUid !== authority.headUid ||
@@ -134,5 +176,6 @@ export async function loadProductionDispatchConfig(
     }
   }
   if (members === 0) throw new Error("Production dispatch has no admitted project memberships");
+  validateQualificationConfigurations(report.configurationDigests, observedConfigs);
   return config;
 }
