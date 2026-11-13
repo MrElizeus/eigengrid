@@ -123,3 +123,38 @@ def test_cli_preserves_all_cas_roots_for_independent_database_component(tmp_path
     assert captured["arguments"] == ["--database-env", "PRIVATE_DB", "--artifact-root", "/qualified/cas", "--artifact-root", "/main/cas"]
     assert captured["journals"] == {"production": "/main/journal"}
     assert json.loads(capsys.readouterr().out) == {"verified": True}
+
+
+def test_real_empty_directories_are_bounded_and_staging_is_removed(tmp_path, monkeypatch):
+    source, _ = fixture(tmp_path, monkeypatch)
+    empty = source / "empty"
+    empty.mkdir()
+    # Real filesystem directories at the configured production limit, not mocked
+    # DirEntry objects or a lowered seam. Root and existing journal also count.
+    for index in range(backup.MAX_JOURNAL_DIRECTORIES):
+        (empty / f"dir-{index}").mkdir()
+    with pytest.raises(ValueError, match="directory-count bound"):
+        backup.create(tmp_path / "snapshot", {"qualification": source}, [])
+    assert not (tmp_path / "snapshot").exists()
+    assert not list(tmp_path.glob(".operational-*"))
+    assert len(list(empty.iterdir())) == backup.MAX_JOURNAL_DIRECTORIES
+
+
+def test_regular_file_cannot_silently_be_captured_as_empty_journal_root(tmp_path, monkeypatch):
+    source, _ = fixture(tmp_path, monkeypatch)
+    file = source / "journal" / "session.jsonl"
+    with pytest.raises(ValueError, match="must be a directory"):
+        backup.create(tmp_path / "snapshot", {"qualification": file}, [])
+    assert not (tmp_path / "snapshot").exists()
+
+
+def test_verification_rejects_unlisted_empty_directory_flood(tmp_path, monkeypatch):
+    source, _ = fixture(tmp_path, monkeypatch)
+    output = tmp_path / "snapshot"
+    backup.create(output, {"qualification": source}, [])
+    empty = output / "journals" / "qualification" / "empty"
+    empty.mkdir()
+    for index in range(backup.MAX_JOURNAL_DIRECTORIES):
+        (empty / f"dir-{index}").mkdir()
+    with pytest.raises(ValueError, match="directory-count bound"):
+        backup.verify(output)

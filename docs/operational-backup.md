@@ -26,7 +26,15 @@ The root-only Monster Queen site adapter `qualification-backup.sh` captures:
   `/var/lib/eigengrid/head-qualification/agent-sessions`, including scope, journal,
   open-request and any stop/lock records present;
 - private bounded inventories: at most 10,000 files and 64 MiB per journal root,
-  16 MiB per journal file. Symlinks and multiply linked files are rejected.
+  16 MiB per journal file, and 1,024 directories (including the root) per journal
+  root. Symlinks, regular-file source roots, and multiply linked files are rejected.
+
+The production journals in this wrapper are captured beside the **qualification**
+database component. They do not form a production checkpoint and must not be used
+as a replacement for a production database backup. Production recovery separately
+requires a verified `eigengrid` DB/main-CAS snapshot from the existing
+`cluster-backup`/`backup-snapshot.py` operation. Record both timestamps explicitly;
+those independent captures and the journals are not an atomic set.
 
 Published snapshots live beneath
 `/home/cluster/backups/eigengrid-operational-snapshots/`. The adapter backs up this

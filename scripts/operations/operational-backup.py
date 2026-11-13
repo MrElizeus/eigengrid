@@ -19,6 +19,7 @@ import tempfile
 
 SCHEMA = "eigengrid.operational-backup/v1"
 MAX_FILES = 10000
+MAX_JOURNAL_DIRECTORIES = 1024
 MAX_FILE_BYTES = 16 * 1024 * 1024
 MAX_JOURNAL_BYTES = 64 * 1024 * 1024
 CONSISTENCY = {"database": "independent-pg-snapshot-with-verified-cas-references",
@@ -58,7 +59,14 @@ def component(command, directory, extra=()):
 
 def inventory(root):
     result = []
+    journal_directories = {}
     for parent, dirs, files, directory_fd in os.fwalk(root, follow_symlinks=False):
+        parts = Path(parent).relative_to(root).parts
+        if len(parts) >= 2 and parts[0] == "journals":
+            label = parts[1]
+            journal_directories[label] = journal_directories.get(label, 0) + 1
+            if journal_directories[label] > MAX_JOURNAL_DIRECTORIES:
+                raise ValueError("journal directory-count bound exceeded")
         for name in dirs:
             info = os.stat(name, dir_fd=directory_fd, follow_symlinks=False)
             if not stat.S_ISDIR(info.st_mode):
@@ -91,8 +99,11 @@ def copy_journals(source, destination):
     source = Path(source)
     if not source.is_absolute() or source.resolve(strict=True) != source:
         raise ValueError("journal root must be canonical and cannot be a symlink")
+    if not stat.S_ISDIR(source.lstat().st_mode):
+        raise ValueError("journal root must be a directory")
     destination.mkdir(mode=0o700)
     count = total = 0
+    directory_count = 1
     started = utc()
     for parent, dirs, files, directory_fd in os.fwalk(source, follow_symlinks=False):
         relative = Path(parent).relative_to(source)
@@ -100,6 +111,9 @@ def copy_journals(source, destination):
             raise ValueError("journal inventory exceeds depth bound")
         target = destination / relative
         for name in dirs:
+            directory_count += 1
+            if directory_count > MAX_JOURNAL_DIRECTORIES:
+                raise ValueError("journal directory-count bound exceeded")
             info = os.stat(name, dir_fd=directory_fd, follow_symlinks=False)
             if not re.fullmatch(r"[A-Za-z0-9_.-]+", name) or not stat.S_ISDIR(info.st_mode):
                 raise ValueError("unsafe journal directory")
