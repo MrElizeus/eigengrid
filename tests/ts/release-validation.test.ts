@@ -61,7 +61,7 @@ function fixture(version = "1.0.0-rc.2") {
 }
 
 describe("release validation manifest", () => {
-  test.each(["1.0.0-rc.2", "1.0.0", "1.0.1", "1.0.2", "1.0.3", "1.0.4", "1.0.5"])(
+  test.each(["1.0.0-rc.2", "1.0.0", "1.0.1", "1.0.2", "1.0.3", "1.0.4", "1.0.5", "1.0.6"])(
     "binds %s package bytes, source and migrations to the CI run",
     (version) => {
       const item = fixture(version);
@@ -81,7 +81,7 @@ describe("release validation manifest", () => {
     },
   );
 
-  test.each(["1.0.6", "1.1.0", "1.0.1-rc.1", "1.0.01", "1.0.0-rc.0", "1.0.0-rc.01", "1.0.0\n"])(
+  test.each(["1.0.7", "1.1.0", "1.0.1-rc.1", "1.0.01", "1.0.0-rc.0", "1.0.0-rc.01", "1.0.0\n"])(
     "rejects unsupported version %j even with matching metadata",
     (version) => {
       const item = fixture(version);

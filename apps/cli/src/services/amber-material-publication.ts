@@ -97,22 +97,46 @@ export function assertSystemBuildOutputBindings(input: {
 
 /** Existing global output IDs must already be this exact receipt's evidence. */
 export function assertSystemBuildOutputAvailability(input: {
-  missionId: string; workUnitId: string; receiptId: string;
+  missionId: string;
+  workUnitId: string;
+  receiptId: string;
   artifacts: z.infer<typeof AmberFrozenSystemDraftSchema>["artifacts"];
   evidence: z.infer<typeof EvidenceReferenceSchema>[];
 }): void {
   for (const [role, artifact] of Object.entries(input.artifacts)) {
-    const kind = role === "atomMap" ? "atom_map" : role === "snapshotPdb" ? "source_snapshot" : role === "qcReport" ? "parser_output" : role;
-    const alias = input.evidence.find((item) => item.id !== artifact.evidenceRef &&
-      item.missionId === input.missionId && item.workUnitId === input.workUnitId &&
-      item.sourceId === input.receiptId && item.kind === kind &&
-      item.contentDigest === artifact.sha256 && item.uri === `cas://sha256/${artifact.sha256}`);
-    if (alias) throw new Error("System-build output authority identity already uses a different ID");
+    const kind =
+      role === "atomMap"
+        ? "atom_map"
+        : role === "snapshotPdb"
+          ? "source_snapshot"
+          : role === "qcReport"
+            ? "parser_output"
+            : role;
+    const alias = input.evidence.find(
+      (item) =>
+        item.id !== artifact.evidenceRef &&
+        item.missionId === input.missionId &&
+        item.workUnitId === input.workUnitId &&
+        item.sourceId === input.receiptId &&
+        item.kind === kind &&
+        item.contentDigest === artifact.sha256 &&
+        item.uri === `cas://sha256/${artifact.sha256}`,
+    );
+    if (alias)
+      throw new Error("System-build output authority identity already uses a different ID");
     const existing = input.evidence.find((item) => item.id === artifact.evidenceRef);
-    if (existing && (existing.missionId !== input.missionId || existing.workUnitId !== input.workUnitId ||
-      existing.sourceId !== input.receiptId || !existing.immutable || existing.kind !== kind ||
-      existing.mediaType !== artifact.mediaType || existing.contentDigest !== artifact.sha256 ||
-      existing.sizeBytes !== artifact.sizeBytes || existing.uri !== `cas://sha256/${artifact.sha256}`))
+    if (
+      existing &&
+      (existing.missionId !== input.missionId ||
+        existing.workUnitId !== input.workUnitId ||
+        existing.sourceId !== input.receiptId ||
+        !existing.immutable ||
+        existing.kind !== kind ||
+        existing.mediaType !== artifact.mediaType ||
+        existing.contentDigest !== artifact.sha256 ||
+        existing.sizeBytes !== artifact.sizeBytes ||
+        existing.uri !== `cas://sha256/${artifact.sha256}`)
+    )
       throw new Error("System-build output evidence ID is already in use");
   }
 }
@@ -123,21 +147,26 @@ export function assertSystemBuildSourceBindings(input: {
   request: z.infer<typeof BiomolecularSystemBuildRequestSchema>;
   evidence: z.infer<typeof EvidenceReferenceSchema>[];
 }): void {
-  const sourceIds = [...new Set([
-    ...input.draft.system.sourceEvidenceRefs,
-    ...Object.values(input.draft.system.components).flatMap((components) =>
-      components.flatMap((component) => component.sourceEvidenceRefs),
-    ),
-  ])].sort();
+  const sourceIds = [
+    ...new Set([
+      ...input.draft.system.sourceEvidenceRefs,
+      ...Object.values(input.draft.system.components).flatMap((components) =>
+        components.flatMap((component) => component.sourceEvidenceRefs),
+      ),
+    ]),
+  ].sort();
   const bindings = [...input.request.sourceEvidence].sort((a, b) => a.id.localeCompare(b.id));
   if (canonicalJson(sourceIds) !== canonicalJson(bindings.map((item) => item.id).sort()))
     throw new Error("System-build source evidence differs from frozen system sources");
   for (const item of bindings) {
     const evidence = input.evidence.filter((entry) => entry.id === item.id);
-    if (evidence.length !== 1 || !evidence[0]!.immutable ||
+    if (
+      evidence.length !== 1 ||
+      !evidence[0]!.immutable ||
       evidence[0]!.missionId !== input.draft.system.missionId ||
       evidence[0]!.contentDigest !== item.contentDigest ||
-      evidence[0]!.uri !== `cas://sha256/${item.contentDigest}`)
+      evidence[0]!.uri !== `cas://sha256/${item.contentDigest}`
+    )
       throw new Error("System-build source evidence digest or mission differs from request");
   }
 }
@@ -1046,58 +1075,113 @@ export class AmberMaterialPublicationDriver implements ScientificMissionWorkDriv
       for (const artifact of Object.values(draft.artifacts)) {
         const rows = await tx.queryRows<{ payload_json: string }>(
           "SELECT payload_json FROM scientific_evidence WHERE id = $1 OR (mission_id = $2 AND work_unit_id = $3 AND source_id = $4)",
-          [artifact.evidenceRef, unit.missionId, unit.id, `receipt-${materialOperationIdentity(unit).operationId}`],
+          [
+            artifact.evidenceRef,
+            unit.missionId,
+            unit.id,
+            `receipt-${materialOperationIdentity(unit).operationId}`,
+          ],
         );
-        for (const row of rows) outputEvidence.push(EvidenceReferenceSchema.parse(
-          typeof row.payload_json === "string" ? JSON.parse(row.payload_json) : row.payload_json,
-        ));
+        for (const row of rows)
+          outputEvidence.push(
+            EvidenceReferenceSchema.parse(
+              typeof row.payload_json === "string"
+                ? JSON.parse(row.payload_json)
+                : row.payload_json,
+            ),
+          );
       }
       const packageRows = await tx.queryRows<{ payload_json: string }>(
-        "SELECT payload_json FROM scientific_evidence WHERE id = $1", [`prepared-package-${unit.id}`],
+        "SELECT payload_json FROM scientific_evidence WHERE id = $1",
+        [`prepared-package-${unit.id}`],
       );
       for (const row of packageRows) {
-        const item = EvidenceReferenceSchema.parse(typeof row.payload_json === "string" ? JSON.parse(row.payload_json) : row.payload_json);
-        if (item.missionId !== unit.missionId || item.workUnitId !== unit.id ||
+        const item = EvidenceReferenceSchema.parse(
+          typeof row.payload_json === "string" ? JSON.parse(row.payload_json) : row.payload_json,
+        );
+        if (
+          item.missionId !== unit.missionId ||
+          item.workUnitId !== unit.id ||
           item.sourceId !== `receipt-${materialOperationIdentity(unit).operationId}` ||
-          item.kind !== "artifact" || !item.immutable)
+          item.kind !== "artifact" ||
+          !item.immutable
+        )
           throw new Error("System-build package evidence ID is already in use");
       }
-    } finally { await tx.rollback(); }
-    assertSystemBuildOutputAvailability({ missionId: unit.missionId, workUnitId: unit.id,
-      receiptId: `receipt-${materialOperationIdentity(unit).operationId}`, artifacts: draft.artifacts,
-      evidence: outputEvidence });
+    } finally {
+      await tx.rollback();
+    }
+    assertSystemBuildOutputAvailability({
+      missionId: unit.missionId,
+      workUnitId: unit.id,
+      receiptId: `receipt-${materialOperationIdentity(unit).operationId}`,
+      artifacts: draft.artifacts,
+      evidence: outputEvidence,
+    });
     assertSystemBuildSourceBindings({ draft, request: r, evidence: provenance.evidence });
     const draftEvidence = provenance.evidence.find((item) => item.id === r.inputEvidenceId);
-    if (!draftEvidence || draftEvidence.kind !== "source_snapshot" ||
+    if (
+      !draftEvidence ||
+      draftEvidence.kind !== "source_snapshot" ||
       digestCanonical(draft) !== r.inputContentDigest ||
-      draftEvidence.sizeBytes !== Buffer.byteLength(canonicalJson(draft)))
+      draftEvidence.sizeBytes !== Buffer.byteLength(canonicalJson(draft))
+    )
       throw new Error("Frozen draft must be an exact canonical source snapshot");
-    const parameters = BiomolecularSystemBuildWorkUnitParametersSchema.parse(unit.protocolFragment.parameters);
+    const parameters = BiomolecularSystemBuildWorkUnitParametersSchema.parse(
+      unit.protocolFragment.parameters,
+    );
     let matchingSources = 0;
     for (const source of r.sourceEvidence) {
       if (source.id === r.inputEvidenceId) continue;
       let document: unknown;
-      try { document = await this.json(source.contentDigest); } catch { continue; }
+      try {
+        document = await this.json(source.contentDigest);
+      } catch {
+        continue;
+      }
       if (frozenSourceManifestDigest(document) !== parameters.manifestDigest) continue;
       const evidence = provenance.evidence.find((item) => item.id === source.id);
-      if (!evidence || evidence.kind !== "source_snapshot" ||
+      if (
+        !evidence ||
+        evidence.kind !== "source_snapshot" ||
         digestCanonical(document) !== source.contentDigest ||
-        evidence.sizeBytes !== Buffer.byteLength(canonicalJson(document)))
+        evidence.sizeBytes !== Buffer.byteLength(canonicalJson(document))
+      )
         throw new Error("Frozen source manifest must be an exact canonical source snapshot");
       const manifest = document as Record<string, unknown>;
-      if (manifest.id !== draft.system.id || manifest.revision !== draft.system.revision ||
-        ["topologyDigest", "coordinateDigest", "atomMapDigest", "atomCount", "totalCharge", "box", "forceFieldStack", "environment"].some(
-          (key) => canonicalJson(manifest[key]) !== canonicalJson(draft.system[key as keyof typeof draft.system]),
-        )) throw new Error("Frozen source manifest differs from the draft system");
+      if (
+        manifest.id !== draft.system.id ||
+        manifest.revision !== draft.system.revision ||
+        [
+          "topologyDigest",
+          "coordinateDigest",
+          "atomMapDigest",
+          "atomCount",
+          "totalCharge",
+          "box",
+          "forceFieldStack",
+          "environment",
+        ].some(
+          (key) =>
+            canonicalJson(manifest[key]) !==
+            canonicalJson(draft.system[key as keyof typeof draft.system]),
+        )
+      )
+        throw new Error("Frozen source manifest differs from the draft system");
       matchingSources++;
     }
-    if (matchingSources !== 1) throw new Error("One exact sealed frozen source manifest is required");
+    if (matchingSources !== 1)
+      throw new Error("One exact sealed frozen source manifest is required");
     const packageValue = this.packageFor(unit, draft, {
       operationId: materialOperationIdentity(unit).operationId,
       receiptId: `receipt-${materialOperationIdentity(unit).operationId}`,
       at: unit.createdAt,
     });
-    const stack = await this.ports.mdStore.getForceFieldStack(unit.missionId, r.forceFieldStack.id, r.forceFieldStack.revision);
+    const stack = await this.ports.mdStore.getForceFieldStack(
+      unit.missionId,
+      r.forceFieldStack.id,
+      r.forceFieldStack.revision,
+    );
     if (!stack || stack.stackDigest !== r.forceFieldStack.digest)
       throw new Error("System-build force-field stack is absent or stale");
     assertForceFieldStackCoversSystem(stack, packageValue.systemManifest);
@@ -1105,15 +1189,25 @@ export class AmberMaterialPublicationDriver implements ScientificMissionWorkDriv
     for (const ref of r.decisionRefs) {
       const decision = await this.ports.mdStore.getBiomolecularDecision(ref.id, ref.revision);
       const approval = provenance.approvals.find((item) => item.id === ref.approvalRef);
-      if (!decision || decision.missionId !== unit.missionId || decision.status !== "approved" ||
-        decision.kind !== ref.kind || decision.decisionDigest !== ref.decisionDigest ||
-        decision.approvalRef !== ref.approvalRef || !approval || approval.state !== "approved" ||
-        approval.subjectType !== "decision" || approval.subjectId !== ref.id ||
-        approval.subjectVersion !== ref.revision || approval.subjectRevision !== ref.revision ||
-        approval.payloadDigest !== ref.decisionDigest)
+      if (
+        !decision ||
+        decision.missionId !== unit.missionId ||
+        decision.status !== "approved" ||
+        decision.kind !== ref.kind ||
+        decision.decisionDigest !== ref.decisionDigest ||
+        decision.approvalRef !== ref.approvalRef ||
+        !approval ||
+        approval.state !== "approved" ||
+        approval.subjectType !== "decision" ||
+        approval.subjectId !== ref.id ||
+        approval.subjectVersion !== ref.revision ||
+        approval.subjectRevision !== ref.revision ||
+        approval.payloadDigest !== ref.decisionDigest
+      )
         throw new Error("System-build decision or approval is absent or stale");
       await this.ports.store.assertApprovalValid(approval.id, {
-        now: new Date().toISOString(), currentPolicyDigest: this.currentPolicy(),
+        now: new Date().toISOString(),
+        currentPolicyDigest: this.currentPolicy(),
       });
       decisions.push(decision);
     }
