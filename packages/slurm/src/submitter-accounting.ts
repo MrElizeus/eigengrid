@@ -2,7 +2,7 @@ import { z } from "zod";
 import { hasControlCharacter } from "./script-builder";
 import { assertSlurmSubmissionBinding } from "./submission-identity";
 import { isSlurmTerminal } from "./state-mapper";
-import { NATIVE_ACCOUNTING_SCHEMA } from "./native-accounting";
+import { NATIVE_ACCOUNTING_SCHEMA, NATIVE_ACCOUNTING_26_05_SCHEMA } from "./native-accounting";
 import { decodeSubmitterResponse, SubmitterSchedulerObservationSchema } from "./submitter-response";
 
 const text = z
@@ -85,8 +85,10 @@ export const SubmitterAccountingRecordSchema = z
     submittedAt: text,
     cluster: text,
     nodeName: text,
-    accountingSchema: z.literal("slurm-23.11/parsable2-v1"),
-    nativeAccountingSchema: z.literal(NATIVE_ACCOUNTING_SCHEMA).optional(),
+    accountingSchema: z.enum(["slurm-23.11/parsable2-v1", "slurm-26.05/parsable2-v1"]),
+    nativeAccountingSchema: z
+      .enum([NATIVE_ACCOUNTING_SCHEMA, NATIVE_ACCOUNTING_26_05_SCHEMA])
+      .optional(),
     records: z.array(record).min(1).max(64),
     elapsed: text.optional(),
     maxRss: text.optional(),
@@ -121,7 +123,10 @@ export const SubmitterAccountingRecordSchema = z
     }
     if (
       isSlurmTerminal(value.state) &&
-      (value.nativeAccountingSchema !== NATIVE_ACCOUNTING_SCHEMA ||
+      (value.nativeAccountingSchema !==
+        (value.accountingSchema === "slurm-26.05/parsable2-v1"
+          ? NATIVE_ACCOUNTING_26_05_SCHEMA
+          : NATIVE_ACCOUNTING_SCHEMA) ||
         value.exitCode === undefined ||
         value.signal === undefined ||
         value.derivedExitCode === undefined ||

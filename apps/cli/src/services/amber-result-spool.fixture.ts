@@ -160,8 +160,10 @@ sys.exit(42 if ${JSON.stringify(mode)} == 'exit42' else 0)
     async stat(file, path) {
       const actual = await file.stat();
       // Only identities are modeled; actual modes/links/sizes/timestamps remain
-      // kernel observations. /tmp's sticky writable ancestry models /srv.
-      if (path === "/tmp") actual.mode = (actual.mode & ~0o7777) | 0o755;
+      // kernel observations. Sticky temporary ancestors model protected /srv,
+      // including installations whose TMPDIR is under /var/tmp.
+      if ((actual.mode & 0o1000) !== 0 && root.startsWith(path + "/"))
+        actual.mode = (actual.mode & ~0o7777) | 0o755;
       if (!path.startsWith(project)) actual.uid = 0;
       if (path === config.resultSpoolRoot || path.startsWith(config.resultSpoolRoot + "/"))
         actual.gid = config.publicationGroupId;

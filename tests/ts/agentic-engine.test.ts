@@ -108,7 +108,7 @@ function createMockCtx(overrides?: Partial<ToolContext>): ToolContext {
     python: {} as any,
     runners: {},
     bus: new InProcessEventBus(),
-    config: { pythonCommand: "python", jobsDir: "/tmp" } as any,
+    config: { pythonCommand: "python", jobsDir: tmpdir() } as any,
     ...overrides,
   };
 }

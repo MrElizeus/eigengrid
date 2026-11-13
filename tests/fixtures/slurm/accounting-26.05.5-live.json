@@ -1,0 +1,417 @@
+{
+  "provenance": {
+    "capturedAt": "2026-11-13",
+    "producer": "Slurm 26.05.5, sacct --json=v0.0.45, fixture-cluster/worker-01",
+    "jobs": {
+      "success": "933",
+      "failure": "934",
+      "high-exit": "935",
+      "cancel": "936",
+      "timeout": "937"
+    },
+    "note": "Bounded one-CPU scheduler probes. Site names are anonymized consistently in text and JSON; not scientific or OOM acceptance."
+  },
+  "text": "933|COMPLETED|0:0|00:00:01||64M|1|2|0:0|2101|2026-11-13T00:13:49Z|fixture-cluster|worker-01|None\n933.batch|COMPLETED|0:0|00:00:01|512K||1|2|||2026-11-13T00:13:49Z|fixture-cluster|worker-01|\n934|FAILED|43:0|00:00:01||64M|1|2|0:0|2101|2026-11-13T00:13:49Z|fixture-cluster|worker-01|None\n934.batch|FAILED|43:0|00:00:01|512K||1|2|||2026-11-13T00:13:49Z|fixture-cluster|worker-01|\n935|FAILED|137:0|00:00:01||64M|1|2|0:0|2101|2026-11-13T00:13:49Z|fixture-cluster|worker-01|None\n935.batch|FAILED|137:0|00:00:01|512K||1|2|||2026-11-13T00:13:49Z|fixture-cluster|worker-01|\n936|CANCELLED by 2101|0:0|00:00:03||64M|1|2|0:0|2101|2026-11-13T00:13:49Z|fixture-cluster|worker-01|None\n936.batch|CANCELLED|0:15|00:00:04|580K||1|2|||2026-11-13T00:13:49Z|fixture-cluster|worker-01|\n937|TIMEOUT|0:0|00:01:03||64M|1|2|0:0|2101|2026-11-13T00:13:49Z|fixture-cluster|worker-01|None\n937.batch|CANCELLED|0:15|00:01:04|576K||1|2|||2026-11-13T00:13:49Z|fixture-cluster|worker-01|\n",
+  "native": {
+    "jobs": [
+      {
+        "cluster": "fixture-cluster",
+        "derived_exit_code": {
+          "status": [
+            "SUCCESS"
+          ],
+          "return_code": {
+            "set": true,
+            "infinite": false,
+            "number": 0
+          },
+          "signal": {
+            "id": {
+              "set": false,
+              "infinite": false,
+              "number": 0
+            },
+            "name": ""
+          }
+        },
+        "time": {
+          "submission": 1794528829
+        },
+        "exit_code": {
+          "status": [
+            "SUCCESS"
+          ],
+          "return_code": {
+            "set": true,
+            "infinite": false,
+            "number": 0
+          },
+          "signal": {
+            "id": {
+              "set": false,
+              "infinite": false,
+              "number": 0
+            },
+            "name": ""
+          }
+        },
+        "job_id": 933,
+        "state": {
+          "current": [
+            "COMPLETED"
+          ],
+          "reason": "None"
+        },
+        "steps": [
+          {
+            "exit_code": {
+              "status": [
+                "SUCCESS"
+              ],
+              "return_code": {
+                "set": true,
+                "infinite": false,
+                "number": 0
+              },
+              "signal": {
+                "id": {
+                  "set": false,
+                  "infinite": false,
+                  "number": 0
+                },
+                "name": ""
+              }
+            },
+            "state": [
+              "COMPLETED"
+            ],
+            "step": {
+              "id": "933.batch"
+            }
+          }
+        ]
+      },
+      {
+        "cluster": "fixture-cluster",
+        "derived_exit_code": {
+          "status": [
+            "SUCCESS"
+          ],
+          "return_code": {
+            "set": true,
+            "infinite": false,
+            "number": 0
+          },
+          "signal": {
+            "id": {
+              "set": false,
+              "infinite": false,
+              "number": 0
+            },
+            "name": ""
+          }
+        },
+        "time": {
+          "submission": 1794528829
+        },
+        "exit_code": {
+          "status": [
+            "ERROR"
+          ],
+          "return_code": {
+            "set": true,
+            "infinite": false,
+            "number": 43
+          },
+          "signal": {
+            "id": {
+              "set": false,
+              "infinite": false,
+              "number": 0
+            },
+            "name": ""
+          }
+        },
+        "job_id": 934,
+        "state": {
+          "current": [
+            "FAILED"
+          ],
+          "reason": "None"
+        },
+        "steps": [
+          {
+            "exit_code": {
+              "status": [
+                "ERROR"
+              ],
+              "return_code": {
+                "set": true,
+                "infinite": false,
+                "number": 43
+              },
+              "signal": {
+                "id": {
+                  "set": false,
+                  "infinite": false,
+                  "number": 0
+                },
+                "name": ""
+              }
+            },
+            "state": [
+              "FAILED"
+            ],
+            "step": {
+              "id": "934.batch"
+            }
+          }
+        ]
+      },
+      {
+        "cluster": "fixture-cluster",
+        "derived_exit_code": {
+          "status": [
+            "SUCCESS"
+          ],
+          "return_code": {
+            "set": true,
+            "infinite": false,
+            "number": 0
+          },
+          "signal": {
+            "id": {
+              "set": false,
+              "infinite": false,
+              "number": 0
+            },
+            "name": ""
+          }
+        },
+        "time": {
+          "submission": 1794528829
+        },
+        "exit_code": {
+          "status": [
+            "ERROR"
+          ],
+          "return_code": {
+            "set": true,
+            "infinite": false,
+            "number": 137
+          },
+          "signal": {
+            "id": {
+              "set": false,
+              "infinite": false,
+              "number": 0
+            },
+            "name": ""
+          }
+        },
+        "job_id": 935,
+        "state": {
+          "current": [
+            "FAILED"
+          ],
+          "reason": "None"
+        },
+        "steps": [
+          {
+            "exit_code": {
+              "status": [
+                "ERROR"
+              ],
+              "return_code": {
+                "set": true,
+                "infinite": false,
+                "number": 137
+              },
+              "signal": {
+                "id": {
+                  "set": false,
+                  "infinite": false,
+                  "number": 0
+                },
+                "name": ""
+              }
+            },
+            "state": [
+              "FAILED"
+            ],
+            "step": {
+              "id": "935.batch"
+            }
+          }
+        ]
+      },
+      {
+        "cluster": "fixture-cluster",
+        "derived_exit_code": {
+          "status": [
+            "SUCCESS"
+          ],
+          "return_code": {
+            "set": true,
+            "infinite": false,
+            "number": 0
+          },
+          "signal": {
+            "id": {
+              "set": false,
+              "infinite": false,
+              "number": 0
+            },
+            "name": ""
+          }
+        },
+        "time": {
+          "submission": 1794528829
+        },
+        "exit_code": {
+          "status": [
+            "SUCCESS"
+          ],
+          "return_code": {
+            "set": true,
+            "infinite": false,
+            "number": 0
+          },
+          "signal": {
+            "id": {
+              "set": false,
+              "infinite": false,
+              "number": 0
+            },
+            "name": ""
+          }
+        },
+        "job_id": 936,
+        "state": {
+          "current": [
+            "CANCELLED"
+          ],
+          "reason": "None"
+        },
+        "steps": [
+          {
+            "exit_code": {
+              "status": [
+                "SIGNALED"
+              ],
+              "return_code": {
+                "set": false,
+                "infinite": false,
+                "number": 0
+              },
+              "signal": {
+                "id": {
+                  "set": true,
+                  "infinite": false,
+                  "number": 15
+                },
+                "name": "TERM"
+              }
+            },
+            "state": [
+              "CANCELLED"
+            ],
+            "step": {
+              "id": "936.batch"
+            }
+          }
+        ]
+      },
+      {
+        "cluster": "fixture-cluster",
+        "derived_exit_code": {
+          "status": [
+            "SUCCESS"
+          ],
+          "return_code": {
+            "set": true,
+            "infinite": false,
+            "number": 0
+          },
+          "signal": {
+            "id": {
+              "set": false,
+              "infinite": false,
+              "number": 0
+            },
+            "name": ""
+          }
+        },
+        "time": {
+          "submission": 1794528829
+        },
+        "exit_code": {
+          "status": [
+            "SUCCESS"
+          ],
+          "return_code": {
+            "set": true,
+            "infinite": false,
+            "number": 0
+          },
+          "signal": {
+            "id": {
+              "set": false,
+              "infinite": false,
+              "number": 0
+            },
+            "name": ""
+          }
+        },
+        "job_id": 937,
+        "state": {
+          "current": [
+            "TIMEOUT"
+          ],
+          "reason": "None"
+        },
+        "steps": [
+          {
+            "exit_code": {
+              "status": [
+                "SIGNALED"
+              ],
+              "return_code": {
+                "set": false,
+                "infinite": false,
+                "number": 0
+              },
+              "signal": {
+                "id": {
+                  "set": true,
+                  "infinite": false,
+                  "number": 15
+                },
+                "name": "TERM"
+              }
+            },
+            "state": [
+              "CANCELLED"
+            ],
+            "step": {
+              "id": "937.batch"
+            }
+          }
+        ]
+      }
+    ],
+    "meta": {
+      "plugin": {
+        "type": "",
+        "name": "",
+        "data_parser": "data_parser/v0.0.45",
+        "accounting_storage": "accounting_storage/slurmdbd"
+      },
+      "slurm": {
+        "release": "26.05.5"
+      }
+    },
+    "errors": [],
+    "warnings": []
+  }
+}

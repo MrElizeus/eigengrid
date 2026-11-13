@@ -1,6 +1,13 @@
 import type { SacctContract, SacctRecord } from "./accounting-contract";
 
 export const NATIVE_ACCOUNTING_SCHEMA = "slurm-23.11/data_parser-v0.0.40";
+export const NATIVE_ACCOUNTING_26_05_SCHEMA = "slurm-26.05/data_parser-v0.0.45";
+
+export function nativeAccountingSchemaFor(contract: SacctContract): string {
+  return contract.nativeParser === "v0.0.45"
+    ? NATIVE_ACCOUNTING_26_05_SCHEMA
+    : NATIVE_ACCOUNTING_SCHEMA;
+}
 
 function object(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
@@ -66,7 +73,7 @@ export function corroborateNativeAccounting(
   const meta = object(document.meta);
   const plugin = object(meta.plugin);
   if (
-    plugin.data_parser !== "data_parser/v0.0.40" ||
+    plugin.data_parser !== `data_parser/${contract.nativeParser}` ||
     plugin.accounting_storage !== "accounting_storage/slurmdbd" ||
     object(meta.slurm).release !== contract.version.replace(/[-+].*$/u, "") ||
     array(document.errors).length !== 0 ||
@@ -113,7 +120,8 @@ export function corroborateNativeAccounting(
     if (states.length !== 1 || states[0] !== record.state)
       throw new Error("Accounting state changed between observations");
     const exact = exitPair(native.exit_code);
-    if (record.exitCode !== exact.exitCode % 128 || record.signal !== exact.signal) {
+    const textExit = contract.nativeParser === "v0.0.40" ? exact.exitCode % 128 : exact.exitCode;
+    if (record.exitCode !== textExit || record.signal !== exact.signal) {
       throw new Error("Accounting exit observations disagree");
     }
     const derived = record.kind === "allocation" ? exitPair(native.derived_exit_code) : undefined;

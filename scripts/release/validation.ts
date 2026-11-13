@@ -13,7 +13,7 @@ const commit = process.env.GITHUB_SHA;
 const runId = process.env.GITHUB_RUN_ID;
 const repositoryId = process.env.GITHUB_REPOSITORY_ID;
 if (
-  !/^v1\.0\.(?:0(?:-rc\.[1-9]\d*)?|[12])$/u.test(tag ?? "") ||
+  !/^v1\.0\.(?:0(?:-rc\.[1-9]\d*)?|[123])$/u.test(tag ?? "") ||
   tag !== tag?.trim() ||
   tag !== `v${release.version}` ||
   commit !== release.sourceCommit ||

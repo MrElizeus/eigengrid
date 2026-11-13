@@ -6,7 +6,7 @@ import {
   type SacctContract,
 } from "./accounting-contract";
 import { BunExecutor, type CliExecutor } from "./executor";
-import { corroborateNativeAccounting, NATIVE_ACCOUNTING_SCHEMA } from "./native-accounting";
+import { corroborateNativeAccounting, nativeAccountingSchemaFor } from "./native-accounting";
 import {
   isSlurmTerminal,
   mapSlurmState,
@@ -297,7 +297,11 @@ export class SlurmCliClient implements SlurmClient {
       )
         return null;
       try {
-        const native = await this.executor.run("sacct", ["--jobs", slurmJobId, "--json"], {
+        const jsonOption =
+          this.accountingContract.nativeParser === "v0.0.40"
+            ? "--json"
+            : `--json=${this.accountingContract.nativeParser}`;
+        const native = await this.executor.run("sacct", ["--jobs", slurmJobId, jsonOption], {
           env: SACCT_ENV,
           timeout: SACCT_TIMEOUT_MS,
           maxOutputBytes: SCHEDULER_OUTPUT_LIMIT,
@@ -312,7 +316,7 @@ export class SlurmCliClient implements SlurmClient {
           return null;
         records = corroborateNativeAccounting(native.stdout, records, this.accountingContract);
         row = records.find((record) => record.kind === "allocation")!;
-        nativeAccountingSchema = NATIVE_ACCOUNTING_SCHEMA;
+        nativeAccountingSchema = nativeAccountingSchemaFor(this.accountingContract);
       } catch {
         return null;
       }
