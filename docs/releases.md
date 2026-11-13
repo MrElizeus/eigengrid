@@ -3,6 +3,9 @@
 Source and release artifacts follow [the publication policy](publication.md).
 Run `bun run verify:publication` before building and publishing any release.
 
+Version **1.0.8** hardens NFS result publication, budget diagnostics and operational
+recovery captures. See the [1.0.8 release notes](release-notes/v1.0.8.md).
+
 Version **1.0.7** makes mission creation atomic with objective evidence and checks
 the complete original creation request before recovering a lost response. See the
 [1.0.7 notes](release-notes/v1.0.7.md).
