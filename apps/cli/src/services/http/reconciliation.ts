@@ -10,6 +10,9 @@ export async function observeApplicationOperation(
   application: MissionApplication,
   agent: () => AgentSessionService,
 ): Promise<unknown | null> {
+  // Material execution recovery requires the composition's closed, policy-bound
+  // confirmed-projection finalizer. Generic readback never authorizes it.
+  if (record.operation === "material.apply" || record.operation === "md.publish-stage") return null;
   const input = record.request as Record<string, unknown>;
   if (record.operation.startsWith("agent.")) {
     const service = agent();

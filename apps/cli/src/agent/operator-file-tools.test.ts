@@ -18,6 +18,22 @@ function registry() {
 }
 
 describe("operator command observations", () => {
+  test("text reader accepts the exact byte limit and rejects oversized files", async () => {
+    const root = mkdtempSync(join(tmpdir(), "eigengrid-read-bound-"));
+    try {
+      const path = join(root, "bounded.txt");
+      writeFileSync(path, "x".repeat(64 * 1024));
+      expect(await readFileTool.execute(ctx, { path })).toMatchObject({
+        ok: true,
+        data: { path, content: "x".repeat(64 * 1024) },
+      });
+      writeFileSync(path, "x".repeat(64 * 1024 + 1));
+      await expect(readFileTool.execute(ctx, { path })).rejects.toThrow("64 KiB maximum");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   test("reads a real scientific output and rejects directories with an actionable diagnostic", async () => {
     const root = mkdtempSync(join(tmpdir(), "eigengrid-agent-output-"));
     try {

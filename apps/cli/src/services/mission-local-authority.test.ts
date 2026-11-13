@@ -116,6 +116,22 @@ function fixture() {
 }
 
 describe("protected mission local operator authority", () => {
+  test("binds the protected MD authority path and revokes sessions when it changes", async () => {
+    const f = fixture();
+    expect((await f.authority.current()).mdSiteAuthorityConfigPath).toBeUndefined();
+    f.config.mdSiteAuthorityConfigPath = "/etc/eigengrid/md-authority.json";
+    f.write();
+    const issued = await f.authority.current();
+    expect(issued.mdSiteAuthorityConfigPath).toBe("/etc/eigengrid/md-authority.json");
+    f.config.mdSiteAuthorityConfigPath = "/etc/eigengrid/another-authority.json";
+    f.write();
+    await expect(f.authority.assertCurrent(issued)).rejects.toThrow("changed");
+    for (const invalid of ["relative.json", "/", "/etc/eigengrid/../bad.json", "/tmp/a\nfile"]) {
+      f.config.mdSiteAuthorityConfigPath = invalid;
+      f.write();
+      await expect(f.authority.current()).rejects.toThrow();
+    }
+  });
   test("HTTP credentials map only protected actors and policy rotation revokes issued sessions", async () => {
     const f = fixture();
     const credential = "A".repeat(43);

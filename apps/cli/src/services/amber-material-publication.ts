@@ -1026,6 +1026,9 @@ export class AmberMaterialPublicationDriver implements ScientificMissionWorkDriv
   private async complete(unit: WorkUnit, operation: ExternalOperation): Promise<void> {
     const request = assertMaterialPublicationRequest(unit, operation.request);
     await this.preflight(unit, request);
+    // The preflight can perform asynchronous reads. Recheck the trusted
+    // caller's live authority before recording a receipt or projecting it.
+    await this.beforeEffect?.();
     const identity = materialOperationIdentity(unit);
     const store = this.ports.store;
     let current = operation;

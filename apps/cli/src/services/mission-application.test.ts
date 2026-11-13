@@ -1,4 +1,5 @@
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { repairConfirmedMaterialProjection } from "./material-recovery";
+import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -59,9 +60,11 @@ import {
 } from "./mission-application";
 import {
   AmberMaterialApplication,
+  AmberMaterialPublicationDriver,
   amberMaterialCapability,
   materialOperationIdentity,
 } from "./amber-material-publication";
+import { confirmedMaterialRecovery, observeConfirmedMaterialExecution } from "./material-recovery";
 
 const NOW = "2026-09-25T12:00:00.000Z";
 // This recovery workflow provisions, approves, restarts, reconciles and streams
@@ -1411,13 +1414,164 @@ describe.skipIf(!canRunPostgres)("human mission application through real Postgre
       decision: "approved",
       reason: "Exact ephemeral engineering approval, no real pilot evidence",
     });
-    await material.apply({ ...base, action: "execute", workUnitId: workUnit.id });
+    const recoveryPool = new Pool({ connectionString: cluster.url });
+    await applyApplicationHttpSchema(recoveryPool);
+    const original = {
+      actorId: actor.id,
+      projectId: address.projectId,
+      operation: "material.apply" as const,
+      key: "material-lost-response",
+      requestDigest: digestCanonical({ technicalTest: workUnit.id }),
+      expectedRevision: (await app.status(address)).revision,
+      request: { ...base, action: "execute", workUnitId: workUnit.id },
+    };
+    const adapter: PgTransactionPool = {
+      async connect() {
+        const client = await recoveryPool.connect();
+        return {
+          query: (text, args) => client.query(text, args as unknown[]),
+          release: () => client.release(),
+        };
+      },
+    };
+    const http = new PostgresMissionHttpIdempotency(adapter, async () => {});
+    spyOn(mdStore, "putForceFieldStack").mockRejectedValueOnce(new Error("projection interrupted"));
+    await expect(http.run(original, () => material.apply(original.request))).rejects.toThrow(
+      "projection interrupted",
+    );
+    const interrupted = await store.getMissionProvenance(mission.id);
+    expect(interrupted.receipts).toHaveLength(1);
+    expect(interrupted.operations).toHaveLength(1);
+    expect(interrupted.operations[0]!.state).toBe("confirmed");
+    const record = {
+      actorId: actor.id,
+      projectId: address.projectId,
+      expectedRevision: interrupted.mission.revision,
+      request: { ...base, action: "execute", workUnitId: workUnit.id },
+    };
+    const exact = confirmedMaterialRecovery(
+      record,
+      interrupted,
+      context.compilerPolicy.policyDigest,
+    );
+    expect(exact?.operation.id).toBe(identity.operationId);
+    expect(
+      confirmedMaterialRecovery(
+        { ...record, actorId: "other" },
+        interrupted,
+        context.compilerPolicy.policyDigest,
+      ),
+    ).toBeNull();
+    expect(
+      observeConfirmedMaterialExecution(record, interrupted, context.compilerPolicy.policyDigest),
+    ).toBeNull();
+    let refusedRepairs = 0;
+    expect(
+      await repairConfirmedMaterialProjection(record, "f".repeat(64), {
+        assertCurrent: async () => {},
+        assertAccess: (address) => app.status(address),
+        provenance: (id) => store.getMissionProvenance(id),
+        assertApproval: async () => {
+          throw new Error("policy mismatch must stop before approval");
+        },
+        reconcile: async () => {
+          refusedRepairs++;
+          throw new Error("must not repair");
+        },
+      }),
+    ).toBeNull();
+    expect(refusedRepairs).toBe(0);
+    for (const status of ["intent", "effect_started", "ambiguous"] as const) {
+      const unsafe = structuredClone(interrupted);
+      unsafe.operations[0]!.state = status;
+      expect(
+        confirmedMaterialRecovery(record, unsafe, context.compilerPolicy.policyDigest),
+      ).toBeNull();
+    }
+    const separatelyReviewed = structuredClone(interrupted);
+    separatelyReviewed.approvals.find(
+      (item) => item.id === `approval-${identity.operationId}`,
+    )!.response!.actor.id = "independent-reviewer";
+    expect(
+      confirmedMaterialRecovery(record, separatelyReviewed, context.compilerPolicy.policyDigest)
+        ?.operation.id,
+    ).toBe(identity.operationId);
+    const expiredExactly = structuredClone(interrupted);
+    expiredExactly.approvals.find(
+      (item) => item.id === `approval-${identity.operationId}`,
+    )!.expiresAt = interrupted.receipts[0]!.recordedAt;
+    expect(
+      confirmedMaterialRecovery(record, expiredExactly, context.compilerPolicy.policyDigest),
+    ).toBeNull();
+    const wrongReceipt = structuredClone(interrupted);
+    wrongReceipt.receipts[0]!.requestDigest = "e".repeat(64);
+    expect(
+      confirmedMaterialRecovery(record, wrongReceipt, context.compilerPolicy.policyDigest),
+    ).toBeNull();
+
+    const revoked = new AmberMaterialPublicationDriver(
+      { database, store, mdStore, artifacts },
+      () => context.compilerPolicy.policyDigest,
+      async () => {
+        throw new Error("authority revoked during preflight");
+      },
+    );
+    await expect(
+      revoked.reconcileOperation(exact!.operation, { ownerId: "unit-recovery", now: NOW }),
+    ).rejects.toThrow("authority revoked during preflight");
+    expect((await store.getWorkUnit(workUnit.id))?.state).toBe("executing");
+    const driver = new AmberMaterialPublicationDriver(
+      { database, store, mdStore, artifacts },
+      () => context.compilerPolicy.policyDigest,
+    );
+    const pending = await http.lookup({ ...original, missionId: mission.id });
+    let repairs = 0;
+    const recover = () =>
+      http.reconcile(
+        {
+          actorId: actor.id,
+          projectId: address.projectId,
+          missionId: mission.id,
+          operationId: pending.operationId,
+        },
+        async (record) =>
+          repairConfirmedMaterialProjection(record, context.compilerPolicy.policyDigest, {
+            assertCurrent: async () => {},
+            assertAccess: (address) => app.status(address),
+            provenance: (id) => store.getMissionProvenance(id),
+            assertApproval: (id, at, policy) =>
+              store.assertApprovalValid(id, { now: at, currentPolicyDigest: policy }),
+            reconcile: async (operation) => {
+              repairs++;
+              return driver.reconcileOperation(operation, { ownerId: "unit-recovery", now: NOW });
+            },
+          }),
+      );
+    try {
+      const responses = await Promise.all([recover(), recover()]);
+      expect(responses.some((response) => response.replayed)).toBe(true);
+      expect(repairs).toBe(1);
+      const replay = await http.run(original, async () => {
+        throw new Error("must never execute again");
+      });
+      expect(replay.replayed).toBe(true);
+      expect(replay.result).toMatchObject({ recoveredFromCanonical: true });
+    } finally {
+      await recoveryPool.end();
+    }
     expect((await store.getWorkUnit(workUnit.id))?.state).toBe("succeeded");
     expect((await mdStore.getForceFieldStack(mission.id, stack.id, 1))?.stackDigest).toBe(
       stack.stackDigest,
     );
-    await material.apply({ ...base, action: "execute", workUnitId: workUnit.id });
-    expect((await app.read(address)).receipts).toHaveLength(1);
+    const recovered = await store.getMissionProvenance(mission.id);
+    expect(recovered.receipts).toEqual(interrupted.receipts);
+    expect(recovered.operations).toHaveLength(1);
+    expect(recovered.operations[0]!.id).toBe(interrupted.operations[0]!.id);
+    expect(recovered.operations[0]!.requestDigest).toBe(interrupted.operations[0]!.requestDigest);
+    expect(
+      observeConfirmedMaterialExecution(record, recovered, context.compilerPolicy.policyDigest)
+        ?.receiptId,
+    ).toBe(interrupted.receipts[0]!.id);
     await expect(material.apply({ ...base, action: "finish-preparation" })).rejects.toThrow();
     await material.apply({ ...base, action: "replan-preparation" });
     expect((await store.getMission(mission.id))?.state).toBe("replanning");

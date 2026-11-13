@@ -198,3 +198,56 @@ A copy on the same physical disk provides recovery from logical mistakes but doe
 provide off-site or disk-failure protection. Schedule encrypted transfer to independently
 stored media and test that copy's recovery. The script does not configure transfer,
 retention, timers or credentials automatically.
+
+`scripts/operations/receive_backup.py` can receive an encrypted stream into an
+existing private directory on another node. Require a conservative `--max-bytes`
+bound for the entire incoming archive. The receiver reserves capacity for that
+bound before writing, rechecks available space during transfer and retains at least
+100 GiB and 20% free by default. It rejects oversized or empty streams and existing
+snapshot names, publishes atomically, and does not delete historical backups.
+Receivers serialize their capacity checks with a directory lock. Other writers on
+the filesystem still require site monitoring or quotas; this check cannot reserve
+space against unrelated processes. After an uncertain transfer, inspect the existing
+destination and verify it before any retry; never overwrite it to hide the failure.
+Its receipt proves storage only: the sender must still retrieve, decrypt and verify
+the backup before declaring success. Provision authenticated transport and a physical
+destination independent of the source separately.
+
+## Authenticated material publication API
+
+HTTP schema version 2 adds these mission-scoped authenticated commands:
+
+- `POST /api/v1/projects/{projectId}/missions/{missionId}/materials` accepts an
+  `AmberMaterialRequestSchema` request, including its explicit material action.
+- `POST /api/v1/projects/{projectId}/missions/{missionId}/md-stage-publications`
+  accepts an `AmberMdPreparationRequestSchema` request for an approved stage.
+
+Both use the standard JSON envelope `{ "expectedRevision": 1, "request": ... }`,
+exact origin, session cookie, session-bound `X-CSRF-Token`, and an `Idempotency-Key`.
+Project and mission in the body must match the path. The existing application
+checks scientific roles, exact approvals, durable work, material digests and protected
+publication authority; HTTP does not grant direct filesystem or scheduler access.
+Material preparation and MD-stage publication remain distinct operations from dispatch.
+A cached response still requires current session and mission access.
+
+Apply the explicit HTTP schema upgrade through the protected admin migration command
+before starting the new listener. Version 1 SQL and its checksum remain unchanged;
+version 2 has its own checksum and expands only the allowed durable HTTP operation
+identities. Reapplying the upgrade validates history and preserves completed and pending
+requests. Runtime startup validates both installed schema versions and performs no DDL.
+The main scientific database migration sequence is unchanged by this HTTP-only upgrade.
+
+An acknowledgement lost after material publication leaves its HTTP intent pending.
+Use `POST /api/v1/projects/{projectId}/missions/{missionId}/operations/{operationId}/reconcile`
+with the original HTTP operation UUID, current session and CSRF protection. For a material
+execute request only, the server can finalize the exact already-confirmed publication
+projection after verifying the original owner, approval, current policy, request and receipt.
+This bounded recovery creates no new intent and submits no engine or chemistry work. It
+then records an explicitly labeled canonical recovery observation under the original key;
+concurrent recovery and subsequent replay use that same durable record.
+
+Unconfirmed/ambiguous effects, mismatched policy or receipt, other material actions, and
+MD-stage publication remain fenced unless
+another complete canonical proof is implemented. Never repeat a pending operation under
+a fresh key merely to bypass its uncertainty fence. Recovery does not establish scientific
+acceptance or substitute for independent scientific review.

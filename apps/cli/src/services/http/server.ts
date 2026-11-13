@@ -1,3 +1,4 @@
+import { handleMaterialRoute } from "./routes/material-routes";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { ContentAddressedStoreError } from "@eigengrid/mission-runtime";
@@ -165,6 +166,13 @@ export function createApplicationHttpHandler(options: ApplicationHttpOptions) {
       const projectId = id.parse(decodeURIComponent(parts[4] ?? ""));
       if (!session.context.httpProjectIds?.includes(projectId))
         throw new MissionHttpError("FORBIDDEN");
+      const material = await handleMaterialRoute(request, {
+        origin: options.origin,
+        session,
+        open,
+        idempotency: options.idempotency,
+      });
+      if (material) return material;
       if (parts[7] === "operations") {
         if (
           parts.length !== 10 ||

@@ -52,6 +52,8 @@ function validate(request: MissionHttpIdempotencyRequest): void {
       "compile",
       "start",
       "cancel",
+      "material.apply",
+      "md.publish-stage",
       "agent.open",
       "agent.approve",
       "agent.resume",
@@ -95,7 +97,7 @@ export class PostgresMissionHttpIdempotency implements MissionHttpIdempotencySer
     if (
       ![input.actorId, input.projectId, input.missionId].every((value) => name.test(value)) ||
       !keyPattern.test(input.key) ||
-      !/^(create|import|approve|compile|start|cancel|agent\.(open|approve|resume|cancel|reconcile))$/u.test(
+      !/^(create|import|approve|compile|start|cancel|material\.apply|md\.publish-stage|agent\.(open|approve|resume|cancel|reconcile))$/u.test(
         input.operation,
       )
     )
@@ -208,7 +210,8 @@ export class PostgresMissionHttpIdempotency implements MissionHttpIdempotencySer
     return { operationId: newlyReservedId, result: safeResult, replayed: false };
   }
 
-  /** Explicit readback of a pending operation; the callback has no submission authority. */
+  /** Explicit recovery under the original row lock. A host callback may finalize only
+   * a verified confirmed material projection; it has no submission/admission authority. */
   async reconcile(
     input: { actorId: string; projectId: string; missionId: string; operationId: string },
     observe: (request: MissionHttpIdempotencyRequest) => Promise<unknown | null>,

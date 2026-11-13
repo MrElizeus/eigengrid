@@ -118,6 +118,20 @@ export const MissionClientConfigSchema = z
     mdFailedAllocationReviews: z.array(MdFailedAllocationReviewSchema).max(32).optional(),
     mdCompilerPolicy: MdCompilerPolicySchema.optional(),
     mdEnvironment: MdEnvironmentCapabilitySnapshotSchema.optional(),
+    /** Root-provisioned Head authority; never a mission/request override. */
+    mdSiteAuthorityConfigPath: z
+      .string()
+      .min(2)
+      .max(1024)
+      .refine(
+        (value) =>
+          isAbsolute(value) &&
+          resolve(value) === value &&
+          value !== "/" &&
+          !hasControlCharacter(value),
+        "A canonical absolute MD site authority path is required",
+      )
+      .optional(),
   })
   .strict()
   .superRefine((config, context) => {
@@ -176,6 +190,7 @@ export interface MissionLocalContext {
   readonly mdFailedAllocationReviews?: readonly MdFailedAllocationReview[];
   readonly mdCompilerPolicy?: MdCompilerPolicy;
   readonly mdEnvironment?: MdEnvironmentCapabilitySnapshot;
+  readonly mdSiteAuthorityConfigPath?: string;
   readonly unixUid: number;
   readonly configDigest: string;
   readonly databaseUrl: string;
@@ -322,6 +337,9 @@ export class MissionLocalAuthority {
       environment: config.environment,
       ...(config.mdCompilerPolicy ? { mdCompilerPolicy: config.mdCompilerPolicy } : {}),
       ...(config.mdEnvironment ? { mdEnvironment: config.mdEnvironment } : {}),
+      ...(config.mdSiteAuthorityConfigPath
+        ? { mdSiteAuthorityConfigPath: config.mdSiteAuthorityConfigPath }
+        : {}),
       ...(config.mdNoSubmitReviews ? { mdNoSubmitReviews: config.mdNoSubmitReviews } : {}),
       ...(config.mdFailedAllocationReviews
         ? { mdFailedAllocationReviews: config.mdFailedAllocationReviews }

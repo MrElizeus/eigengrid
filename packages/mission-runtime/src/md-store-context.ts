@@ -1,5 +1,6 @@
 /** Internal transaction, CAS and publication primitives for MD domain repositories. */
 import {
+  BiomolecularMaterialPublicationBindingSchema,
   EvidenceReferenceSchema,
   WorkUnitSchema,
   canonicalJson,
@@ -39,6 +40,28 @@ import type {
   ScientificTransaction,
   SubjectDecisionRequirement,
 } from "./types";
+
+/** Compare force-field source references as a set, without changing the signed payload. */
+export function materialBindingMatches(
+  expected: BiomolecularMaterialPublicationBinding,
+  actual: unknown,
+): boolean {
+  const submitted = BiomolecularMaterialPublicationBindingSchema.safeParse(actual);
+  if (!submitted.success) return false;
+  if (
+    expected.subjectKind !== "force_field_stack" ||
+    submitted.data.subjectKind !== "force_field_stack"
+  )
+    return canonicalJson(expected) === canonicalJson(submitted.data);
+  return (
+    canonicalJson({ ...expected, sourceEvidenceRefs: [...expected.sourceEvidenceRefs].sort() }) ===
+    canonicalJson({
+      ...submitted.data,
+      sourceEvidenceRefs: [...submitted.data.sourceEvidenceRefs].sort(),
+    })
+  );
+}
+
 export class MdStoreContext {
   constructor(
     readonly database: ScientificDatabase,
@@ -399,6 +422,13 @@ export class MdStoreContext {
     const workUnit = WorkUnitSchema.parse(parseJson(row, "material-publication WorkUnit"));
     await assertBiomolecularMaterialPublicationWorkUnit(tx, workUnit, input.binding);
     await assertMdWorkUnitProjectionDependencies(tx, workUnit);
+    // Force-field sources are a unique set, reconstructed in sorted order from
+    // the frozen stack. Preserve and verify the original approved parameter
+    // digest below; normalize only this set for the projection comparison.
+    const bindingsMatch = materialBindingMatches(
+      input.binding,
+      workUnit.protocolFragment.parameters,
+    );
     if (
       input.effect.operation.kind !== "system_preparation" ||
       String(row.mission_id) !== input.missionId ||
@@ -411,7 +441,7 @@ export class MdStoreContext {
       String(row.capability_id) !== workUnit.protocolFragment.capability.id ||
       canonicalJson(input.request.capability) !==
         canonicalJson(workUnit.protocolFragment.capability) ||
-      canonicalJson(input.binding) !== canonicalJson(workUnit.protocolFragment.parameters) ||
+      !bindingsMatch ||
       input.request.parametersDigest !== digestCanonical(workUnit.protocolFragment.parameters) ||
       input.request.outputContractDigest !== digestCanonical(workUnit.outputContract)
     ) {

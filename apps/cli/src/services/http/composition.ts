@@ -1,6 +1,7 @@
 import { Pool } from "pg";
 import { createHash } from "node:crypto";
 import schema from "./schema-v1.sql" with { type: "text" };
+import schemaV2 from "./schema-v2.sql" with { type: "text" };
 import { MissionLocalAuthority, type MissionLocalContext } from "../mission-local-authority";
 import { openMissionApplication, assertMissionDatabaseEnvironment } from "../mission-composition";
 import { AgentSessionService } from "../agent-sessions";
@@ -15,6 +16,8 @@ import { PostgresHttpArtifactGrants } from "./artifact-grants";
 import { createMissionBoundInference } from "../mission-inference";
 
 export const ApplicationHttpSchema = schema;
+export const ApplicationHttpSchemaV2 = schemaV2;
+const schemaV2Checksum = createHash("sha256").update(schemaV2).digest("hex");
 const schemaChecksum = createHash("sha256").update(schema).digest("hex");
 export async function applyApplicationHttpSchema(pool: Pool) {
   const client = await pool.connect();
@@ -23,16 +26,33 @@ export async function applyApplicationHttpSchema(pool: Pool) {
     await client.query(
       "SELECT pg_advisory_xact_lock(hashtextextended('eigengrid.a5.http-schema',0))",
     );
-    await client.query(schema);
-    const existing = await client.query(
-      "SELECT checksum FROM eigengrid_a5_http_schema WHERE version=1",
+    const present = await client.query(
+      "SELECT to_regclass('public.eigengrid_a5_http_schema') AS name",
     );
-    if (existing.rows.length && existing.rows[0]!.checksum !== schemaChecksum)
+    const installed = present.rows[0]?.name
+      ? (
+          await client.query(
+            "SELECT version,checksum FROM eigengrid_a5_http_schema WHERE version IN (1,2)",
+          )
+        ).rows
+      : [];
+    const v1 = installed.find((row) => row.version === 1);
+    const v2 = installed.find((row) => row.version === 2);
+    if ((v1 && v1.checksum !== schemaChecksum) || (v2 && v2.checksum !== schemaV2Checksum))
       throw new Error("HTTP schema version checksum changed");
-    await client.query(
-      "INSERT INTO eigengrid_a5_http_schema(version,checksum) VALUES(1,$1) ON CONFLICT(version) DO NOTHING",
-      [schemaChecksum],
-    );
+    if (!v1) {
+      if (v2) throw new Error("HTTP schema history is incomplete");
+      await client.query(schema);
+      await client.query("INSERT INTO eigengrid_a5_http_schema(version,checksum) VALUES(1,$1)", [
+        schemaChecksum,
+      ]);
+    }
+    if (!v2) {
+      await client.query(schemaV2);
+      await client.query("INSERT INTO eigengrid_a5_http_schema(version,checksum) VALUES(2,$1)", [
+        schemaV2Checksum,
+      ]);
+    }
     await client.query("COMMIT");
   } catch (error) {
     await client.query("ROLLBACK");
@@ -42,8 +62,14 @@ export async function applyApplicationHttpSchema(pool: Pool) {
   }
 }
 export async function validateApplicationHttpSchema(pool: Pool) {
-  const version = await pool.query("SELECT checksum FROM eigengrid_a5_http_schema WHERE version=1");
-  if (version.rows.length !== 1 || version.rows[0]!.checksum !== schemaChecksum)
+  const version = await pool.query(
+    "SELECT version,checksum FROM eigengrid_a5_http_schema WHERE version IN (1,2) ORDER BY version",
+  );
+  if (
+    version.rows.length !== 2 ||
+    version.rows[0]!.checksum !== schemaChecksum ||
+    version.rows[1]!.checksum !== schemaV2Checksum
+  )
     throw new Error("HTTP schema migration is required");
   await pool.query(
     "SELECT token_digest,csrf_digest,actor_id,config_digest,expires_at,revoked FROM eigengrid_a5_http_sessions LIMIT 0",
@@ -193,6 +219,11 @@ export async function startApplicationHttpServer() {
           await current();
           const session = await open(context, current);
           try {
+            if (record.operation === "material.apply") {
+              const result = await session.reconcileConfirmedMaterialPublication(record);
+              await current();
+              return result ?? null;
+            }
             const result = await observeApplicationOperation(record, session.application, () =>
               agent(context, current),
             );

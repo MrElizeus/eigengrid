@@ -3622,7 +3622,7 @@ describe("MdProjectionStore durable exact projections", () => {
       schemaVersion: BiomolecularMaterialPublicationBindingSchemaVersion,
       subjectKind: "force_field_stack",
       subject: { id: stack.id, revision: stack.revision, digest: stack.stackDigest },
-      sourceEvidenceRefs: Object.keys(forceFieldEvidenceLabels).sort(),
+      sourceEvidenceRefs: Object.keys(forceFieldEvidenceLabels).sort().reverse(),
       artifactEvidenceRef: "force-field-stack-evidence",
     });
     const stackWorkUnit = materialPublicationWorkUnit(stackBinding, {
