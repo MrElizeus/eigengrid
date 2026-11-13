@@ -20,10 +20,36 @@ function assertDecisionBindings(
   executionBinding: MdExecutionBindingParameters,
 ): Set<string> {
   const bindings = [
-    ...(mapping.minimizationSplit ? [mapping.minimizationSplit.decision] : []),
+    ...(mapping.schemaVersion === "eigengrid.amber-canonical-stage-mapping/v3" &&
+    mapping.minimizationSplit
+      ? [mapping.minimizationSplit.decision]
+      : []),
     ...mapping.restraintMasks.map((binding) => binding.decision),
     ...(mapping.membranePressure ? [mapping.membranePressure.decision] : []),
   ];
+  if (
+    mapping.schemaVersion === "eigengrid.amber-canonical-stage-mapping/v4" &&
+    mapping.minimizationSplit
+  ) {
+    const split = mapping.minimizationSplit;
+    const protocol = executionBinding.protocol;
+    const boundStage = executionBinding.stage;
+    if (
+      split.protocol.id !== protocol.id ||
+      split.protocol.revision !== protocol.revision ||
+      split.protocol.digest !== protocol.digest ||
+      split.protocol.approvalRef !== protocol.approvalRef ||
+      split.stage.id !== boundStage.id ||
+      split.stage.revision !== boundStage.revision ||
+      split.stage.digest !== boundStage.digest ||
+      split.stage.id !== stage.id ||
+      split.stage.revision !== stage.revision ||
+      split.stage.digest !== stage.stageDigest
+    )
+      throw new Error(
+        "AMBER minimization split lacks the exact protocol and stage approval binding",
+      );
+  }
   const exactById = new Map(executionBinding.decisions.map((decision) => [decision.id, decision]));
   for (const decisionId of new Set(stage.sourceDecisionRefs)) {
     if (!exactById.has(decisionId)) {
