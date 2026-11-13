@@ -4,7 +4,9 @@ import {
   canonicalJson,
   digestCanonical,
   MissionBudgetSchema,
+  EvidenceReferenceSchema,
   ScientificMissionSchema,
+  type EvidenceReference,
   type ActorIdentity,
   type MissionBudget,
   type MissionState,
@@ -28,6 +30,7 @@ import {
   type ScientificMissionProjectAssociation,
 } from "./mission-project";
 import { ScientificStoreContext } from "./scientific-store-context";
+import { ScientificEvidence } from "./scientific-evidence";
 import {
   CreateMissionInProjectInput,
   JsonRow,
@@ -43,11 +46,19 @@ export class ScientificMissions {
   async createMission(
     missionInput: ScientificMission,
     budgetInput: MissionBudget,
+    objectiveEvidence?: readonly EvidenceReference[],
   ): Promise<ScientificMission> {
     const aggregate = this.validateNewMissionAggregate(missionInput, budgetInput);
-    const result = await this.context.inTransaction("create mission", async (tx) =>
-      this.insertNewMissionAggregate(tx, aggregate.mission, aggregate.budget),
-    );
+    const evidence = this.validateInitialEvidence(aggregate.mission, objectiveEvidence);
+    const result = await this.context.inTransaction("create mission", async (tx) => {
+      const persisted = await this.insertNewMissionAggregate(
+        tx,
+        aggregate.mission,
+        aggregate.budget,
+      );
+      await this.persistInitialEvidence(tx, evidence, persisted.created);
+      return persisted;
+    });
     return result.mission;
   }
 
@@ -60,6 +71,7 @@ export class ScientificMissions {
    */
   async createMissionInProject(input: CreateMissionInProjectInput): Promise<ScientificMission> {
     const aggregate = this.validateNewMissionAggregate(input.mission, input.budget);
+    const evidence = this.validateInitialEvidence(aggregate.mission, input.objectiveEvidence);
     const authorityInput: MissionProjectCreationAuthorityInput = {
       mission: aggregate.mission,
       projectId: input.projectId,
@@ -79,6 +91,7 @@ export class ScientificMissions {
       );
       if (persisted.created) {
         await this.insertMissionProjectAssociation(tx, association);
+        await this.persistInitialEvidence(tx, evidence, true);
         return persisted.mission;
       }
       const existing = await readScientificMissionProjectAssociation(
@@ -98,8 +111,63 @@ export class ScientificMissions {
           association.missionId,
         );
       }
+      await this.persistInitialEvidence(tx, evidence, false);
       return persisted.mission;
     });
+  }
+
+  private validateInitialEvidence(
+    mission: ScientificMission,
+    input: readonly EvidenceReference[] | undefined,
+  ): EvidenceReference[] | undefined {
+    // Low-level historical callers may omit evidence; application creation always supplies it.
+    if (input === undefined) return undefined;
+    const references = input.map((value) => EvidenceReferenceSchema.parse(value));
+    const ids = new Set<string>();
+    for (const reference of references) {
+      if (reference.missionId !== mission.id || !reference.immutable || ids.has(reference.id))
+        throw new ScientificIntegrityError(
+          "Initial mission evidence must be immutable, unique and mission-bound",
+        );
+      ids.add(reference.id);
+    }
+    const system = references.find(
+      (reference) => reference.id === mission.objective.system.evidenceId,
+    );
+    if (!system || system.contentDigest !== mission.objective.system.contentDigest)
+      throw new ScientificIntegrityError(
+        "Initial mission evidence must contain its exact objective system",
+      );
+    return references;
+  }
+
+  private async persistInitialEvidence(
+    tx: ScientificTransaction,
+    references: EvidenceReference[] | undefined,
+    created: boolean,
+  ): Promise<void> {
+    if (!references) return;
+    const repository = new ScientificEvidence(this.context);
+    for (const reference of references) {
+      if (!created) {
+        const existing = await this.context.one<JsonRow>(
+          tx,
+          "SELECT payload_json FROM scientific_evidence WHERE id = $1",
+          [reference.id],
+        );
+        if (
+          !existing ||
+          canonicalJson(
+            parsePayload(EvidenceReferenceSchema, existing, `evidence ${reference.id}`),
+          ) !== canonicalJson(reference)
+        )
+          throw new ScientificIntegrityError(
+            "Existing mission creation has incomplete or conflicting objective evidence",
+          );
+      } else {
+        await repository.createEvidenceInTransaction(tx, reference);
+      }
+    }
   }
 
   /**

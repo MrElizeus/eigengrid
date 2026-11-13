@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { PostgresDatabase } from "@eigengrid/db";
+import { ScientificMissionService } from "@eigengrid/scientific-agent";
 import {
+  EvidenceReferenceSchema,
   MissionBudgetSchema,
   SchemaVersion,
   ScientificMissionSchema,
@@ -91,6 +93,20 @@ function budgetFixture(mission: ScientificMission): MissionBudget {
   });
 }
 
+function objectiveEvidence(mission: ScientificMission) {
+  return EvidenceReferenceSchema.parse({
+    id: mission.objective.system.evidenceId,
+    missionId: mission.id,
+    kind: "structure",
+    uri: `cas://sha256/${mission.objective.system.contentDigest}`,
+    contentDigest: mission.objective.system.contentDigest,
+    sizeBytes: 113,
+    mediaType: "chemical/x-xyz",
+    immutable: true,
+    createdAt: T0,
+  });
+}
+
 describe.skipIf(!canRunPostgres)(
   "ScientificStore production mission-project association (real PostgreSQL)",
   () => {
@@ -153,6 +169,113 @@ describe.skipIf(!canRunPostgres)(
         ownerUserId,
       });
     }
+
+    async function creationRows(missionId: string) {
+      const aggregate = await aggregateRows(missionId);
+      const tx = (await database.beginTransaction()) as ScientificTransaction;
+      try {
+        const counts = { scientific_evidence: 0, scientific_mission_transitions: 0 };
+        for (const table of ["scientific_evidence", "scientific_mission_transitions"] as const) {
+          const [row] = await tx.queryRows<{ count: string }>(
+            `SELECT count(*)::text AS count FROM ${table} WHERE mission_id = $1`,
+            [missionId],
+          );
+          counts[table] = Number(row!.count);
+        }
+        return { ...aggregate, ...counts };
+      } finally {
+        await tx.rollback();
+      }
+    }
+
+    function applicationCreation(
+      mission: ScientificMission,
+      references = [objectiveEvidence(mission)],
+    ) {
+      return new ScientificMissionService({ store }).createMissionInProject({
+        mission,
+        budget: budgetFixture(mission),
+        projectId: "project-fixture",
+        authenticatedActor: owner,
+        objectiveEvidence: references,
+      });
+    }
+
+    test("atomic application creation rolls back every row after a later evidence ID collision", async () => {
+      const first = missionFixture("first-objective-owner");
+      await applicationCreation(first);
+      const other = missionFixture("partial-create-must-not-exist");
+      await expect(
+        applicationCreation(other, [
+          objectiveEvidence(other),
+          {
+            ...objectiveEvidence(first),
+            missionId: other.id,
+          },
+        ]),
+      ).rejects.toThrow(ScientificEntityConflictError);
+      expect(await store.getMission(other.id)).toBeNull();
+      expect(await creationRows(other.id)).toEqual({
+        missions: 0,
+        budgets: 0,
+        associations: 0,
+        scientific_evidence: 0,
+        scientific_mission_transitions: 0,
+      });
+      expect(await creationRows(first.id)).toEqual({
+        missions: 1,
+        budgets: 1,
+        associations: 1,
+        scientific_evidence: 1,
+        scientific_mission_transitions: 1,
+      });
+    });
+
+    test("atomic application creation admits one complete aggregate when concurrent missions share an evidence ID", async () => {
+      const a = missionFixture("concurrent-create-a"),
+        b = missionFixture("concurrent-create-b");
+      b.objective.system.evidenceId = a.objective.system.evidenceId;
+      const outcomes = await Promise.allSettled([applicationCreation(a), applicationCreation(b)]);
+      expect(outcomes.filter((outcome) => outcome.status === "fulfilled")).toHaveLength(1);
+      for (const [index, mission] of [a, b].entries()) {
+        const count = outcomes[index]!.status === "fulfilled" ? 1 : 0;
+        expect(await creationRows(mission.id)).toEqual({
+          missions: count,
+          budgets: count,
+          associations: count,
+          scientific_evidence: count,
+          scientific_mission_transitions: count,
+        });
+      }
+    });
+
+    test("atomic application creation is exact-idempotent and refuses to complete historical partial creation", async () => {
+      const mission = missionFixture("complete-create");
+      const values = await Promise.all([
+        applicationCreation(mission),
+        applicationCreation(mission),
+      ]);
+      expect(values).toEqual([mission, mission]);
+      expect(await creationRows(mission.id)).toEqual({
+        missions: 1,
+        budgets: 1,
+        associations: 1,
+        scientific_evidence: 1,
+        scientific_mission_transitions: 1,
+      });
+      const partial = missionFixture("historical-partial-create");
+      await createBoundMission(partial);
+      await expect(applicationCreation(partial)).rejects.toThrow(
+        "incomplete or conflicting objective evidence",
+      );
+      expect(await creationRows(partial.id)).toEqual({
+        missions: 1,
+        budgets: 1,
+        associations: 1,
+        scientific_evidence: 0,
+        scientific_mission_transitions: 1,
+      });
+    });
 
     test("catalog pages only expose allowed active projects and the requesting human's bound missions", async () => {
       await database.createProject({ id: "project-second", name: "Second project" });

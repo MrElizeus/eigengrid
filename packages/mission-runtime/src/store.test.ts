@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { SqliteDatabase } from "@eigengrid/db";
+import { ScientificMissionService } from "@eigengrid/scientific-agent";
 import {
   ApprovalRequestSchema,
   ApprovalResponseSchema,
@@ -335,6 +336,32 @@ describe("ScientificStore durable SQLite kernel", () => {
 
   afterEach(() => {
     rmSync(directory, { recursive: true, force: true });
+  });
+
+  test("legacy service creation rolls back SQLite mission and budget on objective evidence collision", async () => {
+    const service = new ScientificMissionService({ store });
+    const mission = missionFixture();
+    const evidence = objectiveEvidence();
+    await service.createMission({
+      mission,
+      budget: budgetFixture(),
+      objectiveEvidence: [evidence],
+    });
+    const second = ScientificMissionSchema.parse({
+      ...mission,
+      id: "mission-collision",
+      budgetId: "budget-collision",
+    });
+    await expect(
+      service.createMission({
+        mission: second,
+        budget: { ...budgetFixture(), id: second.budgetId, missionId: second.id },
+        objectiveEvidence: [{ ...evidence, missionId: second.id }],
+      }),
+    ).rejects.toThrow(ScientificEntityConflictError);
+    expect(await store.getMission(second.id)).toBeNull();
+    await expect(store.getMissionBudget(second.id)).rejects.toThrow();
+    expect((await store.getMissionProvenance(mission.id)).evidence).toHaveLength(1);
   });
 
   async function createAwaitingPlan(

@@ -28,6 +28,8 @@ export type JsonRow = { payload_json: string } & Record<string, unknown>;
  */
 export interface CreateMissionInProjectInput extends MissionProjectCreationAuthorityInput {
   budget: MissionBudget;
+  /** Supplied by application creation; committed with mission, budget and association. */
+  objectiveEvidence?: readonly EvidenceReference[];
 }
 
 export const TERMINAL_MISSION_STATES = new Set<MissionState>(["completed", "failed", "cancelled"]);
