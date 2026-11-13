@@ -1,3 +1,4 @@
+import { agentDigest } from "@eigengrid/agent-runtime";
 import { repairConfirmedMaterialProjection } from "./material-recovery";
 import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
@@ -1252,330 +1253,527 @@ describe.skipIf(!canRunPostgres)("human mission application through real Postgre
     );
   });
 
-  test("frozen publication crosses real PostgreSQL approval/effect/projection boundaries exactly once", async () => {
-    const object = await artifacts.put(
-      new TextEncoder().encode(canonicalJson({ unitOnly: "parameter-byte-source" })),
-    );
-    const source = {
-      ...evidence,
-      id: "unit-parameter-source",
-      contentDigest: object.digest,
-      uri: object.uri,
-      sizeBytes: object.sizeBytes,
-      mediaType: "application/json",
-    };
-    const parameter = {
-      id: "unit-parameters",
-      family: "unit-only",
-      version: "1.0.0",
-      source: "ephemeral unit material",
-      sourceEvidenceRefs: [source.id],
-      parameterDigest: object.digest,
-      knownLimitations: ["No physical parameter or engine qualification"],
-    };
-    const stackMaterial = {
-      schemaVersion: "eigengrid.force-field-stack/v1",
-      id: "unit-published-stack",
-      revision: 1,
-      protein: parameter,
-      lipid: parameter,
-      ligands: [],
-      water: { model: "TIP3P", parameterSet: parameter },
-      ions: parameter,
-      cofactors: [],
-      engineCompatibility: [{ engine: "unit-only", versionRange: "unit-only" }],
-      compatibilityEvidenceRefs: [source.id],
-      knownLimitations: ["Ephemeral engineering test"],
-      createdAt: NOW,
-    };
-    const stack = ForceFieldStackManifestSchema.parse({
-      ...stackMaterial,
-      stackDigest: computeForceFieldStackDigest(stackMaterial),
-    });
-    expect(
-      (await artifacts.put(new TextEncoder().encode(canonicalJson(stackMaterial)))).digest,
-    ).toBe(stack.stackDigest);
-    const capability = amberMaterialCapability("amber.force-field-stack");
-    const parameters = {
-      schemaVersion: "eigengrid.biomolecular-material-publication-binding/v1",
-      subjectKind: "force_field_stack",
-      subject: { id: stack.id, revision: stack.revision, digest: stack.stackDigest },
-      sourceEvidenceRefs: [source.id],
-      artifactEvidenceRef: "unit-stack-output",
-    };
-    const workUnit = WorkUnitSchema.parse({
-      id: "unit-stack-publication",
-      missionId: mission.id,
-      planId: candidate.plan.id,
-      planVersion: 1,
-      kind: "scientific_capability",
-      state: "created",
-      reason: "Ephemeral typed publication integration",
-      dependencies: [],
-      inputRefs: [source.id],
-      outputContract: {
-        requiredEvidenceKinds: ["force_field_stack"],
-        requiredObservationKinds: ["artifact_integrity"],
-      },
-      skillRefs: [fragment],
-      protocolFragment: {
-        schemaVersion: "eigengrid.scientific-capability-fragment/v1",
-        id: "unit-stack-fragment",
-        kind: "scientific_capability",
-        capability,
-        reason: "Unit integration",
-        parameters,
-        sourceFragments: [fragment],
-        riskClass: 3,
-      },
-      retryPolicy: { maximumAttempts: 1, ambiguityRequiresReconciliation: true },
-      approvalPolicy: { required: true, minimumRole: actor.role },
-      executionPolicy: { capability: capability.id, riskClass: 3 },
-      revision: 1,
-      claimOwner: null,
-      claimExpiresAt: null,
-      jobId: null,
-      attemptId: null,
-      createdAt: NOW,
-      updatedAt: NOW,
-    });
-    const identity = materialOperationIdentity(workUnit);
-    const request = {
-      schemaVersion: "eigengrid.force-field-stack-publication-request/v2",
-      missionId: mission.id,
-      planId: candidate.plan.id,
-      planVersion: 1,
-      workUnitId: workUnit.id,
-      capability,
-      intendedJobId: identity.jobId,
-      intendedAttemptId: identity.attemptId,
-      inputEvidenceId: source.id,
-      inputContentDigest: source.contentDigest,
-      stack: parameters.subject,
-      sourceEvidence: [{ id: source.id, contentDigest: source.contentDigest }],
-      outputArtifact: {
-        evidenceRef: parameters.artifactEvidenceRef,
-        mediaType: "application/vnd.eigengrid.force-field-stack+json",
-      },
-      parametersDigest: digestCanonical(parameters),
-      outputContractDigest: digestCanonical(workUnit.outputContract),
-    };
-    if (workUnit.protocolFragment.kind !== "scientific_capability")
-      throw new Error("Typed unit fragment required");
-    const { protocolDigest: _priorProtocolDigest, ...protocolBase } = candidate.plan.protocol;
-    const protocol = { ...protocolBase, capabilitySteps: [workUnit.protocolFragment] };
-    const plan = {
-      ...candidate.plan,
-      protocol: { ...protocol, protocolDigest: computeProtocolDigest(protocol) },
-    };
-    const exactPlan = { ...plan, planDigest: computePlanDigest(plan) };
-    const candidateMaterial = { ...candidate, plan: exactPlan, evidence: [evidence, source] };
-    candidate = MissionCandidateSchema.parse({
-      ...candidateMaterial,
-      candidateDigest: computeMissionCandidateDigest(candidateMaterial),
-    });
-    await imported();
-    await approve();
-    const mdStore = new MdProjectionStore(database, artifacts);
-    const material = new AmberMaterialApplication({
-      database,
-      store,
-      mdStore,
-      artifacts,
-      authority: { current: async () => context, assertCurrent: async () => {} },
-    });
-    const base = { ...address, planId: candidate.plan.id };
-    const proposed = (await material.apply({
-      ...base,
-      action: "propose-work-unit",
-      workUnit,
-      request,
-    })) as {
-      approval: {
-        id: string;
-        subjectVersion: number;
-        subjectRevision: number;
-        payloadDigest: string;
-        policyDigest: string;
+  test.each(["recover", "cancel-race", "replan-race", "policy-race"] as const)(
+    "frozen publication canonical boundary handles %s",
+    async (scenario) => {
+      const object = await artifacts.put(
+        new TextEncoder().encode(canonicalJson({ unitOnly: "parameter-byte-source" })),
+      );
+      const source = {
+        ...evidence,
+        id: "unit-parameter-source",
+        contentDigest: object.digest,
+        uri: object.uri,
+        sizeBytes: object.sizeBytes,
+        mediaType: "application/json",
       };
-    };
-    await expect(
-      material.apply({ ...base, action: "execute", workUnitId: workUnit.id }),
-    ).rejects.toThrow();
-    expect((await app.read(address)).receipts).toHaveLength(0);
-    await material.apply({
-      ...base,
-      action: "approve",
-      approvalRequestId: proposed.approval.id,
-      subjectVersion: proposed.approval.subjectVersion,
-      subjectRevision: proposed.approval.subjectRevision,
-      payloadDigest: proposed.approval.payloadDigest,
-      policyDigest: proposed.approval.policyDigest,
-      decision: "approved",
-      reason: "Exact ephemeral engineering approval, no real pilot evidence",
-    });
-    const recoveryPool = new Pool({ connectionString: cluster.url });
-    await applyApplicationHttpSchema(recoveryPool);
-    const original = {
-      actorId: actor.id,
-      projectId: address.projectId,
-      operation: "material.apply" as const,
-      key: "material-lost-response",
-      requestDigest: digestCanonical({ technicalTest: workUnit.id }),
-      expectedRevision: (await app.status(address)).revision,
-      request: { ...base, action: "execute", workUnitId: workUnit.id },
-    };
-    const adapter: PgTransactionPool = {
-      async connect() {
-        const client = await recoveryPool.connect();
-        return {
-          query: (text, args) => client.query(text, args as unknown[]),
-          release: () => client.release(),
+      const parameter = {
+        id: "unit-parameters",
+        family: "unit-only",
+        version: "1.0.0",
+        source: "ephemeral unit material",
+        sourceEvidenceRefs: [source.id],
+        parameterDigest: object.digest,
+        knownLimitations: ["No physical parameter or engine qualification"],
+      };
+      const stackMaterial = {
+        schemaVersion: "eigengrid.force-field-stack/v1",
+        id: "unit-published-stack",
+        revision: 1,
+        protein: parameter,
+        lipid: parameter,
+        ligands: [],
+        water: { model: "TIP3P", parameterSet: parameter },
+        ions: parameter,
+        cofactors: [],
+        engineCompatibility: [{ engine: "unit-only", versionRange: "unit-only" }],
+        compatibilityEvidenceRefs: [source.id],
+        knownLimitations: ["Ephemeral engineering test"],
+        createdAt: NOW,
+      };
+      const stack = ForceFieldStackManifestSchema.parse({
+        ...stackMaterial,
+        stackDigest: computeForceFieldStackDigest(stackMaterial),
+      });
+      expect(
+        (await artifacts.put(new TextEncoder().encode(canonicalJson(stackMaterial)))).digest,
+      ).toBe(stack.stackDigest);
+      const capability = amberMaterialCapability("amber.force-field-stack");
+      const parameters = {
+        schemaVersion: "eigengrid.biomolecular-material-publication-binding/v1",
+        subjectKind: "force_field_stack",
+        subject: { id: stack.id, revision: stack.revision, digest: stack.stackDigest },
+        sourceEvidenceRefs: [source.id],
+        artifactEvidenceRef: "unit-stack-output",
+      };
+      const workUnit = WorkUnitSchema.parse({
+        id: "unit-stack-publication",
+        missionId: mission.id,
+        planId: candidate.plan.id,
+        planVersion: 1,
+        kind: "scientific_capability",
+        state: "created",
+        reason: "Ephemeral typed publication integration",
+        dependencies: [],
+        inputRefs: [source.id],
+        outputContract: {
+          requiredEvidenceKinds: ["force_field_stack"],
+          requiredObservationKinds: ["artifact_integrity"],
+        },
+        skillRefs: [fragment],
+        protocolFragment: {
+          schemaVersion: "eigengrid.scientific-capability-fragment/v1",
+          id: "unit-stack-fragment",
+          kind: "scientific_capability",
+          capability,
+          reason: "Unit integration",
+          parameters,
+          sourceFragments: [fragment],
+          riskClass: 3,
+        },
+        retryPolicy: { maximumAttempts: 1, ambiguityRequiresReconciliation: true },
+        approvalPolicy: { required: true, minimumRole: actor.role },
+        executionPolicy: { capability: capability.id, riskClass: 3 },
+        revision: 1,
+        claimOwner: null,
+        claimExpiresAt: null,
+        jobId: null,
+        attemptId: null,
+        createdAt: NOW,
+        updatedAt: NOW,
+      });
+      const identity = materialOperationIdentity(workUnit);
+      const request = {
+        schemaVersion: "eigengrid.force-field-stack-publication-request/v2",
+        missionId: mission.id,
+        planId: candidate.plan.id,
+        planVersion: 1,
+        workUnitId: workUnit.id,
+        capability,
+        intendedJobId: identity.jobId,
+        intendedAttemptId: identity.attemptId,
+        inputEvidenceId: source.id,
+        inputContentDigest: source.contentDigest,
+        stack: parameters.subject,
+        sourceEvidence: [{ id: source.id, contentDigest: source.contentDigest }],
+        outputArtifact: {
+          evidenceRef: parameters.artifactEvidenceRef,
+          mediaType: "application/vnd.eigengrid.force-field-stack+json",
+        },
+        parametersDigest: digestCanonical(parameters),
+        outputContractDigest: digestCanonical(workUnit.outputContract),
+      };
+      if (workUnit.protocolFragment.kind !== "scientific_capability")
+        throw new Error("Typed unit fragment required");
+      const { protocolDigest: _priorProtocolDigest, ...protocolBase } = candidate.plan.protocol;
+      const protocol = { ...protocolBase, capabilitySteps: [workUnit.protocolFragment] };
+      const plan = {
+        ...candidate.plan,
+        protocol: { ...protocol, protocolDigest: computeProtocolDigest(protocol) },
+      };
+      const exactPlan = { ...plan, planDigest: computePlanDigest(plan) };
+      const candidateMaterial = { ...candidate, plan: exactPlan, evidence: [evidence, source] };
+      candidate = MissionCandidateSchema.parse({
+        ...candidateMaterial,
+        candidateDigest: computeMissionCandidateDigest(candidateMaterial),
+      });
+      await imported();
+      await approve();
+      const mdStore = new MdProjectionStore(database, artifacts);
+      const material = new AmberMaterialApplication({
+        database,
+        store,
+        mdStore,
+        artifacts,
+        authority: { current: async () => context, assertCurrent: async () => {} },
+      });
+      const base = { ...address, planId: candidate.plan.id };
+      const proposed = (await material.apply({
+        ...base,
+        action: "propose-work-unit",
+        workUnit,
+        request,
+      })) as {
+        approval: {
+          id: string;
+          subjectVersion: number;
+          subjectRevision: number;
+          payloadDigest: string;
+          policyDigest: string;
         };
-      },
-    };
-    const http = new PostgresMissionHttpIdempotency(adapter, async () => {});
-    spyOn(mdStore, "putForceFieldStack").mockRejectedValueOnce(new Error("projection interrupted"));
-    await expect(http.run(original, () => material.apply(original.request))).rejects.toThrow(
-      "projection interrupted",
-    );
-    const interrupted = await store.getMissionProvenance(mission.id);
-    expect(interrupted.receipts).toHaveLength(1);
-    expect(interrupted.operations).toHaveLength(1);
-    expect(interrupted.operations[0]!.state).toBe("confirmed");
-    const record = {
-      actorId: actor.id,
-      projectId: address.projectId,
-      expectedRevision: interrupted.mission.revision,
-      request: { ...base, action: "execute", workUnitId: workUnit.id },
-    };
-    const exact = confirmedMaterialRecovery(
-      record,
-      interrupted,
-      context.compilerPolicy.policyDigest,
-    );
-    expect(exact?.operation.id).toBe(identity.operationId);
-    expect(
-      confirmedMaterialRecovery(
-        { ...record, actorId: "other" },
+      };
+      await expect(
+        material.apply({ ...base, action: "execute", workUnitId: workUnit.id }),
+      ).rejects.toThrow();
+      expect((await app.read(address)).receipts).toHaveLength(0);
+      await material.apply({
+        ...base,
+        action: "approve",
+        approvalRequestId: proposed.approval.id,
+        subjectVersion: proposed.approval.subjectVersion,
+        subjectRevision: proposed.approval.subjectRevision,
+        payloadDigest: proposed.approval.payloadDigest,
+        policyDigest: proposed.approval.policyDigest,
+        decision: "approved",
+        reason: "Exact ephemeral engineering approval, no real pilot evidence",
+      });
+      if (scenario !== "recover") {
+        const command = { ...base, action: "execute" as const, workUnitId: workUnit.id };
+        const prepared = await artifacts.put(new TextEncoder().encode(canonicalJson(command)));
+        await store.createEvidence({
+          id: "prepared-material-race",
+          missionId: mission.id,
+          kind: "artifact",
+          immutable: true,
+          contentDigest: prepared.digest,
+          uri: prepared.uri,
+          sizeBytes: prepared.sizeBytes,
+          mediaType: "application/json",
+          createdAt: now,
+        });
+        const principal = { actorId: actor.id, ...address, policyDigest: digestCanonical(context) };
+        const identity = { current: async () => principal, assertCurrent: async () => {} };
+        const open = async () =>
+          ({
+            application: app,
+            artifacts,
+            database,
+            context,
+            applyAmberMaterial: (value: unknown) => material.apply(value),
+            close: async () => {},
+          }) as unknown as Awaited<ReturnType<typeof openMissionApplication>>;
+        const effects = createMissionAgentEffects(identity, async () => principal, open);
+        const call = {
+          id: "race",
+          name: "mission-material",
+          input: {
+            ...address,
+            evidenceId: "prepared-material-race",
+            contentDigest: prepared.digest,
+            expectedRevision: (await app.status(address)).revision,
+          },
+        };
+        expect(await effects.tools.decide(call, "session")).toBe("ask");
+        let interleaved = false;
+        const originalGet = artifacts.get.bind(artifacts);
+        const read = spyOn(artifacts, "get").mockImplementation(async (...args) => {
+          const result = await originalGet(...args);
+          if (!interleaved && args[0] === prepared.digest) {
+            interleaved = true;
+            if (scenario === "cancel-race")
+              await app.requestCancel({
+                ...address,
+                schemaVersion: "eigengrid.mission-cancel/v1",
+                expectedRevision: (await app.status(address)).revision,
+                reason: "Concurrent authorized cancellation before effect admission",
+              });
+            else if (scenario === "replan-race")
+              await material.apply({ ...base, action: "replan-preparation" });
+            else {
+              context.compilerPolicy.id = "changed-policy";
+              context.compilerPolicy.policyDigest = computeCompilerPolicyDigest(
+                context.compilerPolicy,
+              );
+            }
+          }
+          return result;
+        });
+        try {
+          await expect(effects.tools.execute(call, "session")).rejects.toThrow();
+        } finally {
+          read.mockRestore();
+        }
+        expect(interleaved).toBe(true);
+        const fenced = await store.getMissionProvenance(mission.id);
+        expect(fenced.receipts).toHaveLength(0);
+        expect(fenced.operations).toHaveLength(1);
+        expect(["intent", "abandoned"]).toContain(fenced.operations[0]!.state);
+        expect(await mdStore.getForceFieldStack(mission.id, stack.id, 1)).toBeNull();
+        return;
+      }
+      const recoveryPool = new Pool({ connectionString: cluster.url });
+      await applyApplicationHttpSchema(recoveryPool);
+      const original = {
+        actorId: actor.id,
+        projectId: address.projectId,
+        operation: "material.apply" as const,
+        key: "material-lost-response",
+        requestDigest: digestCanonical({ technicalTest: workUnit.id }),
+        expectedRevision: (await app.status(address)).revision,
+        request: { ...base, action: "execute", workUnitId: workUnit.id },
+      };
+      const adapter: PgTransactionPool = {
+        async connect() {
+          const client = await recoveryPool.connect();
+          return {
+            query: (text, args) => client.query(text, args as unknown[]),
+            release: () => client.release(),
+          };
+        },
+      };
+      const http = new PostgresMissionHttpIdempotency(adapter, async () => {});
+      spyOn(mdStore, "putForceFieldStack").mockRejectedValueOnce(
+        new Error("projection interrupted"),
+      );
+      await expect(http.run(original, () => material.apply(original.request))).rejects.toThrow(
+        "projection interrupted",
+      );
+      const interrupted = await store.getMissionProvenance(mission.id);
+      expect(interrupted.receipts).toHaveLength(1);
+      expect(interrupted.operations).toHaveLength(1);
+      expect(interrupted.operations[0]!.state).toBe("confirmed");
+      const record = {
+        actorId: actor.id,
+        projectId: address.projectId,
+        expectedRevision: interrupted.mission.revision,
+        request: { ...base, action: "execute", workUnitId: workUnit.id },
+      };
+      const exact = confirmedMaterialRecovery(
+        record,
         interrupted,
         context.compilerPolicy.policyDigest,
-      ),
-    ).toBeNull();
-    expect(
-      observeConfirmedMaterialExecution(record, interrupted, context.compilerPolicy.policyDigest),
-    ).toBeNull();
-    let refusedRepairs = 0;
-    expect(
-      await repairConfirmedMaterialProjection(record, "f".repeat(64), {
-        assertCurrent: async () => {},
-        assertAccess: (address) => app.status(address),
-        provenance: (id) => store.getMissionProvenance(id),
-        assertApproval: async () => {
-          throw new Error("policy mismatch must stop before approval");
+      );
+      expect(exact?.operation.id).toBe(identity.operationId);
+      expect(
+        confirmedMaterialRecovery(
+          { ...record, actorId: "other" },
+          interrupted,
+          context.compilerPolicy.policyDigest,
+        ),
+      ).toBeNull();
+      expect(
+        observeConfirmedMaterialExecution(record, interrupted, context.compilerPolicy.policyDigest),
+      ).toBeNull();
+      let refusedRepairs = 0;
+      expect(
+        await repairConfirmedMaterialProjection(record, "f".repeat(64), {
+          assertCurrent: async () => {},
+          assertAccess: (address) => app.status(address),
+          provenance: (id) => store.getMissionProvenance(id),
+          assertApproval: async () => {
+            throw new Error("policy mismatch must stop before approval");
+          },
+          reconcile: async () => {
+            refusedRepairs++;
+            throw new Error("must not repair");
+          },
+        }),
+      ).toBeNull();
+      expect(refusedRepairs).toBe(0);
+      for (const status of ["intent", "effect_started", "ambiguous"] as const) {
+        const unsafe = structuredClone(interrupted);
+        unsafe.operations[0]!.state = status;
+        expect(
+          confirmedMaterialRecovery(record, unsafe, context.compilerPolicy.policyDigest),
+        ).toBeNull();
+      }
+      const separatelyReviewed = structuredClone(interrupted);
+      separatelyReviewed.approvals.find(
+        (item) => item.id === `approval-${identity.operationId}`,
+      )!.response!.actor.id = "independent-reviewer";
+      expect(
+        confirmedMaterialRecovery(record, separatelyReviewed, context.compilerPolicy.policyDigest)
+          ?.operation.id,
+      ).toBe(identity.operationId);
+      const expiredExactly = structuredClone(interrupted);
+      expiredExactly.approvals.find(
+        (item) => item.id === `approval-${identity.operationId}`,
+      )!.expiresAt = interrupted.receipts[0]!.recordedAt;
+      expect(
+        confirmedMaterialRecovery(record, expiredExactly, context.compilerPolicy.policyDigest),
+      ).toBeNull();
+      const wrongReceipt = structuredClone(interrupted);
+      wrongReceipt.receipts[0]!.requestDigest = "e".repeat(64);
+      expect(
+        confirmedMaterialRecovery(record, wrongReceipt, context.compilerPolicy.policyDigest),
+      ).toBeNull();
+
+      const revoked = new AmberMaterialPublicationDriver(
+        { database, store, mdStore, artifacts },
+        () => context.compilerPolicy.policyDigest,
+        async () => {
+          throw new Error("authority revoked during preflight");
         },
-        reconcile: async () => {
-          refusedRepairs++;
-          throw new Error("must not repair");
+      );
+      await expect(
+        revoked.reconcileOperation(exact!.operation, { ownerId: "unit-recovery", now: NOW }),
+      ).rejects.toThrow("authority revoked during preflight");
+      expect((await store.getWorkUnit(workUnit.id))?.state).toBe("executing");
+      const driver = new AmberMaterialPublicationDriver(
+        { database, store, mdStore, artifacts },
+        () => context.compilerPolicy.policyDigest,
+      );
+      const pending = await http.lookup({ ...original, missionId: mission.id });
+      let repairs = 0;
+      const recover = () =>
+        http.reconcile(
+          {
+            actorId: actor.id,
+            projectId: address.projectId,
+            missionId: mission.id,
+            operationId: pending.operationId,
+          },
+          async (record) =>
+            repairConfirmedMaterialProjection(record, context.compilerPolicy.policyDigest, {
+              assertCurrent: async () => {},
+              assertAccess: (address) => app.status(address),
+              provenance: (id) => store.getMissionProvenance(id),
+              assertApproval: (id, at, policy) =>
+                store.assertApprovalValid(id, { now: at, currentPolicyDigest: policy }),
+              reconcile: async (operation) => {
+                repairs++;
+                return driver.reconcileOperation(operation, { ownerId: "unit-recovery", now: NOW });
+              },
+            }),
+        );
+      try {
+        const responses = await Promise.all([recover(), recover()]);
+        expect(responses.some((response) => response.replayed)).toBe(true);
+        expect(repairs).toBe(1);
+        const replay = await http.run(original, async () => {
+          throw new Error("must never execute again");
+        });
+        expect(replay.replayed).toBe(true);
+        expect(replay.result).toMatchObject({ recoveredFromCanonical: true });
+      } finally {
+        await recoveryPool.end();
+      }
+      expect((await store.getWorkUnit(workUnit.id))?.state).toBe("succeeded");
+      expect((await mdStore.getForceFieldStack(mission.id, stack.id, 1))?.stackDigest).toBe(
+        stack.stackDigest,
+      );
+      const recovered = await store.getMissionProvenance(mission.id);
+      expect(recovered.receipts).toEqual(interrupted.receipts);
+      expect(recovered.operations).toHaveLength(1);
+      expect(recovered.operations[0]!.id).toBe(interrupted.operations[0]!.id);
+      expect(recovered.operations[0]!.requestDigest).toBe(interrupted.operations[0]!.requestDigest);
+      expect(
+        observeConfirmedMaterialExecution(record, recovered, context.compilerPolicy.policyDigest)
+          ?.receiptId,
+      ).toBe(interrupted.receipts[0]!.id);
+      await expect(material.apply({ ...base, action: "finish-preparation" })).rejects.toThrow();
+      await material.apply({ ...base, action: "replan-preparation" });
+      expect((await store.getMission(mission.id))?.state).toBe("replanning");
+      expect((await app.read(address)).receipts).toHaveLength(1);
+    },
+  );
+
+  test("mission agent reads prepared evidence and imports a real SQL candidate only after host approval", async () => {
+    modelTokens = 20000;
+    modelCost = 10;
+    await create();
+    const prepared = await artifacts.put(new TextEncoder().encode(canonicalJson(candidate)));
+    await store.createEvidence({
+      id: "prepared-candidate-agent",
+      missionId: mission.id,
+      kind: "artifact",
+      immutable: true,
+      contentDigest: prepared.digest,
+      uri: prepared.uri,
+      sizeBytes: prepared.sizeBytes,
+      mediaType: "application/vnd.eigengrid.mission-candidate+json",
+      createdAt: now,
+    });
+    const principal = { actorId: actor.id, ...address, policyDigest: digestCanonical(context) };
+    const identity = { current: async () => principal, assertCurrent: async () => {} };
+    const open = async () =>
+      ({
+        application: app,
+        artifacts,
+        database,
+        context,
+        close: async () => {},
+      }) as unknown as Awaited<ReturnType<typeof openMissionApplication>>;
+    let service!: AgentSessionService;
+    const effects = createMissionAgentEffects(identity, (id) => service.principal(id), open);
+    const inference = createMissionBoundInference(
+      (id) => service.principal(id),
+      open,
+      async () => ({
+        provider: "prepared-tools-unit",
+        model: "synthetic-tool-caller",
+        maximumOutputTokens: 100,
+        timeoutMilliseconds: 1000,
+        inference: {
+          async infer(request) {
+            const observed = (name: string) =>
+              request.observations.find((item) => item.tool === name)?.result as
+                | Record<string, unknown>
+                | undefined;
+            let call;
+            if (!observed("mission-status"))
+              call = { id: "status", name: "mission-status", input: address };
+            else if (!observed("mission-evidence-list"))
+              call = { id: "evidence", name: "mission-evidence-list", input: address };
+            else {
+              const listing = observed("mission-evidence-list") as {
+                evidence: { id: string; contentDigest: string }[];
+              };
+              const input = listing.evidence.find(
+                (item) => item.id === "prepared-candidate-agent",
+              )!;
+              const reference = {
+                ...address,
+                evidenceId: input.id,
+                contentDigest: input.contentDigest,
+              };
+              if (!observed("mission-prepared-input"))
+                call = { id: "inspect", name: "mission-prepared-input", input: reference };
+              else if (!observed("mission-import-candidate"))
+                call = {
+                  id: "import",
+                  name: "mission-import-candidate",
+                  input: { ...reference, expectedRevision: observed("mission-status")!.revision },
+                };
+            }
+            expect(request.tools.some((tool) => tool.name === "mission-approve")).toBe(false);
+            return {
+              provider: "prepared-tools-unit",
+              usage: { inputTokens: 1, outputTokens: 1, cost: 0 },
+              text: call
+                ? "Inspect and request prepared candidate import"
+                : "Prepared candidate imported; scientific approval remains pending",
+              calls: call ? [call] : [],
+            };
+          },
         },
       }),
-    ).toBeNull();
-    expect(refusedRepairs).toBe(0);
-    for (const status of ["intent", "effect_started", "ambiguous"] as const) {
-      const unsafe = structuredClone(interrupted);
-      unsafe.operations[0]!.state = status;
-      expect(
-        confirmedMaterialRecovery(record, unsafe, context.compilerPolicy.policyDigest),
-      ).toBeNull();
-    }
-    const separatelyReviewed = structuredClone(interrupted);
-    separatelyReviewed.approvals.find(
-      (item) => item.id === `approval-${identity.operationId}`,
-    )!.response!.actor.id = "independent-reviewer";
-    expect(
-      confirmedMaterialRecovery(record, separatelyReviewed, context.compilerPolicy.policyDigest)
-        ?.operation.id,
-    ).toBe(identity.operationId);
-    const expiredExactly = structuredClone(interrupted);
-    expiredExactly.approvals.find(
-      (item) => item.id === `approval-${identity.operationId}`,
-    )!.expiresAt = interrupted.receipts[0]!.recordedAt;
-    expect(
-      confirmedMaterialRecovery(record, expiredExactly, context.compilerPolicy.policyDigest),
-    ).toBeNull();
-    const wrongReceipt = structuredClone(interrupted);
-    wrongReceipt.receipts[0]!.requestDigest = "e".repeat(64);
-    expect(
-      confirmedMaterialRecovery(record, wrongReceipt, context.compilerPolicy.policyDigest),
-    ).toBeNull();
-
-    const revoked = new AmberMaterialPublicationDriver(
-      { database, store, mdStore, artifacts },
-      () => context.compilerPolicy.policyDigest,
-      async () => {
-        throw new Error("authority revoked during preflight");
+    );
+    service = new AgentSessionService(
+      join(directory, "prepared-agent-session"),
+      identity,
+      inference,
+      effects,
+    );
+    const opened = await service.open({
+      ...address,
+      prompt: "Inspect and import my prepared candidate; do not grant scientific approval",
+      limits: {
+        maximumSteps: 8,
+        maximumToolCalls: 10,
+        maximumInputTokens: 5000,
+        maximumOutputTokens: 1000,
+        maximumCost: 1,
       },
-    );
-    await expect(
-      revoked.reconcileOperation(exact!.operation, { ownerId: "unit-recovery", now: NOW }),
-    ).rejects.toThrow("authority revoked during preflight");
-    expect((await store.getWorkUnit(workUnit.id))?.state).toBe("executing");
-    const driver = new AmberMaterialPublicationDriver(
-      { database, store, mdStore, artifacts },
-      () => context.compilerPolicy.policyDigest,
-    );
-    const pending = await http.lookup({ ...original, missionId: mission.id });
-    let repairs = 0;
-    const recover = () =>
-      http.reconcile(
-        {
-          actorId: actor.id,
-          projectId: address.projectId,
-          missionId: mission.id,
-          operationId: pending.operationId,
-        },
-        async (record) =>
-          repairConfirmedMaterialProjection(record, context.compilerPolicy.policyDigest, {
-            assertCurrent: async () => {},
-            assertAccess: (address) => app.status(address),
-            provenance: (id) => store.getMissionProvenance(id),
-            assertApproval: (id, at, policy) =>
-              store.assertApprovalValid(id, { now: at, currentPolicyDigest: policy }),
-            reconcile: async (operation) => {
-              repairs++;
-              return driver.reconcileOperation(operation, { ownerId: "unit-recovery", now: NOW });
-            },
-          }),
-      );
-    try {
-      const responses = await Promise.all([recover(), recover()]);
-      expect(responses.some((response) => response.replayed)).toBe(true);
-      expect(repairs).toBe(1);
-      const replay = await http.run(original, async () => {
-        throw new Error("must never execute again");
-      });
-      expect(replay.replayed).toBe(true);
-      expect(replay.result).toMatchObject({ recoveredFromCanonical: true });
-    } finally {
-      await recoveryPool.end();
-    }
-    expect((await store.getWorkUnit(workUnit.id))?.state).toBe("succeeded");
-    expect((await mdStore.getForceFieldStack(mission.id, stack.id, 1))?.stackDigest).toBe(
-      stack.stackDigest,
-    );
-    const recovered = await store.getMissionProvenance(mission.id);
-    expect(recovered.receipts).toEqual(interrupted.receipts);
-    expect(recovered.operations).toHaveLength(1);
-    expect(recovered.operations[0]!.id).toBe(interrupted.operations[0]!.id);
-    expect(recovered.operations[0]!.requestDigest).toBe(interrupted.operations[0]!.requestDigest);
-    expect(
-      observeConfirmedMaterialExecution(record, recovered, context.compilerPolicy.policyDigest)
-        ?.receiptId,
-    ).toBe(interrupted.receipts[0]!.id);
-    await expect(material.apply({ ...base, action: "finish-preparation" })).rejects.toThrow();
-    await material.apply({ ...base, action: "replan-preparation" });
-    expect((await store.getMission(mission.id))?.state).toBe("replanning");
-    expect((await app.read(address)).receipts).toHaveLength(1);
+    });
+    const pending = await service.resume(opened.sessionId);
+    expect(pending.phase).toBe("awaiting_approval");
+    expect((await app.read(address)).plans).toHaveLength(0);
+    expect(pending.call?.name).toBe("mission-import-candidate");
+    await service.approve(opened.sessionId, {
+      callId: pending.call!.id,
+      inputDigest: agentDigest(pending.call!.input),
+      cursor: pending.cursor,
+      ttlSeconds: 60,
+    });
+    const finished = await service.resume(opened.sessionId);
+    expect(finished.phase).toBe("completed");
+    const stored = await app.read(address);
+    expect(stored.plans).toHaveLength(1);
+    expect(stored.approvals.some((approval) => approval.state === "pending")).toBe(true);
+    expect(stored.approvals.some((approval) => approval.state === "approved")).toBe(false);
+    expect(stored.operations).toHaveLength(0);
+    expect((await store.getMissionBudget(mission.id)).consumed.modelTokens).toBeGreaterThan(0);
   });
 
   test("provider-free import requests approval, survives CLI recreation, compiles and starts durably twice", async () => {
@@ -1767,6 +1965,59 @@ describe.skipIf(!canRunPostgres)("human mission application through real Postgre
     } finally {
       store.transitionMission = transition;
     }
+  });
+
+  test("candidate import cannot create a plan after cancellation during asynchronous CAS write", async () => {
+    await create();
+    const put = artifacts.put.bind(artifacts);
+    const hook = spyOn(artifacts, "put").mockImplementationOnce(async (bytes) => {
+      const stored = await put(bytes);
+      const current = await app.status(address);
+      await app.requestCancel({
+        ...address,
+        schemaVersion: "eigengrid.mission-cancel/v1",
+        expectedRevision: current.revision,
+        reason: "Concurrent operator cancellation",
+      });
+      return stored;
+    });
+    try {
+      await expect(
+        app.importCandidate({
+          ...address,
+          candidate,
+          expectedCandidateDigest: candidate.candidateDigest,
+        }),
+      ).rejects.toThrow();
+      const provenance = await store.getMissionProvenance(mission.id);
+      expect(provenance.plans).toHaveLength(0);
+      expect(provenance.operations).toHaveLength(0);
+      expect(provenance.mission.state).toBe("cancel_requested");
+    } finally {
+      hook.mockRestore();
+    }
+  });
+
+  test("cancellation rejects an observed revision superseded before its durable transition", async () => {
+    await create();
+    const observed = await app.status(address);
+    await store.transitionMission({
+      missionId: mission.id,
+      expectedRevision: observed.revision,
+      to: "scoping",
+      reason: "Concurrent planning",
+      actor,
+      at: NOW,
+    });
+    await expect(
+      app.requestCancel({
+        ...address,
+        schemaVersion: "eigengrid.mission-cancel/v1",
+        expectedRevision: observed.revision,
+        reason: "Old observed revision",
+      }),
+    ).rejects.toThrow();
+    expect((await store.getMission(mission.id))?.state).toBe("scoping");
   });
 
   test("terminal mission import fails before candidate evidence is pinned", async () => {

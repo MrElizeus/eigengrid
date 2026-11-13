@@ -251,3 +251,41 @@ MD-stage publication remain fenced unless
 another complete canonical proof is implemented. Never repeat a pending operation under
 a fresh key merely to bypass its uncertainty fence. Recovery does not establish scientific
 acceptance or substitute for independent scientific review.
+
+### Private HTTPS agent sessions
+
+The CLI and TUI can use the protected HTTP service without PostgreSQL peer access.
+Place a current-user-owned mode-0600 file at `~/.eigengrid/mission-http.json`, inside
+an owned mode-0700 directory. Symlink ancestors and peer-writable ancestors are
+rejected. Its strict fields are `schemaVersion: "eigengrid.mission-http-client/v1"`,
+`origin` (an exact HTTPS origin), `caCertificate` (trusted PEM certificate),
+`credential` (the provisioned opaque HTTP credential), `actorId`, `projectId`, and
+`missionId`. Provision credentials through the site's protected administrative
+process; never paste them into an agent prompt or journal. TLS verification is
+mandatory. There is no automatic local fallback when a present configuration is
+invalid. With no configuration, the existing local service mode remains available.
+
+`agent-session` commands and TUI `/session` commands share this transport. A client
+can only operate on session IDs opened or recovered in its configured actor,
+origin, project and mission. `agent-session remote-status` (TUI `/session remote-status`)
+reports that scope and any pending request without authentication secrets.
+
+Every mutation is recorded privately before transmission. A lost response fences
+further mutations; the client never automatically repeats an effect. Run
+`agent-session recover-remote` (TUI `/session recover-remote`) to look up the original
+request and reconcile its original HTTP operation from canonical evidence. Credential
+or CA rotation preserves this fence. If lookup returns NOT_FOUND or evidence is
+insufficient, the fence remains: retain the private state and ask the site operator
+to inspect the original key, server operation and journal. A 404 does not prove that
+an in-flight request cannot arrive later. Do not delete the state or manufacture a
+new key to bypass uncertainty. A process lock left by a crash likewise requires
+checking that the original process has stopped before operator recovery.
+
+The mission tools expose review, capabilities, immutable evidence and prepared
+candidate/material/stage requests. Large scientific structures must come from
+verified prepared artifacts, not model-invented digests. Mutations require the
+existing agent call approval; scientific material `approve` is deliberately not a
+model tool. Prepared request revision checks are preflight observations, while the
+canonical application enforces current mission state, plan, approval and policy at
+its durable mutation boundaries. This workflow does not constitute independent
+scientific validation.

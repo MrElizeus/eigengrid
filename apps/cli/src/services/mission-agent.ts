@@ -1,3 +1,10 @@
+import {
+  preparedMissionToolDefinitions,
+  isPreparedMissionTool,
+  validatePreparedMissionTool,
+  executePreparedMissionTool,
+  recoverPreparedMissionTool,
+} from "./mission-agent-prepared-tools";
 /** Canonical scientific tools for mission-scoped agent sessions. No raw shell, runner, SQL, paths
  * or Slurm payload reaches an agent. MissionApplication remains effect owner.
  */
@@ -100,13 +107,26 @@ export function createMissionAgentEffects(
   open: typeof openMissionApplication = openMissionApplication,
 ): AgentSessionEffects {
   const tools: AgentToolAuthority = {
-    describe: () => [statusTool, startTool],
+    describe: () => [statusTool, startTool, ...preparedMissionToolDefinitions],
     decide: async (call, sessionId) => {
-      if (call.name !== statusTool.name && call.name !== startTool.name) return "deny";
+      if (
+        call.name !== statusTool.name &&
+        call.name !== startTool.name &&
+        !isPreparedMissionTool(call.name)
+      )
+        return "deny";
       const p = await principalFor(sessionId);
       await identity.assertCurrent(p);
       try {
         const address = exactAddress(call.input, p);
+        if (isPreparedMissionTool(call.name)) {
+          const session = await open();
+          try {
+            return await validatePreparedMissionTool(call, p, session);
+          } finally {
+            await session.close();
+          }
+        }
         if (call.name === statusTool.name) {
           const obj = call.input as Record<string, unknown>;
           if (Object.keys(obj).sort().join(",") !== "missionId,projectId") return "deny";
@@ -125,8 +145,9 @@ export function createMissionAgentEffects(
       const address = exactAddress(call.input, p);
       const applicationSession = await open();
       try {
-        const result =
-          call.name === statusTool.name
+        const result = isPreparedMissionTool(call.name)
+          ? await executePreparedMissionTool(call, p, applicationSession)
+          : call.name === statusTool.name
             ? await applicationSession.application.status(address)
             : call.name === startTool.name
               ? await applicationSession.application.start(
@@ -150,6 +171,20 @@ export function createMissionAgentEffects(
       exactAddress(call.input, current);
       const session = await open();
       try {
+        if (isPreparedMissionTool(call.name)) {
+          const result = await recoverPreparedMissionTool(call, current, session);
+          if (!result) return { status: "UNKNOWN" };
+          return {
+            status: "RESOLVED",
+            receiptId: `canonical-${sessionId}-${call.id}`,
+            observation: {
+              id: call.id,
+              tool: call.name,
+              ok: true,
+              result: applicationJson(result),
+            },
+          };
+        }
         if (call.name === statusTool.name) {
           const result = await session.application.status({
             projectId: p.projectId,
