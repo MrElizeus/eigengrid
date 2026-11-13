@@ -219,6 +219,11 @@ export async function startApplicationHttpServer() {
           await current();
           const session = await open(context, current);
           try {
+            if (record.operation === "material.apply") {
+              const result = await session.reconcileConfirmedMaterialPublication(record);
+              await current();
+              return result ?? null;
+            }
             const result = await observeApplicationOperation(record, session.application, () =>
               agent(context, current),
             );

@@ -238,7 +238,16 @@ requests. Runtime startup validates both installed schema versions and performs 
 The main scientific database migration sequence is unchanged by this HTTP-only upgrade.
 
 An acknowledgement lost after material publication leaves its HTTP intent pending.
-Lookup can return a stored completed response; if no complete canonical response proof
-is available, reconciliation preserves the pending fence. Inspect canonical material,
-work-unit and publication records before administrator-led recovery. Never repeat a
-pending operation under a fresh key merely to bypass its uncertainty fence.
+Use `POST /api/v1/projects/{projectId}/missions/{missionId}/operations/{operationId}/reconcile`
+with the original HTTP operation UUID, current session and CSRF protection. For a material
+execute request only, the server can finalize the exact already-confirmed publication
+projection after verifying the original owner, approval, current policy, request and receipt.
+This bounded recovery creates no new intent and submits no engine or chemistry work. It
+then records an explicitly labeled canonical recovery observation under the original key;
+concurrent recovery and subsequent replay use that same durable record.
+
+Unconfirmed/ambiguous effects, mismatched policy or receipt, other material actions, and
+MD-stage publication remain fenced unless
+another complete canonical proof is implemented. Never repeat a pending operation under
+a fresh key merely to bypass its uncertainty fence. Recovery does not establish scientific
+acceptance or substitute for independent scientific review.

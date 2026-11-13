@@ -16,7 +16,15 @@ import { MissionApplication } from "./mission-application";
 import { MissionLocalAuthority, type MissionLocalContext } from "./mission-local-authority";
 import { importMissionArtifact } from "./mission-request-file";
 import { importAmberPreparedSystem } from "./amber-prepared-system-import";
-import { AmberMaterialApplication } from "./amber-material-publication";
+import {
+  confirmedMaterialRecovery,
+  repairConfirmedMaterialProjection,
+  type MaterialRecoveryRecord,
+} from "./material-recovery";
+import {
+  AmberMaterialPublicationDriver,
+  AmberMaterialApplication,
+} from "./amber-material-publication";
 import { publishApprovedMdPreparation } from "./amber-md-preparation";
 import { createHeadMdSiteAuthorityReader } from "./head-md-site-authority";
 
@@ -151,6 +159,43 @@ export async function openMissionApplication(
             await authority.assertCurrent(context);
             await application.status(address);
           },
+        });
+      },
+      async reconcileConfirmedMaterialPublication(record: MaterialRecoveryRecord) {
+        await authority.assertCurrent(context);
+        if (record.actorId !== context.authenticatedActor.id) return;
+        const driver = new AmberMaterialPublicationDriver(
+          { database, store, mdStore, artifacts },
+          () => context.compilerPolicy.policyDigest,
+          async () => {
+            await authority.assertCurrent(context);
+            await application.status({
+              projectId: record.projectId,
+              missionId: (record.request as { missionId: string }).missionId,
+            });
+            const exact = confirmedMaterialRecovery(
+              record,
+              await store.getMissionProvenance((record.request as { missionId: string }).missionId),
+              context.compilerPolicy.policyDigest,
+            );
+            if (!exact) throw new Error("Confirmed material authority changed during recovery");
+            await store.assertApprovalValid(`approval-${exact.operation.id}`, {
+              now: exact.receipt.recordedAt,
+              currentPolicyDigest: context.compilerPolicy.policyDigest,
+            });
+          },
+        );
+        return repairConfirmedMaterialProjection(record, context.compilerPolicy.policyDigest, {
+          assertCurrent: () => authority.assertCurrent(context),
+          assertAccess: (address) => application.status(address),
+          provenance: (missionId) => store.getMissionProvenance(missionId),
+          assertApproval: (id, now, currentPolicyDigest) =>
+            store.assertApprovalValid(id, { now, currentPolicyDigest }),
+          reconcile: (operation) =>
+            driver.reconcileOperation(operation, {
+              ownerId: "eigengrid-amber-material-publication",
+              now: new Date().toISOString(),
+            }),
         });
       },
       async applyAmberMaterial(request: unknown) {
