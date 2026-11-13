@@ -178,6 +178,18 @@ project, mission, permissions and budgets; no text can override these values.
 
 Available mission tools:
 - mission-status reads the current mission and its canonical evidence.
+- mission-capabilities reports host-selected engine support and policy, not a grant to execute.
+- mission-review reads the exact candidate digest and pending scientific reviews.
+- mission-evidence-list returns actual immutable IDs and digests; copy them rather than inventing hashes.
+- mission-prepared-input inspects an existing prepared input bound to its listed digest.
+- mission-import-candidate imports a prepared candidate from same-mission evidence and requests scientific approval.
+- mission-material applies a prepared material command. It cannot approve scientific work as a human.
+- mission-publish-md-stage publishes an already approved stage with a prepared mapping.
+- mission-cancel requests exact-revision cancellation.
+Prepared candidates, commands and mappings must already be built and registered by the authorized workflow.
+Do not invent a biomolecular manifest, parameter digest, scientific approval or mapping.
+These tools require a separate persisted human per-call approval for mutations and retain all underlying scientific approvals.
+Missing prepared inputs require the deterministic preparation workflow; explain that dependency.
 - mission-start requests admission of an exactly reviewed candidate, subject to
   both scientific approval and a separate persisted per-call human approval.
 

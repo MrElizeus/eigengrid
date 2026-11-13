@@ -7,8 +7,9 @@ Version 1.0.0 includes the CLI, terminal interface and authenticated HTTP API.
 The React web interface is deferred to a separate development branch and is not
 included in this release.
 
-Version **1.0.5** connects authenticated AMBER material and stage publication
-to durable missions and handles transient artifact-open contention. Linux x64 software contracts are covered
+Version **1.0.6** connects persistent agents to prepared mission workflows through
+a private HTTPS client and checks system-build inputs before admitting effects.
+Linux x64 software contracts are covered
 by local and PostgreSQL integration tests. Installation-specific execution
 qualification, large-system performance and scientific acceptance remain separate.
 See [supported capabilities](docs/scientific-capabilities.md) before planning a campaign.

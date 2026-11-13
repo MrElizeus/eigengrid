@@ -96,6 +96,7 @@ export interface CanonicalMdFixtureOptions {
   stopAfterPreparation?: boolean;
   downstreamKind?: "equilibration";
   productionSegments?: number;
+  testMinimization?: boolean;
   /** Test-only lease schedule, approvals keep their independently defined expiry. */
   workUnitLeaseExpiresAt?: string;
 }
@@ -1224,9 +1225,39 @@ function stageSpec(manifest: ReturnType<typeof systemManifest>) {
     rendererCompatibilityVersion: AMBER_CANONICAL_STAGE_MAPPING_VERSION,
     stageDigest: D("0"),
   };
+  const stageInput = fixtureOptions.getStore()?.testMinimization
+    ? {
+        ...input,
+        kind: "minimization" as const,
+        ensemble: "none" as const,
+        minimization: {
+          algorithm: "steepest_descent_then_conjugate_gradient" as const,
+          steepestDescentCycles: 200,
+          rmsGradientToleranceKcalMolAngstrom: 0.1,
+          initialStepAngstrom: 0.015,
+        },
+        timeStepPs: null,
+        simulatedTimePs: null,
+        temperature: null,
+        randomSeed: null,
+        thermostat: { kind: "none" as const },
+        barostat: { kind: "none" as const },
+        constraints: { bondsToHydrogen: false as const },
+        checkpoint: {
+          ...input.checkpoint,
+          cadenceSteps: input.steps,
+          stopAfterCheckpointSupported: false,
+        },
+        outputs: input.outputs
+          .filter((output) => output.role !== "trajectory")
+          .map((output) =>
+            output.role === "restart" ? { ...output, cadenceSteps: input.steps } : output,
+          ),
+      }
+    : input;
   return MdStageSpecSchema.parse({
-    ...input,
-    stageDigest: computeMdStageSpecDigest(input),
+    ...stageInput,
+    stageDigest: computeMdStageSpecDigest(stageInput),
   });
 }
 

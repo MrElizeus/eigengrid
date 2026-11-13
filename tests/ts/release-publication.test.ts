@@ -8,16 +8,13 @@ const workflow = readFileSync(".github/workflows/ci.yml", "utf8");
 const publication = workflow.split("          script: |\n")[1]?.replace(/^ {12}/gm, "");
 if (!publication) throw new Error("Missing release publication script");
 
-function fixture() {
+function fixture(version = "1.0.2") {
   const commit = "a".repeat(40),
-    tag = "v1.0.2",
-    archive = "eigengrid-1.0.2-linux-x64.tar.gz";
+    tag = `v${version}`,
+    archive = `eigengrid-${version}-linux-x64.tar.gz`;
   const files = new Map<string, Buffer>();
   files.set(`release/${archive}`, Buffer.from("synthetic archive"));
-  files.set(
-    "release/release.json",
-    Buffer.from(JSON.stringify({ version: "1.0.2", sourceCommit: commit })),
-  );
+  files.set("release/release.json", Buffer.from(JSON.stringify({ version, sourceCommit: commit })));
   const hash = (path: string) => createHash("sha256").update(files.get(path)!).digest("hex");
   files.set(
     "release/validation.json",
@@ -88,6 +85,20 @@ function fixture() {
 }
 
 describe("release publication workflow", () => {
+  test.each(["1.0.0-rc.2", "1.0.0", "1.0.1", "1.0.2", "1.0.3", "1.0.4", "1.0.5", "1.0.6"])(
+    "publishes supported version %s after verification",
+    async (version) => {
+      const f = fixture(version);
+      await f.execute();
+      expect(f.created[0]).toMatchObject({
+        tag_name: `v${version}`,
+        draft: true,
+        prerelease: version.includes("-rc."),
+      });
+      expect(f.uploaded).toContain(`eigengrid-${version}-linux-x64.tar.gz`);
+      expect(f.published).toHaveLength(1);
+    },
+  );
   test("publishes the reviewed notes and only activates after all assets upload", async () => {
     const f = fixture();
     await f.execute();

@@ -17,10 +17,20 @@ retains its maturity/review metadata and has no authority to grant tool permissi
 `validate-md-protocol` checks a supplied MD protocol's schema and digest without effects.
 
 `eigengrid agent-session` and TUI `/session` operate persistent, mission-bound sessions.
-They expose `mission-status` and `mission-start` only. Starting requires an already reviewed
-scientific candidate and a separate exact per-call approval. The session cannot approve its
-own scientific plan, choose an actor, bypass project membership or invoke a shell/runner.
+They can inspect mission status, capabilities, review, evidence and prepared inputs;
+import prepared candidates; apply prepared material operations; publish prepared MD
+stages; and start or cancel a mission. Requests come from immutable mission artifacts
+whose contents and digests the host verifies. The model cannot construct unverified
+scientific inputs by inventing a digest. Mutations require separate exact per-call
+approval, and existing scientific approvals remain required. The session cannot approve
+its own scientific plan, choose an actor, bypass project membership or invoke a shell/runner.
 Use `agent-session --help` for open, observe, approve, resume, events, cancel and reconcile.
+
+The CLI and TUI share a [private HTTPS client](operations.md#private-https-agent-sessions)
+for users without database access. After administrative provisioning, use
+`eigengrid agent-session remote-status` to inspect its scope. A lost response leaves a
+durable local fence; `agent-session recover-remote` checks the original operation without
+repeating its effect. Credentials and certificates can rotate without discarding that fence.
 
 Each interface has a distinct system prompt that describes its actual tools. Scientific
 language distinguishes an execution template from a reviewed protocol and an observed

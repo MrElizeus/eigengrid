@@ -1,5 +1,10 @@
 import { runMissionAction, type MissionAction } from "../commands/mission";
-import { runAgentSessionAction, type AgentSessionAction } from "../commands/agent-session";
+import {
+  runAgentSessionAction,
+  inspectRemoteAgentClient,
+  recoverRemoteAgentClient,
+  type AgentSessionAction,
+} from "../commands/agent-session";
 import { readMissionRequestFile } from "../services/mission-request-file";
 
 /** Human-authored commands bypass inference and use the same protected services as CLI/HTTP. */
@@ -11,6 +16,10 @@ export async function runDurableInterfaceCommand(
   read = readMissionRequestFile,
 ): Promise<unknown> {
   const [action, subject, requestFile] = args;
+  if (surface === "session" && ["remote-status", "recover-remote"].includes(action ?? "")) {
+    if (args.length !== 1) throw new Error("Remote client commands take no request arguments");
+    return action === "remote-status" ? inspectRemoteAgentClient() : recoverRemoteAgentClient();
+  }
   if (!action || !subject)
     throw new Error(`Usage: /${surface} <action> <request-file or session-id> [approval-file]`);
   if (surface === "mission") {

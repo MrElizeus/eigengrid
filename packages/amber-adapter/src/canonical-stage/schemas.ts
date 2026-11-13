@@ -24,6 +24,9 @@ import { AmberMdEngineSchema } from "../stage";
 
 export const AMBER_CANONICAL_STAGE_MAPPING_SCHEMA_VERSION =
   "eigengrid.amber-canonical-stage-mapping/v3" as const;
+export const AMBER_CANONICAL_STAGE_MAPPING_SCHEMA_VERSION_V4 =
+  "eigengrid.amber-canonical-stage-mapping/v4" as const;
+export const AMBER_CANONICAL_STAGE_MAPPING_VERSION_V4 = "4.0.0" as const;
 export const AMBER_CANONICAL_STAGE_RENDER_SCHEMA_VERSION =
   "eigengrid.amber-canonical-stage-render/v3" as const;
 export const AMBER_CANONICAL_STAGE_MAPPING_VERSION = "3.0.0" as const;
@@ -165,7 +168,7 @@ const PmeElectrostaticsMappingSchema = z
   })
   .strict();
 
-export const AmberCanonicalStageMappingSchema = z
+const AmberCanonicalStageMappingV3Schema = z
   .object({
     schemaVersion: z.literal(AMBER_CANONICAL_STAGE_MAPPING_SCHEMA_VERSION),
     mappingVersion: z.literal(AMBER_CANONICAL_STAGE_MAPPING_VERSION),
@@ -195,6 +198,34 @@ export const AmberCanonicalStageMappingSchema = z
     mappingDigest: Sha256Schema,
   })
   .strict();
+
+const ProtocolBoundMinimizationSplitSchema = z
+  .object({
+    algorithm: z.literal("steepest_descent_then_conjugate_gradient"),
+    steepestDescentCycles: z.number().int().nonnegative(),
+    protocol: z
+      .object({
+        id: IdSchema,
+        revision: z.number().int().positive(),
+        digest: Sha256Schema,
+        approvalRef: IdSchema,
+      })
+      .strict(),
+    stage: z
+      .object({ id: IdSchema, revision: z.number().int().positive(), digest: Sha256Schema })
+      .strict(),
+  })
+  .strict();
+const AmberCanonicalStageMappingV4Schema = AmberCanonicalStageMappingV3Schema.extend({
+  schemaVersion: z.literal(AMBER_CANONICAL_STAGE_MAPPING_SCHEMA_VERSION_V4),
+  mappingVersion: z.literal(AMBER_CANONICAL_STAGE_MAPPING_VERSION_V4),
+  canonicalStage: CanonicalStageBindingSchema.extend({ kind: z.literal("minimization") }),
+  minimizationSplit: ProtocolBoundMinimizationSplitSchema,
+}).strict();
+export const AmberCanonicalStageMappingSchema = z.discriminatedUnion("schemaVersion", [
+  AmberCanonicalStageMappingV3Schema,
+  AmberCanonicalStageMappingV4Schema,
+]);
 export type AmberCanonicalStageMapping = z.infer<typeof AmberCanonicalStageMappingSchema>;
 
 export interface AmberCanonicalRuntimeBindings {
@@ -231,7 +262,9 @@ export interface RenderedCanonicalAmberStage {
     stageDigest: string;
   };
   mapping: {
-    version: typeof AMBER_CANONICAL_STAGE_MAPPING_VERSION;
+    version:
+      | typeof AMBER_CANONICAL_STAGE_MAPPING_VERSION
+      | typeof AMBER_CANONICAL_STAGE_MAPPING_VERSION_V4;
     digest: string;
   };
   executionBindingDigest: string;
@@ -249,7 +282,10 @@ export const RenderedCanonicalAmberStageSchema = z
     canonicalStage: CanonicalStageBindingSchema.omit({ rendererCompatibilityVersion: true }),
     mapping: z
       .object({
-        version: z.literal(AMBER_CANONICAL_STAGE_MAPPING_VERSION),
+        version: z.enum([
+          AMBER_CANONICAL_STAGE_MAPPING_VERSION,
+          AMBER_CANONICAL_STAGE_MAPPING_VERSION_V4,
+        ]),
         digest: Sha256Schema,
       })
       .strict(),

@@ -1,3 +1,4 @@
+import { configuredMissionHttpClient } from "../services/mission-http-client";
 import type { CommandModule } from "yargs";
 import { z } from "zod";
 import { AgentSessionService } from "../services/agent-sessions";
@@ -21,31 +22,8 @@ export function openLocalAgentSession(): AgentSessionService {
   return service;
 }
 
-export const sessionIdSchema = z.string().uuid();
-export const openSchema = z
-  .object({
-    projectId: z.string().min(1).max(160),
-    missionId: z.string().min(1).max(160),
-    prompt: z.string().trim().min(1).max(100_000),
-    requestId: z
-      .string()
-      .regex(/^[A-Za-z0-9][A-Za-z0-9_.:@-]{0,159}$/u)
-      .optional(),
-  })
-  .strict();
-export const approvalSchema = z
-  .object({
-    callId: z.string().min(1).max(128),
-    inputDigest: z.string().regex(/^[a-f0-9]{64}$/u),
-    cursor: z
-      .object({
-        sequence: z.number().int().positive(),
-        digest: z.string().regex(/^[a-f0-9]{64}$/u),
-      })
-      .strict(),
-    ttlSeconds: z.number().int().min(1).max(900),
-  })
-  .strict();
+export { sessionIdSchema, openSchema, approvalSchema } from "../services/agent-session-requests";
+import { sessionIdSchema, openSchema, approvalSchema } from "../services/agent-session-requests";
 
 type SessionFactory = () => AgentSessionService;
 export const agentSessionActions = [
@@ -64,14 +42,21 @@ export async function runAgentSessionAction(
   value: unknown,
   provide: SessionFactory = openLocalAgentSession,
 ): Promise<unknown> {
+  const dispatch = async (input: unknown, local: () => Promise<unknown>) => {
+    if (provide === openLocalAgentSession) {
+      const remote = await configuredMissionHttpClient();
+      if (remote) return remote.run(action, input);
+    }
+    return local();
+  };
   if (action === "open") {
     const input = openSchema.parse(value);
-    return provide().open(input);
+    return dispatch(input, () => provide().open(input));
   }
   const base = z.object({ sessionId: sessionIdSchema });
   if (action === "approve") {
     const input = base.extend({ approval: approvalSchema }).strict().parse(value);
-    return provide().approve(input.sessionId, input.approval);
+    return dispatch(input, () => provide().approve(input.sessionId, input.approval));
   }
   if (action === "events") {
     const input = base
@@ -81,12 +66,14 @@ export async function runAgentSessionAction(
       })
       .strict()
       .parse(value);
-    return provide().events(input.sessionId, input.after, input.maximum);
+    return dispatch(input, () => provide().events(input.sessionId, input.after, input.maximum));
   }
   const input = base.strict().parse(value);
   if (!["observe", "resume", "cancel", "reconcile"].includes(action))
     throw new Error("Invalid session action");
-  return provide()[action as "observe" | "resume" | "cancel" | "reconcile"](input.sessionId);
+  return dispatch(input, () =>
+    provide()[action as "observe" | "resume" | "cancel" | "reconcile"](input.sessionId),
+  );
 }
 export function createAgentSessionCommand(
   provide: SessionFactory = openLocalAgentSession,
@@ -98,12 +85,24 @@ export function createAgentSessionCommand(
     builder(y) {
       return y
         .command(
+          "remote-status",
+          "Inspect private HTTPS client scope and unresolved mutation metadata",
+          (child) => child.strict(),
+          async () => output(await inspectRemoteAgentClient()),
+        )
+        .command(
+          "recover-remote",
+          "Explicitly recover the original remote HTTP mutation without retrying its effect",
+          (child) => child.strict(),
+          async () => output(await recoverRemoteAgentClient()),
+        )
+        .command(
           "open <request>",
           "Create an authorized project/mission agent session from a JSON request",
           (child) => child.positional("request", { type: "string", demandOption: true }).strict(),
           async (args) => {
             const input = openSchema.parse(await readMissionRequestFile(args.request as string));
-            output(await provide().open(input));
+            output(await runAgentSessionAction("open", input, provide));
           },
         )
         .command(
@@ -112,7 +111,7 @@ export function createAgentSessionCommand(
           (child) => child.positional("sessionId", { type: "string", demandOption: true }).strict(),
           async (args) => {
             const id = sessionIdSchema.parse(args.sessionId);
-            output(await provide().observe(id));
+            output(await runAgentSessionAction("observe", { sessionId: id }, provide));
           },
         )
         .command(
@@ -128,7 +127,13 @@ export function createAgentSessionCommand(
             const id = sessionIdSchema.parse(args.sessionId);
             const after = z.number().int().nonnegative().parse(args.after);
             const max = z.number().int().min(1).max(256).parse(args.max);
-            output(await provide().events(id, after, max));
+            output(
+              await runAgentSessionAction(
+                "events",
+                { sessionId: id, after, maximum: max },
+                provide,
+              ),
+            );
           },
         )
         .command(
@@ -144,7 +149,9 @@ export function createAgentSessionCommand(
             const input = approvalSchema.parse(
               await readMissionRequestFile(args.request as string),
             );
-            output(await provide().approve(id, input));
+            output(
+              await runAgentSessionAction("approve", { sessionId: id, approval: input }, provide),
+            );
           },
         )
         .command(
@@ -153,7 +160,7 @@ export function createAgentSessionCommand(
           (child) => child.positional("sessionId", { type: "string", demandOption: true }).strict(),
           async (args) => {
             const id = sessionIdSchema.parse(args.sessionId);
-            output(await provide().resume(id));
+            output(await runAgentSessionAction("resume", { sessionId: id }, provide));
           },
         )
         .command(
@@ -162,7 +169,7 @@ export function createAgentSessionCommand(
           (child) => child.positional("sessionId", { type: "string", demandOption: true }).strict(),
           async (args) => {
             const id = sessionIdSchema.parse(args.sessionId);
-            output(await provide().cancel(id));
+            output(await runAgentSessionAction("cancel", { sessionId: id }, provide));
           },
         )
         .command(
@@ -171,7 +178,7 @@ export function createAgentSessionCommand(
           (child) => child.positional("sessionId", { type: "string", demandOption: true }).strict(),
           async (args) => {
             const id = sessionIdSchema.parse(args.sessionId);
-            output(await provide().reconcile(id));
+            output(await runAgentSessionAction("reconcile", { sessionId: id }, provide));
           },
         )
         .demandCommand(1)
@@ -181,3 +188,13 @@ export function createAgentSessionCommand(
   };
 }
 export const agentSessionCommand = createAgentSessionCommand();
+
+export async function inspectRemoteAgentClient() {
+  const remote = await configuredMissionHttpClient();
+  return remote ? remote.status() : { configured: false };
+}
+export async function recoverRemoteAgentClient() {
+  const remote = await configuredMissionHttpClient();
+  if (!remote) throw new Error("Private mission HTTPS client is not configured");
+  return remote.recoverPending();
+}

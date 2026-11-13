@@ -481,9 +481,16 @@ export class ScientificBudgets {
         }
         await tx.query(
           `UPDATE scientific_budget_reservations
-           SET state = $1, payload_json = $2, updated_at = $3
+           SET state = $1, payload_json = $2, updated_at = $3, amount = $6
            WHERE id = $4 AND state = $5`,
-          [settled.state, canonicalJson(settled), settled.updatedAt, settled.id, "reserved"],
+          [
+            settled.state,
+            canonicalJson(settled),
+            settled.updatedAt,
+            settled.id,
+            "reserved",
+            settled.amount,
+          ],
         );
       }
       const nextBudget = MissionBudgetSchema.parse({
