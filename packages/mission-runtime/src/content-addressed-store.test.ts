@@ -153,6 +153,24 @@ describe("ContentAddressedArtifactStore", () => {
     expect((await store.get(results[0]!.digest)).bytes).toEqual(bytes);
   });
 
+  it("waits for a publisher's temporary link to disappear before verifying immutable bytes", async () => {
+    const { root, store } = await storeFixture();
+    const bytes = Buffer.from("publisher waits for durable shard sync");
+    const stored = await store.put(bytes);
+    const staging = join(root, "sha256/.staging/publisher.tmp");
+    await link(objectPath(root, stored.digest), staging);
+    const removal = (async () => {
+      await Bun.sleep(60);
+      await rm(staging);
+    })();
+    try {
+      expect((await store.get(stored.digest)).bytes).toEqual(bytes);
+      expect((await stat(objectPath(root, stored.digest))).nlink).toBe(1);
+    } finally {
+      await removal;
+    }
+  });
+
   it("opens a published namespace read-only without chmod, staging, or consuming write input", async () => {
     const { root, store } = await storeFixture();
     const bytes = Buffer.from("published for an authorized reader");

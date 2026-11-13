@@ -688,7 +688,13 @@ export class ContentAddressedArtifactStore {
             error.detail.linkCount > 1;
           if (publishing && attempt < 8) {
             await closeQuietly(shardHandle);
-            await new Promise<void>((resolve) => setImmediate(resolve));
+            // Publishing fsyncs the shard before removing its staging link.
+            // Event-loop turns can all finish before that disk operation does.
+            // Wait a bounded interval, then repeat the complete single-link and
+            // digest verification; a retained hardlink is still rejected.
+            await new Promise<void>((resolve) =>
+              setTimeout(resolve, Math.min(8 * 2 ** attempt, 128)),
+            );
             continue;
           }
           throw error;
