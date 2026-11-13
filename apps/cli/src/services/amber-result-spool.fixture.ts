@@ -172,6 +172,9 @@ sys.exit(42 if ${JSON.stringify(mode)} == 'exit42' else 0)
     async chown() {
       /* root/group membership modeled, no privileged host mutation */
     },
+    async unlink(path) {
+      await (await import("node:fs/promises")).unlink(path);
+    },
   };
   const factory = (path: string) => createAmberResultSpoolForTest(path, io);
   const runnerIO: AmberRunnerIO = {

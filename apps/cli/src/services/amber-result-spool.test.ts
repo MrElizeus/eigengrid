@@ -8,6 +8,7 @@ import {
   rm,
   stat,
   symlink,
+  unlink,
   writeFile,
 } from "node:fs/promises";
 import { join } from "node:path";
@@ -60,7 +61,61 @@ async function published(mode?: string) {
   };
 }
 
+/** Model the NFS silly-rename trigger: an open FD on the unlinked inode is
+ * rejected, even if a POSIX local filesystem would allow it silently. */
+function requireClosedBeforeUnlink(f: Pick<Awaited<ReturnType<typeof fixture>>, "io">) {
+  const original = f.io.unlink;
+  let calls = 0;
+  f.io.unlink = async (path) => {
+    calls++;
+    const target = await stat(path);
+    for (const fd of await readdir("/proc/self/fd")) {
+      try {
+        const openFile = await stat(`/proc/self/fd/${fd}`);
+        if (openFile.dev === target.dev && openFile.ino === target.ino)
+          throw new Error("unlink attempted while inode still has an open descriptor");
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+      }
+    }
+    await original(path);
+  };
+  return () => calls;
+}
+
 describe("Amber result spool — local real bytes/FDs; two UIDs/root ownership modeled", () => {
+  test("normal publication closes every staging inode before unlink", async () => {
+    const f = await fixture();
+    const unlinkCount = requireClosedBeforeUnlink(f);
+    const result = await runAmberSlurmStage(f.capsule, f.profile, undefined, f.runnerIO);
+    expect(result.publication?.canonicalAcknowledged).toBe(false);
+    expect(unlinkCount()).toBeGreaterThan(0);
+    expect(await readFile(f.launches, "utf8")).toBe("launch\n");
+  });
+
+  test("stale interrupted staging closes its verified inode before unlink and does not rerun", async () => {
+    const f = await fixture();
+    const original = f.io.unlink;
+    f.io.unlink = async () => {
+      throw Object.assign(new Error("simulated interruption"), { code: "EIO" });
+    };
+    await expect(
+      runAmberSlurmStage(f.capsule, f.profile, undefined, f.runnerIO),
+    ).rejects.toMatchObject({ phase: "stage_out", errno: "EIO" });
+    f.io.unlink = original;
+    const observation = await f.observation();
+    const incoming = join(f.publicationRoot, "incoming", observation.transfer.transferId);
+    const staged = await readdir(incoming);
+    expect(staged).toHaveLength(1);
+    await unlink(join(f.publicationRoot, "objects", staged[0]!));
+    expect((await stat(join(incoming, staged[0]!))).nlink).toBe(1);
+    const unlinkCount = requireClosedBeforeUnlink(f);
+    const result = await collectAmberSlurmStage(f.capsule, f.profile, f.runnerIO.host(), f.factory);
+    expect(result.publication?.canonicalAcknowledged).toBe(false);
+    expect(unlinkCount()).toBeGreaterThan(0);
+    expect(await readFile(f.launches, "utf8")).toBe("launch\n");
+  });
+
   test("runner auto-publishes only closed CAS bytes; Head streams/revalidates with no scientific ACK", async () => {
     const f = await published();
     expect(f.result.publication?.canonicalAcknowledged).toBe(false);
@@ -319,7 +374,9 @@ describe("Amber result spool — local real bytes/FDs; two UIDs/root ownership m
     f.collector();
     await expect(f.open()).rejects.toThrow("link count");
     f.writer();
+    const unlinkCount = requireClosedBeforeUnlink(f);
     await f.publish();
+    expect(unlinkCount()).toBeGreaterThan(0);
     expect((await stat(final)).nlink).toBe(1);
     f.collector();
     const reader = await f.open();
