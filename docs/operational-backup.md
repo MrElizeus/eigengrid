@@ -97,3 +97,7 @@ remove them. Review operational retention explicitly by the `eigengrid-operation
 tag and intended host grouping, inventory the retained remote and local bytes, and
 keep the storage reserve guards enabled. Do not delete historical captures during
 the pilot merely to make a space check pass.
+
+For a non-destructive inventory and redundancy/reserve dry-run, see
+[Backup redundancy and reserve planning](backup-retention-planning.md). This does
+not implement snapshot-history pruning or change the running timer.

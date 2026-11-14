@@ -67,3 +67,8 @@ Retain pilot history without automated deletion. Review a later daily/weekly/mon
 policy with a dry-run and storage accounting before pruning. The worker copy is
 another disk/node, not an offsite backup. Runtime binaries and scientific engines
 must be provisioned separately from verified releases and environment records.
+
+This repository currently provides capture/verification, not a sidecar publishing
+service or timer. Manual readback evidence does not prove recurring automation.
+See [Backup redundancy and reserve planning](backup-retention-planning.md) for the
+separate, non-destructive planning boundary.
