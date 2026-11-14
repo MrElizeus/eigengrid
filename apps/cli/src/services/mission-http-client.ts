@@ -412,6 +412,7 @@ export class MissionHttpClient {
       configured: true,
       ...state.scope,
       sessionCount: state.sessions.length,
+      sessionIds: [...state.sessions],
       pending: state.pending
         ? {
             action: state.pending.action,

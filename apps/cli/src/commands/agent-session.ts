@@ -5,6 +5,7 @@ import { AgentSessionService } from "../services/agent-sessions";
 import { createLocalAgentIdentity, createMissionAgentEffects } from "../services/mission-agent";
 import { createMissionBoundInference } from "../services/mission-inference";
 import { readMissionRequestFile } from "../services/mission-request-file";
+import { startConfiguredAgentSession } from "../services/mission-agent-start";
 
 /** Fixed Head-owned path, NOT configurable from CLI args, prompts or HTTP. */
 export const AgentSessionRoot = "/var/lib/eigengrid/agent-sessions";
@@ -78,12 +79,19 @@ export async function runAgentSessionAction(
 export function createAgentSessionCommand(
   provide: SessionFactory = openLocalAgentSession,
   output: (value: unknown) => void = (value) => console.log(JSON.stringify(value, null, 2)),
+  start: (prompt: string) => Promise<unknown> = startConfiguredAgentSession,
 ): CommandModule {
   return {
     command: "agent-session",
     describe: "Host-owned durable scientific agent session with canonical mission authority",
     builder(y) {
       return y
+        .command(
+          "start <prompt>",
+          "Open and run a session in the project and mission from your private HTTPS profile",
+          (child) => child.positional("prompt", { type: "string", demandOption: true }).strict(),
+          async (args) => output(await start(openSchema.shape.prompt.parse(args.prompt))),
+        )
         .command(
           "remote-status",
           "Inspect private HTTPS client scope and unresolved mutation metadata",

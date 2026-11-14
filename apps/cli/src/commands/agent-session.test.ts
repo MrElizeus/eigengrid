@@ -7,6 +7,37 @@ import { executeCommand } from "./execute";
 import type { AgentSessionService } from "../services/agent-sessions";
 
 describe("application CLI surface and fail-closed legacy migrations", () => {
+  test("start accepts a prompt and rejects scope overrides before dispatch", async () => {
+    const calls: string[] = [];
+    const results: unknown[] = [];
+    const command = createAgentSessionCommand(
+      () => {
+        throw new Error("must not open a local service");
+      },
+      (result) => results.push(result),
+      async (prompt) => {
+        calls.push(prompt);
+        return { phase: "waiting_approval" };
+      },
+    );
+    await yargs(["agent-session", "start", " inspect this mission "])
+      .command(command)
+      .exitProcess(false)
+      .parseAsync();
+    expect(calls).toEqual(["inspect this mission"]);
+    expect(results).toEqual([{ phase: "waiting_approval" }]);
+    await expect(
+      (async () =>
+        yargs(["agent-session", "start", "inspect", "--actorId", "admin"])
+          .command(command)
+          .exitProcess(false)
+          .parseAsync())(),
+    ).rejects.toThrow();
+    await expect(
+      yargs(["agent-session", "start", "   "]).command(command).exitProcess(false).parseAsync(),
+    ).rejects.toThrow();
+    expect(calls).toHaveLength(1);
+  });
   test("agent help resolves the native agent rather than an overlapping legacy execute command", async () => {
     let help = "";
     await yargs([])
