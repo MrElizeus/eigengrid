@@ -62,3 +62,28 @@ thermochemistry, periodic convergence, spectra, and analysis/uncertainty. Define
 systems, reference provenance, tolerances, resource budget and reviewed decision
 criteria before running. Planning and diagnostic entries may instead require
 structured case review and cannot all be validated by a single engine job.
+
+## Isolated NFS spool regression
+
+A dedicated, writable NFS scratch directory can exercise the actual result-spool
+implementation against Linux NFS behavior without a scheduler, the cluster or a
+scientific engine. Provision the NFS mount separately (for example in an isolated
+local test environment), and create an empty directory owned by the test user with
+mode `0700`. The test mount must allow the synthetic fixture executable to run.
+Then, from the repository root:
+
+```sh
+scripts/qualification/test-nfs-spool.sh /absolute/path/to/private/nfs-scratch
+```
+
+The harness refuses non-NFS filesystems and unsafe scratch ownership or modes,
+creates only a unique child directory, and runs the tests as the current user.
+It does not mount a filesystem or start a service. The suite first confirms that
+this Linux NFS client reproduces open-unlink link retention; it then exercises
+normal publication, recovery of the exact linked crash window, and recovery of a
+stale staging file. All authority and engine inputs are synthetic. A failure or
+unsupported NFS implementation remains a failure; it is not reported as an NFS
+pass. Unexpected leftover files are retained for inspection. This is a software
+regression check, not scientific validation or qualification of a deployment.
+
+Without an explicitly supplied NFS scratch directory, these tests are skipped.
