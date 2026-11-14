@@ -268,7 +268,15 @@ invalid. With no configuration, the existing local service mode remains availabl
 `agent-session` commands and TUI `/session` commands share this transport. A client
 can only operate on session IDs opened or recovered in its configured actor,
 origin, project and mission. `agent-session remote-status` (TUI `/session remote-status`)
-reports that scope and any pending request without authentication secrets.
+reports that scope, known session IDs and any pending request without authentication secrets.
+
+`agent-session start "<prompt>"` (TUI `/session start <prompt>`) opens a session in
+that configured project and mission, then resumes it once through the same client.
+It requires a private HTTPS profile and does not fall back to the local database.
+It cannot select another actor or grant an approval. If interrupted between opening
+and resuming, use `remote-status` to find the opened session, then `observe` it before
+resuming. If either response is lost, recover the pending operation first; do not
+start a replacement session to bypass the uncertainty fence.
 
 Every mutation is recorded privately before transmission. A lost response fences
 further mutations; the client never automatically repeats an effect. Run

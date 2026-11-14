@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { execFileSync } from "node:child_process";
 import { MissionHttpClient, configuredMissionHttpClient } from "./mission-http-client";
 import { writePrivateClientJson } from "./mission-http-private-files";
+import { startConfiguredAgentSession } from "./mission-agent-start";
 
 const sid = "41f4b0b5-046a-4401-bcb2-8899fc77c1c2";
 const snapshot = {
@@ -38,6 +39,8 @@ async function fixture() {
     { stdio: "ignore" },
   );
   let drops = false,
+    dropResume = false,
+    blockReads = false,
     wrongActor = false,
     missing = false,
     mismatched = false,
@@ -74,8 +77,11 @@ async function fixture() {
           );
       } else if (req.method === "POST") {
         posts++;
-        if (drops) req.socket.destroy();
+        if (drops || (dropResume && req.url?.endsWith("/resume"))) req.socket.destroy();
         else res.end(JSON.stringify({ result: snapshot }));
+      } else if (blockReads) {
+        res.statusCode = 503;
+        res.end(JSON.stringify({ error: { code: "UNAVAILABLE" } }));
       } else res.end(JSON.stringify({ result: snapshot }));
     },
   );
@@ -97,6 +103,12 @@ async function fixture() {
     drop: () => {
       drops = true;
     },
+    dropResume: () => {
+      dropResume = true;
+    },
+    blockReads: (value: boolean) => {
+      blockReads = value;
+    },
     wrongActor: () => {
       wrongActor = true;
     },
@@ -115,6 +127,66 @@ async function fixture() {
   };
 }
 const input = { projectId: "project", missionId: "mission", prompt: "inspect" };
+
+test("start runs over verified HTTPS once and retains its known session", async () => {
+  const f = await fixture();
+  try {
+    expect(await startConfiguredAgentSession("inspect", async () => f.client)).toEqual(snapshot);
+    expect(f.posts()).toBe(2);
+    const state = JSON.parse(await readFile(join(f.root, "state.json"), "utf8"));
+    expect(state.sessions).toEqual([sid]);
+    expect(state.pending).toBeUndefined();
+    expect(await f.client.status()).toMatchObject({ sessionCount: 1, sessionIds: [sid] });
+  } finally {
+    await f.close();
+  }
+});
+
+test("failure before resume intent leaves the opened ID discoverable after client restart", async () => {
+  const f = await fixture();
+  try {
+    f.blockReads(true);
+    await expect(startConfiguredAgentSession("inspect", async () => f.client)).rejects.toThrow(
+      "UNAVAILABLE",
+    );
+    expect(f.posts()).toBe(1);
+    const restarted = new MissionHttpClient(f.config, join(f.root, "state.json"));
+    expect(await restarted.status()).toMatchObject({ sessionIds: [sid], pending: null });
+    f.blockReads(false);
+    expect(await restarted.run("observe", { sessionId: sid })).toEqual(snapshot);
+    expect(f.posts()).toBe(1);
+    await restarted.run("resume", { sessionId: sid });
+    expect(f.posts()).toBe(2);
+  } finally {
+    await f.close();
+  }
+});
+
+test.each(["open", "resume"])(
+  "start preserves the %s lost-ack fence and cannot open a replacement",
+  async (action) => {
+    const f = await fixture();
+    try {
+      if (action === "open") f.drop();
+      else f.dropResume();
+      await expect(startConfiguredAgentSession("inspect", async () => f.client)).rejects.toThrow();
+      const before = JSON.parse(await readFile(join(f.root, "state.json"), "utf8"));
+      expect(before.pending.action).toBe(action);
+      const posts = action === "open" ? 1 : 2;
+      expect(f.posts()).toBe(posts);
+      const restarted = new MissionHttpClient(f.config, join(f.root, "state.json"));
+      await expect(startConfiguredAgentSession("inspect", async () => restarted)).rejects.toThrow(
+        "recover-remote",
+      );
+      expect(f.posts()).toBe(posts);
+      const after = JSON.parse(await readFile(join(f.root, "state.json"), "utf8"));
+      expect(after.pending).toEqual(before.pending);
+      expect(after.sessions).toEqual(action === "open" ? [] : [sid]);
+    } finally {
+      await f.close();
+    }
+  },
+);
 test("verified TLS binds session IDs and rejects cross-mission use", async () => {
   const f = await fixture();
   try {

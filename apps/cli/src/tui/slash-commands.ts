@@ -22,7 +22,7 @@ export const SlashCommands = new Map<string, string>([
   ["agent", "Run the AI agent (prompt)"],
   ["plan", "Plan a scientific campaign interactively; /plan off to leave planning"],
   ["mission", "Canonical mission action using a reviewed JSON request file"],
-  ["session", "Open, observe, approve, resume, cancel or reconcile a durable agent session"],
+  ["session", "Start a mission agent with /session start <prompt>; observe, approve or recover it"],
   ["connect", "Connect an LLM provider"],
   ["providers", "Alias for /connect"],
   ["models", "Choose a model for the current account or API key"],

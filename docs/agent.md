@@ -24,13 +24,22 @@ whose contents and digests the host verifies. The model cannot construct unverif
 scientific inputs by inventing a digest. Mutations require separate exact per-call
 approval, and existing scientific approvals remain required. The session cannot approve
 its own scientific plan, choose an actor, bypass project membership or invoke a shell/runner.
-Use `agent-session --help` for open, observe, approve, resume, events, cancel and reconcile.
+Use `agent-session --help` for start, open, observe, approve, resume, events, cancel and reconcile.
 
 The CLI and TUI share a [private HTTPS client](operations.md#private-https-agent-sessions)
 for users without database access. After administrative provisioning, use
 `eigengrid agent-session remote-status` to inspect its scope. A lost response leaves a
 durable local fence; `agent-session recover-remote` checks the original operation without
 repeating its effect. Credentials and certificates can rotate without discarding that fence.
+
+Start working in the mission already selected in that profile with
+`eigengrid agent-session start "Inspect this mission and explain the next required action"`,
+or type `/session start Inspect this mission and explain the next required action` in the TUI.
+This opens a persistent session and runs it until it finishes or reaches an approval,
+budget or recovery boundary. It uses the configured project and mission, requires the
+private HTTPS profile and grants no approvals. Existing `open` and `resume` commands
+remain available for separate steps. Starting again creates a new session; use the
+returned session ID to observe, approve or resume existing work.
 
 Each interface has a distinct system prompt that describes its actual tools. Scientific
 language distinguishes an execution template from a reviewed protocol and an observed
